@@ -1,1 +1,159 @@
 /* Empty. Add your own CSS if you like */
+.plan-list {
+  border-top: none;
+  background-image: none !important;
+}
+
+.plan {
+  line-height: 1;
+  padding: 0;
+}
+
+.plan-left {
+  text-align: center;
+  padding: 10px;
+}
+
+.plan-center {
+  background-color: #3399ff;
+  opacity: 0.5;
+}
+
+.plan-right {
+  padding: 10px 40px 10px 10px;
+}
+
+.plan-date {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.plan-duration {
+  font-size: 11px;
+  opacity: 0.4;
+}
+
+.plan-name {
+  font-size: 22px;
+  margin-bottom: 8px;
+}
+
+.plan-info {
+  opacity: 0.4;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.list-item-note {
+    position: absolute;
+    right: 36px;
+    top: 0;
+    bottom: 0;
+    font-size: 14px;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.list-item-note > .notification {
+}
+
+.overlay-parent {
+    position: relative;
+    padding: 10px;
+}
+
+.overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.budget-item-main {
+    padding: 10px 0 0 10px;
+}
+
+.budget-item-separator {
+    flex-basis: 1px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin: 0 10px 0 10px;
+    padding: 0;
+}
+
+.budget-item-navigation {
+    flex-basis: 40px;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    justify-content: center;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin: 0 10px 0 10px;
+}
+
+.budget-remaining {
+    font-size: 14px;
+    font-weight: 200;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.budget-spent {
+    font-size: 14px;
+    font-weight: 200;
+    position: absolute;
+    text-align: right;
+    right: 0;
+    top: 0;
+}
+
+.budget-prediction {
+    font-size: 18px;
+    font-weight: 100;
+    font-stretch: condensed;
+    text-align: center;
+}
+
+.budget-planned {
+    font-size: 20px;
+    font-weight: 100;
+    font-stretch: condensed;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+.budget-overview {
+    padding: 20px;
+    position: absolute;
+    border-top: 1px solid #ddd;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+    .budget-overview .budget-remaining {
+        font-size: 18px;
+    }
+
+    .budget-overview .budget-spent {
+        font-size: 18px;
+    }
+
+    .budget-overview .budget-prediction {
+        font-size: 20px;
+    }
+
+    .budget-overview .budget-planned {
+        font-size: 22px;
+    }

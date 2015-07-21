@@ -1,0 +1,36 @@
+﻿<ion-view view-title="{{budget.subject}}">
+    <ion-content class="has-header" padding="false">
+        <ion-list>
+            <ion-item item="subitem" href="#/budget/list" ng-repeat="subitem in budget.subitems">
+                <div class="row" height="140px">
+                    <div class="col col-10">
+                        <div class="overlay-parent">
+                            <div style="margin: 10px">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     xmlns:xlink="http://www.w3.org/1999/xlink"
+                                     viewBox="0 0 80 80">
+                                    <circle cx="40" cy="5" r="5" fill="{{subitem.prediction > 100 ? '#ff0000' : '#297f59'}}" />
+                                    <circle cx="{{subitem.xArcEnd}}" cy="{{subitem.yArcEnd}}" r="5" fill="{{subitem.prediction > 100 ? '#ff0000' : '#297f59'}}" />
+                                    <path style="{{'stroke-width:10; fill:none; stroke:' + (subitem.prediction > 100 ? '#ff0000' : '#297f59')}}" d="{{subitem.progressPath}}" />
+                                </svg>
+                            </div>
+                            <div class="overlay">
+                                <div class="budget-prediction">{{subitem.prediction + '%'}}</div>
+                                <div class="budget-spent">{{subitem.spent}}</div>
+                                <div class="budget-remaining">{{subitem.remaining}}</div>
+                                <div class="budget-planned">{{subitem.planned}}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col budget-item-separator" ng-style="{backgroundColor:subitem.subitems.length == 0 ? '#3399ff' : '#ccc'}"></div>
+                    <div class="col budget-item-main">
+                        <div class="plan-name">{{subitem.subject}}</div>
+                    </div>
+                    <div class="col budget-item-navigation">
+                        <span ng-hide="subitem.subitems.length == 0" class="notification">{{subitem.subitems.length}}</span>
+                    </div>
+                </div>
+            </ion-item>
+        </ion-list>
+    </ion-content>
+</ion-view>
