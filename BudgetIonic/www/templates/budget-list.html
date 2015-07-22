@@ -1,11 +1,11 @@
 ﻿<ion-view view-title="{{budget.subject}}">
     <ion-content class="has-header" padding="false">
         <ion-list>
-            <ion-item item="subitem" href="#/budget/list" ng-repeat="subitem in budget.subitems">
-                <div class="row" height="140px">
-                    <div class="col col-10">
+            <ion-item item="subitem" class="budget-list-item" href="#/budget/list" ng-repeat="subitem in budget.subitems">
+                <div class="row">
+                    <div class="col budget-prediction-col">
                         <div class="overlay-parent">
-                            <div style="margin: 10px">
+                            <div class="budget-prediction-gfx">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                      xmlns:xlink="http://www.w3.org/1999/xlink"
                                      viewBox="0 0 80 80">
@@ -24,7 +24,7 @@
                     </div>
                     <div class="col budget-item-separator" ng-style="{backgroundColor:subitem.subitems.length == 0 ? '#3399ff' : '#ccc'}"></div>
                     <div class="col budget-item-main">
-                        <div class="plan-name">{{subitem.subject}}</div>
+                        <div class="budget-name">{{subitem.subject}}</div>
                     </div>
                     <div class="col budget-item-navigation">
                         <div>
