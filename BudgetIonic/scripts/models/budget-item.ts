@@ -7,6 +7,7 @@
         public yArcEnd: number;
 
         constructor(
+            public id: Number,
             public subject: string,
             public description: string,
             public planned: number,

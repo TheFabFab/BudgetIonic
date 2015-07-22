@@ -6,6 +6,7 @@ module Budget {
     export class BudgetCtrl {
         public static $inject = [
             '$scope',
+            "$stateParams",
             '$location',
             ModelService.IID
         ];
@@ -14,16 +15,13 @@ module Budget {
 
         public budget: BudgetItem;
 
-        constructor(private $scope, private $location: ng.ILocationService, private modelService: ModelService) {
-            this.budget = modelService.getBudget();
+        constructor(private $scope: ng.IScope, $stateParams, private $location: ng.ILocationService, private modelService: ModelService) {
+            this.budget = modelService.getBudgetItem($stateParams.itemid);
+
+            var scopeInject = <any>$scope;
+            scopeInject.budget = this.budget;
+
             console.log("BudgetCtrl created with " + this.budget.subject + " containing " + this.budget.subitems.length + " items.");
-
-            $scope.budget = this.budget;
-            $scope.onClick = this.onClick;
-        }
-
-        private onClick(subitem: BudgetItem) {
-            console.log("Subitem clicked:" + subitem.subject);
         }
     }
 }

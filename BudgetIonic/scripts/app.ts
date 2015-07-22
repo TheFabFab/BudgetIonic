@@ -37,6 +37,12 @@ module Budget {
                 controller: MainCtrl.IID
             });
 
+            $stateProvider.state("budget-item-detail", {
+                url: "/budget-item/:itemid",
+                templateUrl: "templates/budget-list.html",
+                controller: BudgetCtrl.IID,
+            });
+
             // if none of the above states are matched, use this as the fallback
             $urlRouterProvider.otherwise('/budget/list');
 
