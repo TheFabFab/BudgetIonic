@@ -92,12 +92,14 @@
 
 .budget-item-navigation {
     flex-basis: 40px;
+    display: flex;
     -ms-flex-direction: column;
     flex-direction: column;
     justify-content: center;
     flex-grow: 0;
     flex-shrink: 0;
     margin: 0 10px 0 10px;
+    font-size: 22px;
 }
 
 .budget-remaining {

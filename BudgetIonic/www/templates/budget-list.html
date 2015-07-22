@@ -27,7 +27,10 @@
                         <div class="plan-name">{{subitem.subject}}</div>
                     </div>
                     <div class="col budget-item-navigation">
-                        <span ng-hide="subitem.subitems.length == 0" class="notification">{{subitem.subitems.length}}</span>
+                        <div>
+                            <span ng-hide="subitem.subitems.length == 0" class="notification">{{subitem.subitems.length}}</span>
+                            <i class="icon ion-ios-arrow-right"></i>
+                        </div>
                     </div>
                 </div>
             </ion-item>
