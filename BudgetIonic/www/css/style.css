@@ -199,3 +199,7 @@
     .budget-overview .budget-planned {
         font-size: 22px;
     }
+
+    .budget-overview .budget-prediction-gfx {
+        margin: 30px;
+    }
