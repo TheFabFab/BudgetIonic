@@ -1,7 +1,7 @@
-﻿<ion-view view-title="{{budget.subject}}">
+﻿<ion-view view-title="{{budgetItem.subject}}">
     <ion-content class="has-header" padding="false">
         <ion-list>
-            <ion-item item="subitem" class="budget-list-item" ui-sref="budget-item-detail({itemid: subitem.id})" ng-repeat="subitem in budget.subitems">
+            <ion-item ng-repeat="subitem in budgetItem.subitems" item="subitem" class="budget-list-item" ui-sref="budget-item-detail({itemid: subitem.id})">
                 <div class="row">
                     <div class="col budget-prediction-col">
                         <div class="overlay-parent">

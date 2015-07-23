@@ -3,7 +3,7 @@
 module Budget {
     'use strict';
 
-    export class BudgetCtrl {
+    export class BudgetItemCtrl {
         public static $inject = [
             '$scope',
             "$stateParams",
@@ -11,17 +11,21 @@ module Budget {
             ModelService.IID
         ];
 
-        public static IID = "budgetCtrl";
+        public static IID = "budgetItemCtrl";
 
-        public budget: BudgetItem;
+        public budgetItem: BudgetItem;
 
         constructor(private $scope: ng.IScope, $stateParams, private $location: ng.ILocationService, private modelService: ModelService) {
-            this.budget = modelService.getBudgetItem($stateParams.itemid);
+            console.log($stateParams);
+            this.budgetItem =
+                $stateParams.itemid === undefined
+                ? modelService.getBudget()
+                : modelService.getBudgetItem($stateParams.itemid);
 
             var scopeInject = <any>$scope;
-            scopeInject.budget = this.budget;
+            scopeInject.budgetItem = this.budgetItem;
 
-            console.log("BudgetCtrl created with " + this.budget.subject + " containing " + this.budget.subitems.length + " items.");
+            console.log("BudgetCtrl created with " + this.budgetItem.subject + " containing " + this.budgetItem.subitems.length + " items.");
         }
     }
 }

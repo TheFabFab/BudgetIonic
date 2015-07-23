@@ -1,5 +1,4 @@
 /// <reference path="controllers/budgetctrl.ts" />
-/// <reference path="controllers/mainctrl.ts" />
 /// <reference path="controllers/sidemenuctrl.ts" />
 /// <reference path="services/model-service.ts" />
 
@@ -12,8 +11,7 @@ module Budget {
 
     var budgetModule =
         angular.module('budget-app', ["ui.router", 'ionic'])
-        .controller(MainCtrl.IID, MainCtrl)
-        .controller(BudgetCtrl.IID, BudgetCtrl)
+        .controller(BudgetItemCtrl.IID, BudgetItemCtrl)
         .controller(SideMenuCtrl.IID, SideMenuCtrl)
         .service(ModelService.IID, ModelService)
 
@@ -32,19 +30,19 @@ module Budget {
         })
         .config(($stateProvider: ng.ui.IStateProvider, $urlRouterProvider: ng.ui.IUrlRouterProvider, $locationProvider: ng.ILocationProvider) => {
             $stateProvider.state("app", {
-                url: "/budget/list",
+                url: "/budget/",
                 templateUrl: "templates/budget-list.html",
-                controller: MainCtrl.IID
+                controller: BudgetItemCtrl.IID,
             });
 
             $stateProvider.state("budget-item-detail", {
                 url: "/budget-item/:itemid",
                 templateUrl: "templates/budget-list.html",
-                controller: BudgetCtrl.IID,
+                controller: BudgetItemCtrl.IID,
             });
 
             // if none of the above states are matched, use this as the fallback
-            $urlRouterProvider.otherwise('/budget/list');
+            $urlRouterProvider.otherwise('/budget/');
 
             // configure html5 to get links working on jsfiddle
             $locationProvider.html5Mode(true);
