@@ -1,5 +1,10 @@
-﻿module Budget {
+﻿/// <reference path="budget-transaction.ts" />
+/// <reference path="lite-events.ts" />
+
+module Budget {
     export class BudgetItem {
+        private changed: LiteEvent<Object> = new LiteEvent();
+
         public progress: number;
         public prediction: number;
         public progressPath: string;
@@ -7,17 +12,38 @@
         public yArcEnd: number;
 
         constructor(
-            public id: Number,
+            public id: number,
             public subject: string,
             public description: string,
             public planned: number,
             public spent: number,
             public remaining: number,
-            public subitems: BudgetItem[] = []
+            public subitems: BudgetItem[] = [],
+            public transactions: BudgetTransaction[] = []
         ) {
-            this.progress = Math.round(100 * spent / (spent + remaining));
-            this.prediction = Math.round(100 * (spent + remaining) / planned);
-            this.calculateProgressPath();
+            var overriden = {
+                push: transactions.push,
+                pop: transactions.pop,
+                length: transactions.length,
+                shift: transactions.shift,
+                splice: transactions.splice,
+                unshift: transactions.unshift,
+            };
+
+            transactions.push = (...items: BudgetTransaction[]) => {
+                var returnValue = overriden.push.apply(this, items);
+                this.onTransactionListChanged();
+                return returnValue;
+            };
+
+            transactions.pop = () => {
+                var returnValue = overriden.pop();
+                this.onTransactionListChanged();
+                return returnValue;
+            };
+
+            this.subitems.forEach(x => x.changed.on(this.onChildChanged));
+            this.recalculate();
         }
 
         private calculateProgressPath() : void {
@@ -28,6 +54,48 @@
             this.progressPath = 'M40,5 A35,35 0 ' + largeArcFlag + ',1 ' + x + ',' + y;
             this.xArcEnd = x;
             this.yArcEnd = y;
+        }
+
+        private getAllTransactions(): BudgetTransaction[]{
+            var allTransactions = this.transactions.map(x => x);
+
+            return allTransactions;
+        }
+
+        private recalculate() {
+            var spent = 0;
+            var remaining = 0;
+
+            this.transactions.forEach(x => {
+                spent += x.spent;
+                remaining += -x.reduced;
+            });
+
+            this.subitems.forEach(x => {
+                spent += x.spent;
+                remaining += x.remaining;
+            });
+
+            var changed = this.spent != spent || this.remaining != remaining;
+
+            if (changed) {
+                this.spent = spent;
+                this.remaining = remaining;
+
+                this.changed.trigger(this);
+            }
+
+            this.progress = Math.round(100 * this.spent / (this.spent + this.remaining));
+            this.prediction = Math.round(100 * (this.spent + this.remaining) / this.planned);
+            this.calculateProgressPath();
+        }
+
+        private onTransactionListChanged(): void {
+            this.recalculate();
+        }
+
+        private onChildChanged(child: BudgetItem): void {
+            this.recalculate();
         }
     }
 }

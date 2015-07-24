@@ -1,6 +1,6 @@
 ﻿<ion-view view-title="{{budgetItem.subject}}">
     <ion-content class="has-header" padding="false">
-        <ion-list>
+        <ion-list ng-if="budgetItem.subitems.length > 0">
             <ion-item ng-repeat="subitem in budgetItem.subitems" item="subitem" class="budget-list-item" ui-sref="budget-item-detail({itemid: subitem.id})">
                 <div class="row">
                     <div class="col budget-prediction-col">
@@ -35,5 +35,24 @@
                 </div>
             </ion-item>
         </ion-list>
+
+        <div ng-if="budgetItem.subitems.length == 0">
+            <div class="row">
+                <label class="col item item-input item-stacked-label">
+                    <span class="input-label">Description</span>
+                    <textarea placeholder="Enter a description..." ng-model="budgetItem.description"></textarea>
+                </label>
+            </div>
+            <div class="row responsive-sm">
+                <label class="col item item-input item-stacked-label">
+                    <span class="input-label">Planned</span>
+                    <input type="number" placeholder="Planned" ng-model="budgetItem.planned">
+                </label>
+                <label class="col item item-input item-stacked-label">
+                    <span class="input-label">Spent</span>
+                    <input type="number" placeholder="Spent" ng-model="budgetItem.spent">
+                </label>
+            </div>
+        </div>
     </ion-content>
 </ion-view>
