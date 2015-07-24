@@ -21,26 +21,8 @@ module Budget {
             public subitems: BudgetItem[] = [],
             public transactions: BudgetTransaction[] = []
         ) {
-            var overriden = {
-                push: transactions.push,
-                pop: transactions.pop,
-                length: transactions.length,
-                shift: transactions.shift,
-                splice: transactions.splice,
-                unshift: transactions.unshift,
-            };
-
-            transactions.push = (...items: BudgetTransaction[]) => {
-                var returnValue = overriden.push.apply(this, items);
-                this.onTransactionListChanged();
-                return returnValue;
-            };
-
-            transactions.pop = () => {
-                var returnValue = overriden.pop();
-                this.onTransactionListChanged();
-                return returnValue;
-            };
+            __.observe(transactions, this.transactionsUpdated);
+            __.observe(subitems, this.subitemsUpdated);
 
             this.subitems.forEach(x => x.changed.on(this.onChildChanged));
             this.recalculate();
@@ -90,7 +72,11 @@ module Budget {
             this.calculateProgressPath();
         }
 
-        private onTransactionListChanged(): void {
+        private transactionsUpdated(new_array: BudgetTransaction[], old_array: BudgetTransaction[]): void {
+            this.recalculate();
+        }
+
+        private subitemsUpdated(new_array: BudgetItem[], old_array: BudgetItem[]): void {
             this.recalculate();
         }
 

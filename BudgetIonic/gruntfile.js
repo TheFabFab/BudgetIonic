@@ -9,7 +9,7 @@ module.exports = function (grunt) {
                 options: {
                     targetDir: "www/scripts/lib",
                     layout: "byComponent",
-                    cleanTargetDir: true
+                    cleanTargetDir: false
                 }
             }
         },
