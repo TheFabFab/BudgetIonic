@@ -2,9 +2,7 @@
   "name": "bower",
   "license": "Apache-2.0",
   "private": true,
-  "dependencies": {
-
-  },
+  "dependencies": {},
   "exportsOverride": {
     "bootstrap": {
       "js": "dist/js/*.*",
@@ -20,5 +18,8 @@
     "underscore-observable-arrays": {
       "js": "underscore-observe.js"
     }
+  },
+  "devDependencies": {
+    "ionic": "driftyco/ionic-bower#1.0.1"
   }
 }

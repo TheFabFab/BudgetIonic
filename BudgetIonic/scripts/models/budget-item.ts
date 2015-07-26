@@ -1,4 +1,5 @@
-﻿/// <reference path="budget-transaction.ts" />
+﻿/// <reference path="../typings/underscore-observable-arrays/underscore-observable-arrays.d.ts" />
+/// <reference path="budget-transaction.ts" />
 /// <reference path="lite-events.ts" />
 
 module Budget {
@@ -21,8 +22,8 @@ module Budget {
             public subitems: BudgetItem[] = [],
             public transactions: BudgetTransaction[] = []
         ) {
-            __.observe(transactions, this.transactionsUpdated);
-            __.observe(subitems, this.subitemsUpdated);
+            _.observe(transactions, (new_array, old_array) => this.transactionsUpdated(new_array, old_array));
+            _.observe(subitems, (new_array, old_array) => this.subitemsUpdated(new_array, old_array));
 
             this.subitems.forEach(x => x.changed.on(this.onChildChanged));
             this.recalculate();
