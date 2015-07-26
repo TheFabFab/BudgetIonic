@@ -17,6 +17,8 @@ module.exports = function(config) {
     // list of files / patterns to load in the browser
     files: [
       'www/lib/ionic/js/ionic.bundle.js',
+      'www/lib/underscore/js/underscore.js',
+      'www/lib/underscore-observable-arrays/js/underscore-observe.js',
       'www/scripts/*.js',
       'test/*.js'
     ],

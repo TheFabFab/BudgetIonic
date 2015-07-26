@@ -4,7 +4,7 @@
 
 module Budget {
     export class BudgetItem {
-        private changed: LiteEvent<Object> = new LiteEvent();
+        private changed: LiteEvent<BudgetItem> = new LiteEvent();
 
         public progress: number;
         public prediction: number;
@@ -25,7 +25,7 @@ module Budget {
             _.observe(transactions, (new_array, old_array) => this.transactionsUpdated(new_array, old_array));
             _.observe(subitems, (new_array, old_array) => this.subitemsUpdated(new_array, old_array));
 
-            this.subitems.forEach(x => x.changed.on(this.onChildChanged));
+            this.subitems.forEach(x => x.changed.on(child => this.onChildChanged(child)));
             this.recalculate();
         }
 
