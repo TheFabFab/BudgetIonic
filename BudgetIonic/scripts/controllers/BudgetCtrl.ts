@@ -1,4 +1,5 @@
 ﻿/// <reference path="../services/model-service.ts" />
+/// <reference path="../services/data-service.ts" />
 
 module Budget {
     'use strict';
@@ -8,15 +9,21 @@ module Budget {
             '$scope',
             "$stateParams",
             '$location',
-            ModelService.IID
+            ModelService.IID,
+            DataService.IID
         ];
 
         public static IID = "budgetItemCtrl";
 
         public budgetItem: BudgetItem;
 
-        constructor(private $scope: ng.IScope, $stateParams, private $location: ng.ILocationService, private modelService: ModelService) {
-            console.log($stateParams);
+        constructor(
+            private $scope: ng.IScope,
+            private $stateParams,
+            private $location: ng.ILocationService,
+            private modelService: ModelService,
+            private dataService: DataService) {
+
             this.budgetItem =
                 $stateParams.itemid === undefined
                 ? modelService.getBudget()

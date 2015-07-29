@@ -1,4 +1,3 @@
-/// <reference path="www/lib/ionic/js/ionic.bundle.js" />
 // Karma configuration
 // Generated on Sun Jul 26 2015 10:50:55 GMT+0200 (Romance Daylight Time)
 
@@ -16,11 +15,14 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'www/lib/ionic/js/ionic.bundle.js',
-      'www/lib/underscore/js/underscore.js',
-      'www/lib/underscore-observable-arrays/js/underscore-observe.js',
-      'www/scripts/*.js',
-      'test/*.js'
+        'www/lib/ionic/js/ionic.bundle.js',
+        'www/lib/underscore/js/underscore.js',
+        'www/lib/underscore-observable-arrays/js/underscore-observe.js',
+        'www/lib/firebase/firebase.js',
+        'www/lib/angularfire/angularfire.js',
+        'www/scripts/*.js',
+        'www/lib/angular-mocks/angular-mocks.js',
+        'test/*.js'
     ],
 
 
@@ -51,7 +53,7 @@ module.exports = function(config) {
 
     // level of logging
     // possible values: config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
-    logLevel: config.LOG_INFO,
+    logLevel: config.LOG_DEBUG,
 
 
     // enable / disable watching file and executing tests whenever any file changes
@@ -60,11 +62,16 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['IE', 'Chrome'],
 
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits
-    singleRun: true
+    singleRun: false,
+
+    client: {
+        captureConsole: true,
+        useIframe: true
+    }
   })
 }

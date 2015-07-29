@@ -50,7 +50,7 @@ module Budget {
             var remaining = 0;
 
             this.transactions.forEach(x => {
-                spent += x.spent;
+                spent += x.spent();
                 remaining += -x.reduced;
             });
 

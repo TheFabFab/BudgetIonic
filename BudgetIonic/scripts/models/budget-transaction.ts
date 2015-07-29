@@ -8,11 +8,11 @@
             private _user: string = 'admin') {
         }
 
-        public get spent(): number {
+        public spent(): number {
             return this._spent;
         }
 
-        public get reduced(): number {
+        public reduced(): number {
             return this._reduced;
         }
     }

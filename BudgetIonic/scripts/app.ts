@@ -1,6 +1,11 @@
+/// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
+/// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="controllers/budgetctrl.ts" />
 /// <reference path="controllers/sidemenuctrl.ts" />
+/// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="services/model-service.ts" />
+/// <reference path="services/data-service.ts" />
+/// <reference path="typings/angular-ui-router/angular-ui-router.d.ts" />
 
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
@@ -10,10 +15,11 @@ module Budget {
     "use strict";
 
     var budgetModule =
-        angular.module('budget-app', ["ui.router", 'ionic'])
+        angular.module('budget-app', ["ui.router", 'ionic', 'firebase'])
         .controller(BudgetItemCtrl.IID, BudgetItemCtrl)
         .controller(SideMenuCtrl.IID, SideMenuCtrl)
         .service(ModelService.IID, ModelService)
+        .service(DataService.IID, DataService)
 
         .run(function ($ionicPlatform) {
             $ionicPlatform.ready(function () {
