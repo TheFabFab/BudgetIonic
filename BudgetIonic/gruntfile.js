@@ -39,6 +39,29 @@ module.exports = function (grunt) {
                 cmd: 'tsc -p scripts',
                 force: true
             }
+        },
+        'http-server': {
+            'dev': {
+                root: ['www', 'scripts'],
+                port: 8282,
+                host: "0.0.0.0",
+                showDir: false,
+                autoIndex: true,
+                cache: 1,
+                ext: "html",
+                runInBackground: false,
+            }
+        },
+        connect: {
+            server: {
+                options: {
+                    port: 8181,
+                    hostname: '0.0.0.0',
+                    base: ['www', 'scripts'],
+                    keepalive: true,
+                    livereload: true,
+                }
+            }
         }
     });
 
@@ -47,4 +70,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks("grunt-bower-task");
     grunt.loadNpmTasks("grunt-commands");
     grunt.loadNpmTasks('grunt-contrib-watch');
+    grunt.loadNpmTasks('grunt-http-server');
+    grunt.loadNpmTasks('grunt-contrib-connect');
 };

@@ -23,61 +23,28 @@ describe("account-ctrl", () => {
     beforeEach(inject(function (
         _$rootScope_: ng.IRootScopeService,
         _$log_: ng.ILogService,
-        _$q_: ng.IQService,
-        $httpBackend: ng.IHttpBackendService) {
+        _$q_: ng.IQService) {
 
         $rootScope = _$rootScope_;
         $scope = <Budget.IAccountScope>_$rootScope_.$new();
         $log = _$log_;
         $q = _$q_;
 
-        $httpBackend.whenGET('templates/budget-list.html').respond(404);
-
-        var resolved = $q.defer();
-        resolved.resolve(true);
-
-        accounts = {
-            '$getRecord': id => {
-                return {
-                    $value: BudgetTestData.accounts[id]
-                };
-            },
-            '$loaded': () => resolved.promise        
-        };
-
-        transactions = {
-            '$getRecord': id => {
-                return {
-                    $value: BudgetTestData.transactions[id]
-                };
-            },
-            '$loaded': () => resolved.promise
-        };
-
-        dataService = {
-            getRootAccountKey: () => _(BudgetTestData.accounts).keys()[0],
-            accounts: () => <AngularFireArray>accounts,
-            transactions: () => <AngularFireArray>transactions,
-        };
+        dataService = new BudgetTestData.MockDataService($q);
     }));
 
     it("gets constructed", () => {
-        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $log, $q, dataService);
+        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $log, dataService);
         expect(controller).not.toBeNull();
     });
 
-    it("calculates original scope correctly", done => {
-        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $log, $q, dataService);
+    it("calculates original scope correctly", () => {
+        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $log, dataService);
 
-        controller.initDone().then(() => {
-            expect($scope.account).not.toBeNull();
-            expect($scope.account.subject).toBe('My budget');
-            expect($scope.debited).toBe(65000);
-            expect($scope.credited).toBe(65000);
-            console.log("Done!");
-            done();
-        });
-
-        $rootScope.$apply();
+        expect($scope.account).not.toBeNull();
+        expect($scope.account.subject).toBe('My budget');
+        expect($scope.account.description).not.toBeNull();
+        expect($scope.debited).toBe(65000);
+        expect($scope.credited).toBe(65000);
     });
 });

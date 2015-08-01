@@ -16,10 +16,10 @@ module Budget {
 
     var budgetModule =
         angular.module('budget-app', ["ui.router", 'ionic', 'firebase'])
+        .service(DataService.IID, DataService)
+        .service(ModelService.IID, ModelService)
         .controller(BudgetItemCtrl.IID, BudgetItemCtrl)
         .controller(SideMenuCtrl.IID, SideMenuCtrl)
-        .service(ModelService.IID, ModelService)
-        .service(DataService.IID, DataService)
 
         .run(function ($ionicPlatform) {
             $ionicPlatform.ready(function () {
@@ -51,7 +51,7 @@ module Budget {
             $urlRouterProvider.otherwise('/budget/');
 
             // configure html5 to get links working on jsfiddle
-            $locationProvider.html5Mode(true);
+            $locationProvider.html5Mode(false);
         });
 
     console.log("Module initialized");

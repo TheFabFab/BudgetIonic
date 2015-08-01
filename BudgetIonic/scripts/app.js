@@ -14,10 +14,10 @@ var Budget;
 (function (Budget) {
     "use strict";
     var budgetModule = angular.module('budget-app', ["ui.router", 'ionic', 'firebase'])
+        .service(Budget.DataService.IID, Budget.DataService)
+        .service(Budget.ModelService.IID, Budget.ModelService)
         .controller(Budget.BudgetItemCtrl.IID, Budget.BudgetItemCtrl)
         .controller(Budget.SideMenuCtrl.IID, Budget.SideMenuCtrl)
-        .service(Budget.ModelService.IID, Budget.ModelService)
-        .service(Budget.DataService.IID, Budget.DataService)
         .run(function ($ionicPlatform) {
         $ionicPlatform.ready(function () {
             // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
@@ -45,7 +45,7 @@ var Budget;
         // if none of the above states are matched, use this as the fallback
         $urlRouterProvider.otherwise('/budget/');
         // configure html5 to get links working on jsfiddle
-        $locationProvider.html5Mode(true);
+        $locationProvider.html5Mode(false);
     });
     console.log("Module initialized");
     function initialize() {
