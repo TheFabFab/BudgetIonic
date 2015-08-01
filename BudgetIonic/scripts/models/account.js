@@ -4,53 +4,34 @@
 var Budget;
 (function (Budget) {
     var Account = (function () {
-        function Account(_firebaseObject, _snapshot, subAccounts, creditTransactions, debitTransactions) {
+        function Account(_dataService, _firebaseObject, _snapshot, subAccounts, creditTransactions, debitTransactions) {
             var _this = this;
             this._firebaseObject = _firebaseObject;
             this._snapshot = _snapshot;
             this.subAccounts = subAccounts;
-            this._debited = 0;
-            this._credited = 0;
-            this._directDebited = 0;
-            this._directCredited = 0;
-            this._changedEvent = new Budget.LiteEvent();
-            creditTransactions.forEach(function (x) { return _this._directCredited += x.amount; });
-            debitTransactions.forEach(function (x) { return _this._directDebited += x.amount; });
+            this.debited = 0;
+            this.credited = 0;
+            this._key = _snapshot.key();
+            creditTransactions.forEach(function (x) { return _this.credited += x.amount; });
+            debitTransactions.forEach(function (x) { return _this.debited += x.amount; });
             this._firebaseObject.on('value', function (snapshot) { return _this._snapshot = snapshot; });
-            subAccounts.forEach(function (subAccount) {
-                subAccount._changedEvent.on(function (child) { return _this.onChildChanged(child); });
-            });
+            _dataService.newTransactionAvailable().on(function (transaction) { return _this.onNewTransactionAvailable(transaction); });
         }
+        Account.prototype.key = function () {
+            return this._key;
+        };
         Account.prototype.firebaseObject = function () {
             return this._firebaseObject;
         };
         Account.prototype.snapshot = function () {
             return this._snapshot;
         };
-        Account.prototype.debited = function () {
-            return this._debited;
-        };
-        Account.prototype.credited = function () {
-            return this._credited;
-        };
-        Account.prototype.onChanged = function () {
-            this._changedEvent.trigger(this);
-        };
-        Account.prototype.onChildChanged = function (child) {
-            this.recalculate();
-        };
-        Account.prototype.recalculate = function () {
-            var credited = this._directCredited;
-            var debited = this._directDebited;
-            this.subAccounts.forEach(function (subAccount) {
-                credited += subAccount.credited();
-                debited += subAccount.debited();
-            });
-            if (credited != this._credited ||
-                debited != this._debited) {
-                this._credited = credited;
-                this._debited = debited;
-                this.onChanged();
+        Account.prototype.onNewTransactionAvailable = function (transaction) {
+            if (transaction.debit == this._key) {
+                this.debited += transaction.amount;
+            }
+            if (transaction.credit == this._key) {
+                this.credited += transaction.amount;
             }
         };
         return Account;

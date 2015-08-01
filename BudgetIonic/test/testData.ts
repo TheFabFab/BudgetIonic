@@ -2,8 +2,10 @@
 
     export class MockDataService implements Budget.IDataService {
 
-        public rootAccount: Budget.Account;
+        private _rootAccount: Budget.Account;
+        private _accountMap: Budget.Account[] = [];
         private _loaded: ng.IPromise<boolean>;
+        private _newTransactionAvailable = new Budget.LiteEvent<Budget.ITransactionData>();
 
         constructor($q: ng.IQService) {
             console.log("Costructing test data");
@@ -15,22 +17,39 @@
             var rootKey = _.keys(this.testData.accounts)[0];
             var rootValue = this.testData.accounts[rootKey];
 
-            this.rootAccount = this.loadAccounts(rootKey, rootValue);
+            this._rootAccount = this.loadAccounts(rootKey, rootValue);
+            console.log(this._accountMap);
         }
 
         public getRootAccount(): Budget.Account {
-            return this.rootAccount;
+            return this._rootAccount;
+        }
+
+        public getAccount(key: string): Budget.Account {
+            return this._accountMap[key];
         }
 
         public loaded(): ng.IPromise<boolean> {
             return this._loaded;
         }
 
+        public newTransactionAvailable(): Budget.LiteEvent<Budget.ITransactionData> {
+            return this._newTransactionAvailable;
+        }
+
+        public addTransaction(transaction: Budget.ITransactionData) {
+            this._newTransactionAvailable.trigger(transaction);
+        }
+
         private loadAccounts(key, value): Budget.Account {
-            var subAccounts =
-                _(this.testData.accounts)
-                    .where({ parent: key })
-                    .map((childValue, childKey) => this.loadAccounts(childKey, childValue));
+            var keys = _(this.testData.accounts).keys();
+            var subAccounts = [];
+            keys.forEach(childKey => {
+                var childValue = this.testData.accounts[childKey];
+                if (childValue.parent == key) {
+                    subAccounts.push(this.loadAccounts(childKey, childValue));
+                }
+            });
 
             var mockFirebaseObject = <Firebase>{
                 on: (event: string, callback: any) => { },
@@ -38,6 +57,7 @@
 
             var mockSnapshot = <FirebaseDataSnapshot>{
                 val: () => value,
+                key: () => key,
             };
 
             var creditTransactions =
@@ -50,7 +70,9 @@
                     .where({ debit: key })
                     .map(x => <Budget.ITransactionData>x);
 
-            return new Budget.Account(mockFirebaseObject, mockSnapshot, subAccounts, creditTransactions, debitTransactions);
+            var account = new Budget.Account(this, mockFirebaseObject, mockSnapshot, subAccounts, creditTransactions, debitTransactions);
+            this._accountMap[key] = account;
+            return account;
         }
 
         private testData: any = {

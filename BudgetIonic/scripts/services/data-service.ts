@@ -1,4 +1,5 @@
 ﻿/// <reference path="../models/account.ts" />
+/// <reference path="../models/lite-events.ts" />
 module Budget {
     export interface ITransactionData {
         debit: string;
@@ -15,6 +16,8 @@ module Budget {
     export interface IDataService {
         loaded(): ng.IPromise<boolean>;
         getRootAccount(): Account;
+        getAccount(key: string): Account;
+        newTransactionAvailable(): LiteEvent<ITransactionData>;
     }
 
     export class DataService implements IDataService {
@@ -28,6 +31,9 @@ module Budget {
         private _database: Firebase;
         private _loaded: ng.IPromise<boolean>;
         private _rootAccount: Account;
+        private _accountMap: Account[] = [];
+
+        private _newTransactionAvailable = new LiteEvent<ITransactionData>();
 
         private _accountsReference: Firebase;
         private _transactionsReference: Firebase;
@@ -42,6 +48,10 @@ module Budget {
 
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
+
+            this._transactionsReference.on('child_added', (dataSnapshot, prevChildName) => {
+                this.onTransactionAdded(dataSnapshot, prevChildName);
+            });
 
             this.loadAccounts()
                 .then(rootAccount => {
@@ -69,6 +79,20 @@ module Budget {
         public getRootAccount(): Account {
             this.assertLoaded();
             return this._rootAccount;
+        }
+
+        public getAccount(key: string): Account {
+            this.assertLoaded();
+            return this._accountMap[key];
+        }
+
+        public newTransactionAvailable(): LiteEvent<ITransactionData> {
+            return this._newTransactionAvailable;
+        }
+
+        private onTransactionAdded(dataSnapshot: FirebaseDataSnapshot, prevChildName: string) {
+            var transaction = <ITransactionData>dataSnapshot.val();
+            this._newTransactionAvailable.trigger(transaction);
         }
         
         private filterTransactions(creditOrDebit: boolean, accountKey: string): ng.IPromise<ITransactionData[]> {
@@ -163,7 +187,9 @@ module Budget {
                     var childAccounts = <Account[]>results[2];
     
                     var firebaseObject: Firebase = this._accountsReference.child(snapshot.key());
-                    return new Account(firebaseObject, snapshot, childAccounts, creditTransactions, debitTransactions);
+                    var account = new Account(this, firebaseObject, snapshot, childAccounts, creditTransactions, debitTransactions);
+                    this._accountMap[snapshot.key()] = account;
+                    return account;
                 });
 
             return loadedAccount;

@@ -158,54 +158,34 @@ var Budget;
 var Budget;
 (function (Budget) {
     var Account = (function () {
-        function Account(_firebaseObject, _snapshot, subAccounts, creditTransactions, debitTransactions) {
+        function Account(_dataService, _firebaseObject, _snapshot, subAccounts, creditTransactions, debitTransactions) {
             var _this = this;
             this._firebaseObject = _firebaseObject;
             this._snapshot = _snapshot;
             this.subAccounts = subAccounts;
-            this._debited = 0;
-            this._credited = 0;
-            this._directDebited = 0;
-            this._directCredited = 0;
-            this._changedEvent = new Budget.LiteEvent();
-            creditTransactions.forEach(function (x) { return _this._directCredited += x.amount; });
-            debitTransactions.forEach(function (x) { return _this._directDebited += x.amount; });
+            this.debited = 0;
+            this.credited = 0;
+            this._key = _snapshot.key();
+            creditTransactions.forEach(function (x) { return _this.credited += x.amount; });
+            debitTransactions.forEach(function (x) { return _this.debited += x.amount; });
             this._firebaseObject.on('value', function (snapshot) { return _this._snapshot = snapshot; });
-            subAccounts.forEach(function (subAccount) {
-                subAccount._changedEvent.on(function (child) { return _this.onChildChanged(child); });
-            });
-            this.recalculate();
+            _dataService.newTransactionAvailable().on(function (transaction) { return _this.onNewTransactionAvailable(transaction); });
         }
+        Account.prototype.key = function () {
+            return this._key;
+        };
         Account.prototype.firebaseObject = function () {
             return this._firebaseObject;
         };
         Account.prototype.snapshot = function () {
             return this._snapshot;
         };
-        Account.prototype.debited = function () {
-            return this._debited;
-        };
-        Account.prototype.credited = function () {
-            return this._credited;
-        };
-        Account.prototype.onChanged = function () {
-            this._changedEvent.trigger(this);
-        };
-        Account.prototype.onChildChanged = function (child) {
-            this.recalculate();
-        };
-        Account.prototype.recalculate = function () {
-            var credited = this._directCredited;
-            var debited = this._directDebited;
-            this.subAccounts.forEach(function (subAccount) {
-                credited += subAccount.credited();
-                debited += subAccount.debited();
-            });
-            if (credited != this._credited ||
-                debited != this._debited) {
-                this._credited = credited;
-                this._debited = debited;
-                this.onChanged();
+        Account.prototype.onNewTransactionAvailable = function (transaction) {
+            if (transaction.debit == this._key) {
+                this.debited += transaction.amount;
+            }
+            if (transaction.credit == this._key) {
+                this.credited += transaction.amount;
             }
         };
         return Account;
@@ -213,18 +193,24 @@ var Budget;
     Budget.Account = Account;
 })(Budget || (Budget = {}));
 /// <reference path="../models/account.ts" />
+/// <reference path="../models/lite-events.ts" />
 var Budget;
 (function (Budget) {
     var DataService = (function () {
         function DataService($q, $firebaseArray) {
             var _this = this;
             this.$q = $q;
+            this._accountMap = [];
+            this._newTransactionAvailable = new Budget.LiteEvent();
             console.log("Creating data service");
             var loadedPromise = $q.defer();
             this._loaded = loadedPromise.promise;
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
+            this._transactionsReference.on('child_added', function (dataSnapshot, prevChildName) {
+                _this.onTransactionAdded(dataSnapshot, prevChildName);
+            });
             this.loadAccounts()
                 .then(function (rootAccount) {
                 if (rootAccount == null) {
@@ -249,6 +235,17 @@ var Budget;
         DataService.prototype.getRootAccount = function () {
             this.assertLoaded();
             return this._rootAccount;
+        };
+        DataService.prototype.getAccount = function (key) {
+            this.assertLoaded();
+            return this._accountMap[key];
+        };
+        DataService.prototype.newTransactionAvailable = function () {
+            return this._newTransactionAvailable;
+        };
+        DataService.prototype.onTransactionAdded = function (dataSnapshot, prevChildName) {
+            var transaction = dataSnapshot.val();
+            this._newTransactionAvailable.trigger(transaction);
         };
         DataService.prototype.filterTransactions = function (creditOrDebit, accountKey) {
             var deferred = this.$q.defer();
@@ -325,7 +322,9 @@ var Budget;
                 var debitTransactions = results[1];
                 var childAccounts = results[2];
                 var firebaseObject = _this._accountsReference.child(snapshot.key());
-                return new Budget.Account(firebaseObject, snapshot, childAccounts, creditTransactions, debitTransactions);
+                var account = new Budget.Account(_this, firebaseObject, snapshot, childAccounts, creditTransactions, debitTransactions);
+                _this._accountMap[snapshot.key()] = account;
+                return account;
             });
             return loadedAccount;
         };
@@ -529,10 +528,10 @@ var Budget;
                 this._account = dataService.getRootAccount();
             }
             else {
+                this._account = dataService.getAccount(accountId);
             }
-            $scope.account = this._account.snapshot().val();
-            $scope.debited = this._account.debited();
-            $scope.credited = this._account.credited();
+            $scope.accountData = this._account.snapshot().val();
+            $scope.account = this._account;
         }
         AccountCtrl.$inject = [
             '$scope',

@@ -3,9 +3,8 @@ module Budget {
     'use strict';
 
     export interface IAccountScope extends ng.IScope {
-        account: IAccountData;
-        debited: number;
-        credited: number;
+        accountData: IAccountData;
+        account: Account;
     }
 
     export class AccountCtrl {
@@ -31,12 +30,11 @@ module Budget {
             if (accountId === '') {
                 this._account = dataService.getRootAccount();
             } else {
-                // TODO: this._account = dataService.getAccount(accountId);
+                this._account = dataService.getAccount(accountId);
             }
 
-            $scope.account = this._account.snapshot().val();
-            $scope.debited = this._account.debited();
-            $scope.credited = this._account.credited();
+            $scope.accountData = this._account.snapshot().val();
+            $scope.account = this._account;
         }
     }
 }

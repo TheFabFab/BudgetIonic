@@ -13,10 +13,10 @@ var Budget;
                 this._account = dataService.getRootAccount();
             }
             else {
+                this._account = dataService.getAccount(accountId);
             }
-            $scope.account = this._account.snapshot().val();
-            $scope.debited = this._account.debited();
-            $scope.credited = this._account.credited();
+            $scope.accountData = this._account.snapshot().val();
+            $scope.account = this._account;
         }
         AccountCtrl.$inject = [
             '$scope',

@@ -1,16 +1,22 @@
 /// <reference path="../models/account.ts" />
+/// <reference path="../models/lite-events.ts" />
 var Budget;
 (function (Budget) {
     var DataService = (function () {
         function DataService($q, $firebaseArray) {
             var _this = this;
             this.$q = $q;
+            this._accountMap = [];
+            this._newTransactionAvailable = new Budget.LiteEvent();
             console.log("Creating data service");
             var loadedPromise = $q.defer();
             this._loaded = loadedPromise.promise;
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
+            this._transactionsReference.on('child_added', function (dataSnapshot, prevChildName) {
+                _this.onTransactionAdded(dataSnapshot, prevChildName);
+            });
             this.loadAccounts()
                 .then(function (rootAccount) {
                 if (rootAccount == null) {
@@ -35,6 +41,17 @@ var Budget;
         DataService.prototype.getRootAccount = function () {
             this.assertLoaded();
             return this._rootAccount;
+        };
+        DataService.prototype.getAccount = function (key) {
+            this.assertLoaded();
+            return this._accountMap[key];
+        };
+        DataService.prototype.newTransactionAvailable = function () {
+            return this._newTransactionAvailable;
+        };
+        DataService.prototype.onTransactionAdded = function (dataSnapshot, prevChildName) {
+            var transaction = dataSnapshot.val();
+            this._newTransactionAvailable.trigger(transaction);
         };
         DataService.prototype.filterTransactions = function (creditOrDebit, accountKey) {
             var deferred = this.$q.defer();
@@ -111,7 +128,9 @@ var Budget;
                 var debitTransactions = results[1];
                 var childAccounts = results[2];
                 var firebaseObject = _this._accountsReference.child(snapshot.key());
-                return new Budget.Account(firebaseObject, snapshot, childAccounts, creditTransactions, debitTransactions);
+                var account = new Budget.Account(_this, firebaseObject, snapshot, childAccounts, creditTransactions, debitTransactions);
+                _this._accountMap[snapshot.key()] = account;
+                return account;
             });
             return loadedAccount;
         };

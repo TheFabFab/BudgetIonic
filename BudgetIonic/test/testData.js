@@ -2,6 +2,8 @@ var BudgetTestData;
 (function (BudgetTestData) {
     var MockDataService = (function () {
         function MockDataService($q) {
+            this._accountMap = [];
+            this._newTransactionAvailable = new Budget.LiteEvent();
             this.testData = {
                 "accounts": {
                     "-JvFY-oIBp_fPP2fdjPs": {
@@ -102,24 +104,40 @@ var BudgetTestData;
             resolved.resolve(true);
             var rootKey = _.keys(this.testData.accounts)[0];
             var rootValue = this.testData.accounts[rootKey];
-            this.rootAccount = this.loadAccounts(rootKey, rootValue);
+            this._rootAccount = this.loadAccounts(rootKey, rootValue);
+            console.log(this._accountMap);
         }
         MockDataService.prototype.getRootAccount = function () {
-            return this.rootAccount;
+            return this._rootAccount;
+        };
+        MockDataService.prototype.getAccount = function (key) {
+            return this._accountMap[key];
         };
         MockDataService.prototype.loaded = function () {
             return this._loaded;
         };
+        MockDataService.prototype.newTransactionAvailable = function () {
+            return this._newTransactionAvailable;
+        };
+        MockDataService.prototype.addTransaction = function (transaction) {
+            this._newTransactionAvailable.trigger(transaction);
+        };
         MockDataService.prototype.loadAccounts = function (key, value) {
             var _this = this;
-            var subAccounts = _(this.testData.accounts)
-                .where({ parent: key })
-                .map(function (childValue, childKey) { return _this.loadAccounts(childKey, childValue); });
+            var keys = _(this.testData.accounts).keys();
+            var subAccounts = [];
+            keys.forEach(function (childKey) {
+                var childValue = _this.testData.accounts[childKey];
+                if (childValue.parent == key) {
+                    subAccounts.push(_this.loadAccounts(childKey, childValue));
+                }
+            });
             var mockFirebaseObject = {
                 on: function (event, callback) { },
             };
             var mockSnapshot = {
                 val: function () { return value; },
+                key: function () { return key; },
             };
             var creditTransactions = _(this.testData.transactions)
                 .where({ credit: key })
@@ -127,7 +145,9 @@ var BudgetTestData;
             var debitTransactions = _(this.testData.transactions)
                 .where({ debit: key })
                 .map(function (x) { return x; });
-            return new Budget.Account(mockFirebaseObject, mockSnapshot, subAccounts, creditTransactions, debitTransactions);
+            var account = new Budget.Account(this, mockFirebaseObject, mockSnapshot, subAccounts, creditTransactions, debitTransactions);
+            this._accountMap[key] = account;
+            return account;
         };
         return MockDataService;
     })();
