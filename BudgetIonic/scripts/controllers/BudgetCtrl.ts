@@ -24,6 +24,8 @@ module Budget {
             private modelService: ModelService,
             private dataService: DataService) {
 
+            console.log("Initializing budget controller");
+
             this.budgetItem =
                 $stateParams.itemid === undefined
                 ? modelService.getBudget()

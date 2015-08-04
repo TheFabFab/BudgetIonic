@@ -7,10 +7,15 @@ module Budget {
         account: Account;
     }
 
+    interface IAccountStateParams {
+        accountId: string;
+    }
+
     export class AccountCtrl {
         public static $inject = [
             '$scope',
             "$stateParams",
+            "$firebaseObject",
             "$log",
             DataService.IID
         ];
@@ -21,7 +26,8 @@ module Budget {
 
         constructor(
             private $scope: IAccountScope,
-            private $stateParams,
+            private $stateParams: IAccountStateParams,
+            private $firebaseObject: AngularFireObjectService,
             private $log: ng.ILogService,
             private dataService: IDataService) {
 
@@ -33,7 +39,7 @@ module Budget {
                 this._account = dataService.getAccount(accountId);
             }
 
-            $scope.accountData = this._account.snapshot().val();
+            $firebaseObject(this._account.firebaseObject()).$bindTo($scope, "accountData");
             $scope.account = this._account;
         }
     }

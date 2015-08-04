@@ -3,9 +3,10 @@ var Budget;
 (function (Budget) {
     'use strict';
     var AccountCtrl = (function () {
-        function AccountCtrl($scope, $stateParams, $log, dataService) {
+        function AccountCtrl($scope, $stateParams, $firebaseObject, $log, dataService) {
             this.$scope = $scope;
             this.$stateParams = $stateParams;
+            this.$firebaseObject = $firebaseObject;
             this.$log = $log;
             this.dataService = dataService;
             var accountId = $stateParams.accountId || '';
@@ -15,12 +16,13 @@ var Budget;
             else {
                 this._account = dataService.getAccount(accountId);
             }
-            $scope.accountData = this._account.snapshot().val();
+            $firebaseObject(this._account.firebaseObject()).$bindTo($scope, "accountData");
             $scope.account = this._account;
         }
         AccountCtrl.$inject = [
             '$scope',
             "$stateParams",
+            "$firebaseObject",
             "$log",
             Budget.DataService.IID
         ];

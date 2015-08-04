@@ -4,7 +4,9 @@
 /// <reference path="controllers/sidemenuctrl.ts" />
 /// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="services/model-service.ts" />
+/// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="services/data-service.ts" />
+/// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="typings/angular-ui-router/angular-ui-router.d.ts" />
 
 // For an introduction to the Blank template, see the following documentation:
@@ -15,14 +17,18 @@ module Budget {
     "use strict";
 
     var budgetModule =
-        angular.module('budget-app', ["ui.router", 'ionic', 'firebase'])
-        .service(DataService.IID, DataService)
-        .service(ModelService.IID, ModelService)
-        .controller(BudgetItemCtrl.IID, BudgetItemCtrl)
-        .controller(SideMenuCtrl.IID, SideMenuCtrl)
+        angular.module('budget-app', ['ionic', 'firebase'])
+            .service(DataService.IID, DataService)
+            .service(ModelService.IID, ModelService)
+            .controller(BudgetItemCtrl.IID, BudgetItemCtrl)
+            .controller(SideMenuCtrl.IID, SideMenuCtrl)
+            .controller(MainCtrl.IID, MainCtrl)
+            .controller(AccountCtrl.IID, AccountCtrl);
 
-        .run(function ($ionicPlatform) {
-            $ionicPlatform.ready(function () {
+
+    budgetModule
+        .run(function ($ionicPlatform, $rootScope: ng.IRootScopeService) {
+            $ionicPlatform.ready(() => {
                 // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
                 // for form inputs)
                 if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
@@ -33,22 +39,75 @@ module Budget {
                     window.StatusBar.styleLightContent();
                 }
             });
-        })
-        .config(($stateProvider: ng.ui.IStateProvider, $urlRouterProvider: ng.ui.IUrlRouterProvider, $locationProvider: ng.ILocationProvider) => {
-            $stateProvider.state("app", {
-                url: "/budget/",
-                templateUrl: "templates/budget-list.html",
-                controller: BudgetItemCtrl.IID,
+
+            // Credits: Adam's answer in http://stackoverflow.com/a/20786262/69362
+            console.log("Setting up $rootscope logging...");
+
+            $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
+                console.log('$stateChangeStart to ' + toState.to + '- fired when the transition begins. toState,toParams : \n', toState, toParams);
             });
 
-            $stateProvider.state("budget-item-detail", {
-                url: "/budget-item/:itemid",
+            $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams) {
+                console.log('$stateChangeError - fired when an error occurs during transition.');
+                console.log(arguments);
+            });
+
+            $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+                console.log('$stateChangeSuccess to ' + toState.name + '- fired once the state transition is complete.');
+            });
+
+            $rootScope.$on('$viewContentLoaded', function (event) {
+                console.log('$viewContentLoaded - fired after dom rendered', event);
+            });
+
+            $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
+                console.log('$stateNotFound ' + unfoundState.to + '  - fired when a state cannot be found by its name.');
+                console.log(unfoundState, fromState, fromParams);
+            });
+        })
+    ;
+
+    budgetModule
+        .config(($stateProvider: ng.ui.IStateProvider, $urlRouterProvider: ng.ui.IUrlRouterProvider, $locationProvider: ng.ILocationProvider) => {
+            console.log("Configuring routes...");
+
+            $stateProvider
+                 
+                .state("app", {
+                    abstract: true,
+                    url: "/budget",
+                    views: {
+                        'main-frame': {
+                            controller: MainCtrl.IID,
+                            templateUrl: "templates/master-page.html",
+                        },
+                    },
+                    resolve: {
+                        delay: ['$q', DataService.IID, ($q, dataService: IDataService) => {
+                            console.log("Resolving app state...");
+                            return dataService.loaded();
+                        }]
+                    }
+                })
+
+                .state("app.budget", {
+                    url: "/home",
+                    views: {
+                        'main-content': {
+                            templateUrl: "templates/budget-list.html",
+                            controller: BudgetItemCtrl.IID,
+                        },
+                    },
+                });
+
+            $stateProvider.state("app.budget-account", {
+                url: "/account/:itemid",
                 templateUrl: "templates/budget-list.html",
                 controller: BudgetItemCtrl.IID,
             });
 
             // if none of the above states are matched, use this as the fallback
-            $urlRouterProvider.otherwise('/budget/');
+            $urlRouterProvider.otherwise('/budget/home');
 
             // configure html5 to get links working on jsfiddle
             $locationProvider.html5Mode(false);

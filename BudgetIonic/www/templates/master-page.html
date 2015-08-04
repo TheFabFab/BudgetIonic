@@ -1,0 +1,43 @@
+﻿<ion-view view-title="{{rootAccount.subject}}">
+    <ion-side-menus>
+        <!-- Left menu -->
+        <ion-side-menu side="left" expose-aside-when="large">
+            <ion-content scroll="false" class="has-header" padding="false">
+                <div class="budget-side-menu">
+                    <div class="row row-fill">
+                        <!-- Put further content here -->
+                    </div>
+                    <div class="row budget-overview-row">
+                        <div class="budget-overview">
+                            <div class="overlay-parent">
+                                <div class="budget-prediction-gfx">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         xmlns:xlink="http://www.w3.org/1999/xlink"
+                                         viewBox="0 0 80 80">
+                                        <circle cx="40" cy="5" r="5" fill="{{budget.prediction > 100 ? '#ff0000' : '#297f59'}}" />
+                                        <circle cx="{{budget.xArcEnd}}" cy="{{budget.yArcEnd}}" r="5" fill="{{budget.prediction > 100 ? '#ff0000' : '#297f59'}}" />
+                                        <path style="{{'stroke-width:10; fill:none; stroke:' + (budget.prediction > 100 ? '#ff0000' : '#297f59')}}" d="{{budget.progressPath}}" />
+                                    </svg>
+                                </div>
+                                <div class="overlay">
+                                    <div class="budget-prediction"><div>Prediction</div><div>{{budget.prediction + '%'}}</div></div>
+                                    <div class="budget-spent"><div>Spent up to date</div><div>{{rootAccount.credited}}</div></div>
+                                    <div class="budget-remaining"><div>Remaining</div><div>{{budget.remaining}}</div></div>
+                                    <div class="budget-planned"><div>Budgeted</div><div>{{rootAccount.debited}}</div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ion-content>
+        </ion-side-menu>
+        <ion-side-menu-content>
+            <!--
+              The views will be rendered in the <ion-nav-view> directive below
+              Templates are in the /templates folder (but you could also
+              have templates inline in this html file if you'd like).
+            -->
+            <ion-nav-view name="main-content"></ion-nav-view>
+        </ion-side-menu-content>
+    </ion-side-menus>
+</ion-view>

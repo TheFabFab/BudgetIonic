@@ -134,6 +134,8 @@ var BudgetTestData;
             });
             var mockFirebaseObject = {
                 on: function (event, callback) { },
+                $$mockVal: function () { return value; },
+                $$key: function () { return key; },
             };
             var mockSnapshot = {
                 val: function () { return value; },

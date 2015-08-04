@@ -51,9 +51,11 @@
                 }
             });
 
-            var mockFirebaseObject = <Firebase>{
+            var mockFirebaseObject = <Firebase>(<any>{
                 on: (event: string, callback: any) => { },
-            };
+                $$mockVal: () => value,
+                $$key: () => key,
+            });
 
             var mockSnapshot = <FirebaseDataSnapshot>{
                 val: () => value,

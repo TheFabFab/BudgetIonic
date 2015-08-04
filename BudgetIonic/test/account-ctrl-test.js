@@ -16,6 +16,13 @@ describe("account-ctrl", function () {
     var $rootScope;
     var accounts;
     var transactions;
+    var $firebaseObject = (function (firebase) {
+        return {
+            $bindTo: function (scope, name) {
+                scope[name] = firebase.$$mockVal();
+            }
+        };
+    });
     beforeEach(inject(function (_$rootScope_, _$log_, _$q_) {
         $rootScope = _$rootScope_;
         $log = _$log_;
@@ -24,12 +31,12 @@ describe("account-ctrl", function () {
     }));
     it("gets constructed", function () {
         $scope = $rootScope.$new();
-        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $log, dataService);
+        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $firebaseObject, $log, dataService);
         expect(controller).not.toBeNull();
     });
     it("calculates original scope correctly", function () {
         $scope = $rootScope.$new();
-        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $log, dataService);
+        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $firebaseObject, $log, dataService);
         expect($scope.accountData).not.toBeNull();
         expect($scope.account).not.toBeNull();
         expect($scope.accountData.subject).toBe('My budget');
@@ -41,7 +48,7 @@ describe("account-ctrl", function () {
         $scope = $rootScope.$new();
         var rootAccount = dataService.getRootAccount();
         var subAccount = rootAccount.subAccounts[0];
-        var controller = new Budget.AccountCtrl($scope, { accountId: subAccount.key() }, $log, dataService);
+        var controller = new Budget.AccountCtrl($scope, { accountId: subAccount.key() }, $firebaseObject, $log, dataService);
         expect($scope.accountData).not.toBeNull();
         expect($scope.account).not.toBeNull();
         expect($scope.accountData.subject).toBe('Item1');
@@ -50,7 +57,7 @@ describe("account-ctrl", function () {
     });
     it("recalculates when new transaction is created", function () {
         $scope = $rootScope.$new();
-        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $log, dataService);
+        var controller = new Budget.AccountCtrl($scope, { accountId: '' }, $firebaseObject, $log, dataService);
         var rootAccount = dataService.getRootAccount();
         var transaction = {
             debit: null,
@@ -66,7 +73,7 @@ describe("account-ctrl", function () {
         var rootAccount = dataService.getRootAccount();
         var subAccount = rootAccount.subAccounts[0];
         $scope = $rootScope.$new();
-        var controller = new Budget.AccountCtrl($scope, { accountId: subAccount.key() }, $log, dataService);
+        var controller = new Budget.AccountCtrl($scope, { accountId: subAccount.key() }, $firebaseObject, $log, dataService);
         var rootAccount = dataService.getRootAccount();
         var subAccount = rootAccount.subAccounts[0];
         var transaction = {

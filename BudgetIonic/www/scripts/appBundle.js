@@ -402,6 +402,7 @@ var Budget;
             this.$location = $location;
             this.modelService = modelService;
             this.dataService = dataService;
+            console.log("Initializing budget controller");
             this.budgetItem =
                 $stateParams.itemid === undefined
                     ? modelService.getBudget()
@@ -445,13 +446,74 @@ var Budget;
     })();
     Budget.SideMenuCtrl = SideMenuCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="../services/data-service.ts" />
+var Budget;
+(function (Budget) {
+    'use strict';
+    var AccountCtrl = (function () {
+        function AccountCtrl($scope, $stateParams, $firebaseObject, $log, dataService) {
+            this.$scope = $scope;
+            this.$stateParams = $stateParams;
+            this.$firebaseObject = $firebaseObject;
+            this.$log = $log;
+            this.dataService = dataService;
+            var accountId = $stateParams.accountId || '';
+            if (accountId === '') {
+                this._account = dataService.getRootAccount();
+            }
+            else {
+                this._account = dataService.getAccount(accountId);
+            }
+            $firebaseObject(this._account.firebaseObject()).$bindTo($scope, "accountData");
+            $scope.account = this._account;
+        }
+        AccountCtrl.$inject = [
+            '$scope',
+            "$stateParams",
+            "$firebaseObject",
+            "$log",
+            Budget.DataService.IID
+        ];
+        AccountCtrl.IID = "accountCtrl";
+        return AccountCtrl;
+    })();
+    Budget.AccountCtrl = AccountCtrl;
+})(Budget || (Budget = {}));
+/// <reference path="../services/data-service.ts" />
+var Budget;
+(function (Budget) {
+    'use strict';
+    var MainCtrl = (function () {
+        function MainCtrl($scope, $firebaseObject, $log, dataService) {
+            this.$scope = $scope;
+            this.$firebaseObject = $firebaseObject;
+            this.$log = $log;
+            this.dataService = dataService;
+            console.log("Initializing main controller");
+            this._rootAccount = dataService.getRootAccount();
+            $firebaseObject(this._rootAccount.firebaseObject()).$bindTo($scope, "rootAccountData");
+            $scope.rootAccount = this._rootAccount;
+        }
+        MainCtrl.$inject = [
+            '$scope',
+            "$firebaseObject",
+            "$log",
+            Budget.DataService.IID
+        ];
+        MainCtrl.IID = "mainCtrl";
+        return MainCtrl;
+    })();
+    Budget.MainCtrl = MainCtrl;
+})(Budget || (Budget = {}));
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="controllers/budgetctrl.ts" />
 /// <reference path="controllers/sidemenuctrl.ts" />
 /// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="services/model-service.ts" />
+/// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="services/data-service.ts" />
+/// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="typings/angular-ui-router/angular-ui-router.d.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
@@ -460,12 +522,15 @@ var Budget;
 var Budget;
 (function (Budget) {
     "use strict";
-    var budgetModule = angular.module('budget-app', ["ui.router", 'ionic', 'firebase'])
+    var budgetModule = angular.module('budget-app', ['ionic', 'firebase'])
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.ModelService.IID, Budget.ModelService)
         .controller(Budget.BudgetItemCtrl.IID, Budget.BudgetItemCtrl)
         .controller(Budget.SideMenuCtrl.IID, Budget.SideMenuCtrl)
-        .run(function ($ionicPlatform) {
+        .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
+        .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl);
+    budgetModule
+        .run(function ($ionicPlatform, $rootScope) {
         $ionicPlatform.ready(function () {
             // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
             // for form inputs)
@@ -477,20 +542,62 @@ var Budget;
                 window.StatusBar.styleLightContent();
             }
         });
-    })
-        .config(function ($stateProvider, $urlRouterProvider, $locationProvider) {
-        $stateProvider.state("app", {
-            url: "/budget/",
-            templateUrl: "templates/budget-list.html",
-            controller: Budget.BudgetItemCtrl.IID,
+        // Credits: Adam's answer in http://stackoverflow.com/a/20786262/69362
+        console.log("Setting up $rootscope logging...");
+        $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
+            console.log('$stateChangeStart to ' + toState.to + '- fired when the transition begins. toState,toParams : \n', toState, toParams);
         });
-        $stateProvider.state("budget-item-detail", {
-            url: "/budget-item/:itemid",
+        $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams) {
+            console.log('$stateChangeError - fired when an error occurs during transition.');
+            console.log(arguments);
+        });
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+            console.log('$stateChangeSuccess to ' + toState.name + '- fired once the state transition is complete.');
+        });
+        $rootScope.$on('$viewContentLoaded', function (event) {
+            console.log('$viewContentLoaded - fired after dom rendered', event);
+        });
+        $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
+            console.log('$stateNotFound ' + unfoundState.to + '  - fired when a state cannot be found by its name.');
+            console.log(unfoundState, fromState, fromParams);
+        });
+    });
+    budgetModule
+        .config(function ($stateProvider, $urlRouterProvider, $locationProvider) {
+        console.log("Configuring routes...");
+        $stateProvider
+            .state("app", {
+            abstract: true,
+            url: "/budget",
+            views: {
+                'main-frame': {
+                    controller: Budget.MainCtrl.IID,
+                    templateUrl: "templates/master-page.html",
+                },
+            },
+            resolve: {
+                delay: ['$q', Budget.DataService.IID, function ($q, dataService) {
+                        console.log("Resolving app state...");
+                        return dataService.loaded();
+                    }]
+            }
+        })
+            .state("app.budget", {
+            url: "/home",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/budget-list.html",
+                    controller: Budget.BudgetItemCtrl.IID,
+                },
+            },
+        });
+        $stateProvider.state("app.budget-account", {
+            url: "/account/:itemid",
             templateUrl: "templates/budget-list.html",
             controller: Budget.BudgetItemCtrl.IID,
         });
         // if none of the above states are matched, use this as the fallback
-        $urlRouterProvider.otherwise('/budget/');
+        $urlRouterProvider.otherwise('/budget/home');
         // configure html5 to get links working on jsfiddle
         $locationProvider.html5Mode(false);
     });
@@ -513,37 +620,6 @@ var Budget;
     }
 })(Budget || (Budget = {}));
 // Platform specific overrides will be placed in the merges folder versions of this file 
-/// <reference path="../services/data-service.ts" />
-var Budget;
-(function (Budget) {
-    'use strict';
-    var AccountCtrl = (function () {
-        function AccountCtrl($scope, $stateParams, $log, dataService) {
-            this.$scope = $scope;
-            this.$stateParams = $stateParams;
-            this.$log = $log;
-            this.dataService = dataService;
-            var accountId = $stateParams.accountId || '';
-            if (accountId === '') {
-                this._account = dataService.getRootAccount();
-            }
-            else {
-                this._account = dataService.getAccount(accountId);
-            }
-            $scope.accountData = this._account.snapshot().val();
-            $scope.account = this._account;
-        }
-        AccountCtrl.$inject = [
-            '$scope',
-            "$stateParams",
-            "$log",
-            Budget.DataService.IID
-        ];
-        AccountCtrl.IID = "accountCtrl";
-        return AccountCtrl;
-    })();
-    Budget.AccountCtrl = AccountCtrl;
-})(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
     var UnderscoreService = (function () {
