@@ -1,4 +1,4 @@
-﻿<ion-view view-title="{{rootAccount.subject}}">
+﻿<ion-view view-title="{{rootAccountData.subject}}">
     <ion-side-menus>
         <!-- Left menu -->
         <ion-side-menu side="left" expose-aside-when="large">
@@ -9,7 +9,7 @@
                     </div>
                     <div class="row budget-overview-row">
                         <div class="budget-overview">
-                            <div class="overlay-parent">
+                            <div class="overlay-parent" ng-if="rootAccount">
                                 <div class="budget-prediction-gfx">
                                     <svg xmlns="http://www.w3.org/2000/svg"
                                          xmlns:xlink="http://www.w3.org/1999/xlink"

@@ -10,3 +10,7 @@
         all<TResult>(promises: IPromise<TResult>[]): IPromise<TResult[]>;
     }
 }
+
+interface AngularFireArrayService {
+    (firebaseQuery: FirebaseQuery): AngularFireArray;
+}

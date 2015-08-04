@@ -229,6 +229,29 @@ var Budget;
                 }
             });
         }
+        DataService.prototype.getAccountReference = function (key) {
+            console.log("Resolving account for key: " + key);
+            var deferred = this.$q.defer();
+            if (key === '') {
+                var query = this._accountsReference
+                    .orderByChild("parent")
+                    .equalTo(null);
+                query.once('value', function (snapshot) {
+                    var child;
+                    snapshot.forEach(function (x) { return child = x; });
+                    deferred.resolve(child.ref());
+                });
+            }
+            else {
+                console.log("Resolving account by key " + key);
+                this._accountsReference.child(key).once('value', function (snapshot) {
+                    console.log("Resolved account by id:");
+                    console.log(snapshot);
+                    deferred.resolve(snapshot.ref());
+                });
+            }
+            return deferred.promise;
+        };
         DataService.prototype.loaded = function () {
             return this._loaded;
         };
@@ -316,7 +339,7 @@ var Budget;
             });
             var creditTransactionsDeferred = this.filterTransactions(true, snapshot.key());
             var debitTransactionsDeferred = this.filterTransactions(false, snapshot.key());
-            var loadedAccount = this.$q.all([creditTransactionsDeferred, debitTransactionsDeferred, childrenLoaded])
+            var loadedAccount = this.$q.all([creditTransactionsDeferred, debitTransactionsDeferred, childrenLoaded.promise])
                 .then(function (results) {
                 var creditTransactions = results[0];
                 var debitTransactions = results[1];
@@ -446,35 +469,52 @@ var Budget;
     })();
     Budget.SideMenuCtrl = SideMenuCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="../typings/extensions.d.ts" />
 /// <reference path="../services/data-service.ts" />
 var Budget;
 (function (Budget) {
     'use strict';
     var AccountCtrl = (function () {
-        function AccountCtrl($scope, $stateParams, $firebaseObject, $log, dataService) {
+        function AccountCtrl($scope, $firebaseObject, $firebaseArray, $log, dataService, account) {
             this.$scope = $scope;
-            this.$stateParams = $stateParams;
             this.$firebaseObject = $firebaseObject;
+            this.$firebaseArray = $firebaseArray;
             this.$log = $log;
             this.dataService = dataService;
-            var accountId = $stateParams.accountId || '';
-            if (accountId === '') {
-                this._account = dataService.getRootAccount();
-            }
-            else {
-                this._account = dataService.getAccount(accountId);
-            }
-            $firebaseObject(this._account.firebaseObject()).$bindTo($scope, "accountData");
-            $scope.account = this._account;
+            this.account = account;
+            console.log("Initializing account controller");
+            console.log(arguments);
+            $firebaseObject(account).$bindTo($scope, "accountData");
+            var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
+            var childrenQuery = accounts
+                .orderByChild("parent")
+                .equalTo(account.key());
+            console.log(account.key());
+            $scope.subAccounts = $firebaseArray(childrenQuery);
+            $scope.subAccounts.$loaded(function (x) {
+                console.log($scope.subAccounts);
+            });
         }
+        AccountCtrl.resolve = function () {
+            return {
+                account: ['$stateParams', Budget.DataService.IID, AccountCtrl.getAccount],
+            };
+        };
+        AccountCtrl.getAccount = function ($stateParams, dataService) {
+            console.log("Getting account: ");
+            console.log($stateParams);
+            var accountId = $stateParams.accountId || '';
+            return dataService.getAccountReference(accountId);
+        };
+        AccountCtrl.IID = "accountCtrl";
         AccountCtrl.$inject = [
             '$scope',
-            "$stateParams",
             "$firebaseObject",
+            "$firebaseArray",
             "$log",
-            Budget.DataService.IID
+            Budget.DataService.IID,
+            "account",
         ];
-        AccountCtrl.IID = "accountCtrl";
         return AccountCtrl;
     })();
     Budget.AccountCtrl = AccountCtrl;
@@ -586,15 +626,21 @@ var Budget;
             url: "/home",
             views: {
                 'main-content': {
-                    templateUrl: "templates/budget-list.html",
-                    controller: Budget.BudgetItemCtrl.IID,
+                    templateUrl: "templates/account.html",
+                    resolve: Budget.AccountCtrl.resolve(),
+                    controller: Budget.AccountCtrl.IID,
                 },
             },
         });
         $stateProvider.state("app.budget-account", {
-            url: "/account/:itemid",
-            templateUrl: "templates/budget-list.html",
-            controller: Budget.BudgetItemCtrl.IID,
+            url: "/account/:accountId",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/account.html",
+                    resolve: Budget.AccountCtrl.resolve(),
+                    controller: Budget.AccountCtrl.IID,
+                },
+            },
         });
         // if none of the above states are matched, use this as the fallback
         $urlRouterProvider.otherwise('/budget/home');

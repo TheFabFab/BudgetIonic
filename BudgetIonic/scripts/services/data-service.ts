@@ -18,6 +18,7 @@ module Budget {
         getRootAccount(): Account;
         getAccount(key: string): Account;
         newTransactionAvailable(): LiteEvent<ITransactionData>;
+        getAccountReference(key: string): ng.IPromise<Firebase>;
     }
 
     export class DataService implements IDataService {
@@ -70,6 +71,35 @@ module Budget {
                     this._rootAccount = rootAccount;
                 }
             });
+        }
+
+        public getAccountReference(key: string): ng.IPromise<Firebase> {
+            console.log("Resolving account for key: " + key);
+
+            var deferred = this.$q.defer<Firebase>();
+
+            if (key === '') {
+                var query =
+                    this._accountsReference
+                        .orderByChild("parent")
+                        .equalTo(null);
+
+                query.once('value', snapshot => {
+                    var child: FirebaseDataSnapshot;
+                    snapshot.forEach(x => child = x);
+                    deferred.resolve(child.ref());
+                });
+            } else {
+                console.log("Resolving account by key " + key);
+                this._accountsReference.child(key).once(
+                    'value', snapshot => {
+                        console.log("Resolved account by id:");
+                        console.log(snapshot);
+                        deferred.resolve(snapshot.ref());
+                });
+            }
+
+            return deferred.promise;
         }
 
         public loaded(): ng.IPromise<boolean> {
@@ -180,7 +210,7 @@ module Budget {
             var debitTransactionsDeferred = this.filterTransactions(false, snapshot.key());
 
             var loadedAccount =                
-                this.$q.all(<any[]>[creditTransactionsDeferred, debitTransactionsDeferred, childrenLoaded])
+                this.$q.all(<any[]>[creditTransactionsDeferred, debitTransactionsDeferred, childrenLoaded.promise])
                 .then(results => {
                     var creditTransactions = <ITransactionData[]>results[0];
                     var debitTransactions = <ITransactionData[]>results[1];

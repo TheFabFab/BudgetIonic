@@ -94,16 +94,22 @@ module Budget {
                     url: "/home",
                     views: {
                         'main-content': {
-                            templateUrl: "templates/budget-list.html",
-                            controller: BudgetItemCtrl.IID,
+                            templateUrl: "templates/account.html",
+                            resolve: AccountCtrl.resolve(),
+                            controller: AccountCtrl.IID,
                         },
                     },
                 });
 
             $stateProvider.state("app.budget-account", {
-                url: "/account/:itemid",
-                templateUrl: "templates/budget-list.html",
-                controller: BudgetItemCtrl.IID,
+                url: "/account/:accountId",
+                views: {
+                    'main-content': {
+                        templateUrl: "templates/account.html",
+                        resolve: AccountCtrl.resolve(),
+                        controller: AccountCtrl.IID,
+                    },
+                },
             });
 
             // if none of the above states are matched, use this as the fallback
