@@ -1,9 +1,7 @@
+/// <reference path="services/aggregator-service.ts" />
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
-/// <reference path="controllers/budgetctrl.ts" />
-/// <reference path="controllers/sidemenuctrl.ts" />
 /// <reference path="typings/cordova/cordova.d.ts" />
-/// <reference path="services/model-service.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="services/data-service.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
@@ -18,10 +16,8 @@ module Budget {
 
     var budgetModule =
         angular.module('budget-app', ['ionic', 'firebase'])
+            .service(AggregatorService.IID, AggregatorService)
             .service(DataService.IID, DataService)
-            .service(ModelService.IID, ModelService)
-            .controller(BudgetItemCtrl.IID, BudgetItemCtrl)
-            .controller(SideMenuCtrl.IID, SideMenuCtrl)
             .controller(MainCtrl.IID, MainCtrl)
             .controller(AccountCtrl.IID, AccountCtrl);
 
@@ -82,12 +78,7 @@ module Budget {
                             templateUrl: "templates/master-page.html",
                         },
                     },
-                    resolve: {
-                        delay: ['$q', DataService.IID, ($q, dataService: IDataService) => {
-                            console.log("Resolving app state...");
-                            return dataService.loaded();
-                        }]
-                    }
+                    resolve: MainCtrl.resolve()
                 })
 
                 .state("app.budget", {

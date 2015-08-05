@@ -3,8 +3,7 @@ module Budget {
     'use strict';
 
     export interface IMainScope extends ng.IScope {
-        rootAccountData: IAccountData;
-        rootAccount: Account;
+        rootAccount: IAccountData;
     }
 
     export class MainCtrl {
@@ -12,24 +11,32 @@ module Budget {
             '$scope',
             "$firebaseObject",
             "$log",
-            DataService.IID
+            DataService.IID,
+            'rootAccountReference',
         ];
 
-        public static IID = "mainCtrl";
+        public static resolve() {
+            return {
+                rootAccountReference: [DataService.IID, MainCtrl.getAccount],
+            };
+        }
 
-        private _rootAccount: Account;
+        public static getAccount(dataService: IDataService): ng.IPromise<Firebase> {
+            return dataService.getRootAccountReference();
+        }
+
+        public static IID = "mainCtrl";
 
         constructor(
             private $scope: IMainScope,
             private $firebaseObject: AngularFireObjectService,
             private $log: ng.ILogService,
-            private dataService: IDataService) {
+            private dataService: IDataService,
+            private rootAccountReference: Firebase) {
 
             console.log("Initializing main controller");
-            this._rootAccount = dataService.getRootAccount();
 
-            $firebaseObject(this._rootAccount.firebaseObject()).$bindTo($scope, "rootAccountData");
-            $scope.rootAccount = this._rootAccount;
+            $firebaseObject(rootAccountReference).$bindTo($scope, "rootAccount");
         }
     }
 }

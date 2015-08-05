@@ -1,81 +1,52 @@
-/// <reference path="../models/account.ts" />
-/// <reference path="../models/lite-events.ts" />
 var Budget;
 (function (Budget) {
     var DataService = (function () {
-        function DataService($q, $firebaseArray) {
-            var _this = this;
+        function DataService($q, $firebaseArray, aggregatorService) {
             this.$q = $q;
-            this._accountMap = [];
-            this._newTransactionAvailable = new Budget.LiteEvent();
             console.log("Creating data service");
-            var loadedPromise = $q.defer();
-            this._loaded = loadedPromise.promise;
+            aggregatorService.start();
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
-            this._transactionsReference.on('child_added', function (dataSnapshot, prevChildName) {
-                _this.onTransactionAdded(dataSnapshot, prevChildName);
-            });
-            this.loadAccounts()
-                .then(function (rootAccount) {
-                if (rootAccount == null) {
-                    _this.createDemoData()
-                        .then(function () {
-                        _this.loadAccounts().then(function (rootAccount2) {
-                            console.assert(rootAccount2 != null, "We should have a root account after creating demo data");
-                            _this._rootAccount = rootAccount;
-                            loadedPromise.resolve(true);
-                        });
-                    });
-                }
-                else {
-                    loadedPromise.resolve(true);
-                    _this._rootAccount = rootAccount;
-                }
-            });
         }
-        DataService.prototype.loaded = function () {
-            return this._loaded;
+        DataService.prototype.getRootAccountReference = function () {
+            return this.getAccountReference('');
         };
-        DataService.prototype.getRootAccount = function () {
-            this.assertLoaded();
-            return this._rootAccount;
-        };
-        DataService.prototype.getAccount = function (key) {
-            this.assertLoaded();
-            return this._accountMap[key];
-        };
-        DataService.prototype.newTransactionAvailable = function () {
-            return this._newTransactionAvailable;
-        };
-        DataService.prototype.onTransactionAdded = function (dataSnapshot, prevChildName) {
-            var transaction = dataSnapshot.val();
-            this._newTransactionAvailable.trigger(transaction);
-        };
-        DataService.prototype.filterTransactions = function (creditOrDebit, accountKey) {
+        DataService.prototype.getAccountReference = function (key) {
+            console.log("Resolving account for key: " + key);
             var deferred = this.$q.defer();
-            this._transactionsReference
-                .orderByChild(creditOrDebit ? "credit" : "debit")
-                .equalTo(accountKey)
-                .once('value', function (snapshot) {
-                var transactions = [];
-                snapshot.forEach(function (x) { return transactions.push(x.val()); });
-                deferred.resolve(transactions);
-            });
+            if (key === '') {
+                var query = this._accountsReference
+                    .orderByChild("parent")
+                    .equalTo(null);
+                query.once('value', function (snapshot) {
+                    var child;
+                    snapshot.forEach(function (x) { return child = x; });
+                    deferred.resolve(child.ref());
+                });
+            }
+            else {
+                console.log("Resolving account by key " + key);
+                this._accountsReference.child(key).once('value', function (snapshot) {
+                    console.log("Resolved account by id:");
+                    console.log(snapshot);
+                    deferred.resolve(snapshot.ref());
+                });
+            }
             return deferred.promise;
         };
-        DataService.prototype.transactionsReference = function () {
-            return this._transactionsReference;
-        };
-        DataService.prototype.assertLoaded = function () {
-            console.assert(this._loaded["$$state"] !== undefined, "$q internals changed");
-            console.assert(this._loaded["$$state"].value !== undefined, "Controller should be only invoked after data is loaded.");
-            console.assert(this._loaded["$$state"].value == true, "Controller should be only invoked if data is loaded successfully.");
-        };
-        DataService.prototype.addAccount = function (account) {
+        DataService.prototype.addAccount = function (subject, parent, description) {
+            if (parent === void 0) { parent = null; }
+            if (description === void 0) { description = ''; }
             var deferred = this.$q.defer();
-            var reference = this._accountsReference.push(account, function (x) {
+            var reference = this._accountsReference.push({
+                subject: subject,
+                description: description,
+                parent: parent,
+                credited: 0,
+                debited: 0,
+                lastAggregationTime: 0,
+            }, function (x) {
                 deferred.resolve(reference);
             });
             return deferred.promise;
@@ -87,76 +58,19 @@ var Budget;
             });
             return deferred.promise;
         };
-        DataService.prototype.loadAccounts = function () {
-            var _this = this;
-            var rootAccountPromise = this.$q.defer();
-            this._accountsReference.orderByChild("parent")
-                .equalTo(null)
-                .once("value", function (rootCandidates) {
-                if (rootCandidates.hasChildren()) {
-                    console.assert(rootCandidates.numChildren() == 1, "Exactly one root account is expected");
-                    var root;
-                    rootCandidates.forEach(function (x) { return root = x; });
-                    _this.loadAccount(root).then(function (rootAccount) {
-                        rootAccountPromise.resolve(rootAccount);
-                    });
-                }
-                else {
-                    rootAccountPromise.resolve(null);
-                }
-            });
-            return rootAccountPromise.promise;
-        };
-        DataService.prototype.loadAccount = function (snapshot) {
-            var _this = this;
-            var childrenLoaded = this.$q.defer();
-            this._accountsReference
-                .orderByChild("parent")
-                .equalTo(snapshot.key())
-                .once('value', function (childrenSnapshot) {
-                var children = [];
-                childrenSnapshot.forEach(function (childSnapshot) {
-                    children.push(_this.loadAccount(childSnapshot));
-                });
-                _this.$q.all(children).then(function (childAccounts) { return childrenLoaded.resolve(childAccounts); });
-            });
-            var creditTransactionsDeferred = this.filterTransactions(true, snapshot.key());
-            var debitTransactionsDeferred = this.filterTransactions(false, snapshot.key());
-            var loadedAccount = this.$q.all([creditTransactionsDeferred, debitTransactionsDeferred, childrenLoaded])
-                .then(function (results) {
-                var creditTransactions = results[0];
-                var debitTransactions = results[1];
-                var childAccounts = results[2];
-                var firebaseObject = _this._accountsReference.child(snapshot.key());
-                var account = new Budget.Account(_this, firebaseObject, snapshot, childAccounts, creditTransactions, debitTransactions);
-                _this._accountMap[snapshot.key()] = account;
-                return account;
-            });
-            return loadedAccount;
-        };
         DataService.prototype.createDemoData = function () {
             var _this = this;
             var deferred = this.$q.defer();
-            this.addAccount({
-                subject: 'My budget',
-                description: 'This is the root node',
-                parent: null
-            }).then(function (rootNode) { return _this.$q.all([
-                _this.addAccount({
-                    subject: 'Item1',
-                    description: '',
-                    parent: rootNode.key()
-                }),
-                _this.addAccount({
-                    subject: 'Item2',
-                    description: '',
-                    parent: rootNode.key()
-                }),
-                _this.addAccount({
-                    subject: 'Item3',
-                    description: '',
-                    parent: rootNode.key()
-                })
+            this.addAccount('My budget', null, 'This is the root node')
+                .then(function (rootNode) { return _this.$q.all([
+                _this.addAccount('Item1', rootNode.key()),
+                _this.addAccount('Item2', rootNode.key()),
+                _this.addAccount('Item3', rootNode.key())
+                    .then(function (item3) { return _this.$q.all([
+                    _this.addAccount('Item3.1', item3.key()),
+                    _this.addAccount('Item3.2', item3.key()),
+                    _this.addAccount('Item3.3', item3.key()),
+                ]); })
             ]).then(function (subitems) {
                 _this.$q.all([
                     _this.addTransaction({
@@ -191,6 +105,7 @@ var Budget;
         DataService.$inject = [
             '$q',
             '$firebaseArray',
+            Budget.AggregatorService.IID,
         ];
         return DataService;
     })();

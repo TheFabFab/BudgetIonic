@@ -15,11 +15,9 @@ module Budget {
     export class AccountCtrl {
         public static IID = "accountCtrl";
 
-        private _account: Account;
-
         public static resolve() {
             return {
-                account: ['$stateParams', DataService.IID, AccountCtrl.getAccount],
+                accountReference: ['$stateParams', DataService.IID, AccountCtrl.getAccount],
             };
         }
 
@@ -39,7 +37,7 @@ module Budget {
             "$firebaseArray",
             "$log",
             DataService.IID,
-            "account",
+            "accountReference",
         ];
 
         constructor(
@@ -48,21 +46,20 @@ module Budget {
             private $firebaseArray: AngularFireArrayService,
             private $log: ng.ILogService,
             private dataService: IDataService,
-            private account: Firebase) {
+            private accountReference: Firebase) {
 
-            console.log("Initializing account controller");
-            console.log(arguments);
+            $log.debug("Initializing account controller", arguments);
 
-            $firebaseObject(account).$bindTo($scope, "accountData");
+            $firebaseObject(accountReference).$bindTo($scope, "accountData");
 
             var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
 
             var childrenQuery =
                 accounts
                 .orderByChild("parent")
-                .equalTo(account.key());
+                .equalTo(accountReference.key());
 
-            console.log(account.key());
+            console.log(accountReference.key());
             $scope.subAccounts = $firebaseArray(childrenQuery);
 
             $scope.subAccounts.$loaded(x => {

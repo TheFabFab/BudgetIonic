@@ -1,32 +1,48 @@
+/// <reference path="../typings/extensions.d.ts" />
 /// <reference path="../services/data-service.ts" />
 var Budget;
 (function (Budget) {
     'use strict';
     var AccountCtrl = (function () {
-        function AccountCtrl($scope, $stateParams, $firebaseObject, $log, dataService) {
+        function AccountCtrl($scope, $firebaseObject, $firebaseArray, $log, dataService, accountReference) {
             this.$scope = $scope;
-            this.$stateParams = $stateParams;
             this.$firebaseObject = $firebaseObject;
+            this.$firebaseArray = $firebaseArray;
             this.$log = $log;
             this.dataService = dataService;
-            var accountId = $stateParams.accountId || '';
-            if (accountId === '') {
-                this._account = dataService.getRootAccount();
-            }
-            else {
-                this._account = dataService.getAccount(accountId);
-            }
-            $firebaseObject(this._account.firebaseObject()).$bindTo($scope, "accountData");
-            $scope.account = this._account;
+            this.accountReference = accountReference;
+            $log.debug("Initializing account controller", arguments);
+            $firebaseObject(accountReference).$bindTo($scope, "accountData");
+            var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
+            var childrenQuery = accounts
+                .orderByChild("parent")
+                .equalTo(accountReference.key());
+            console.log(accountReference.key());
+            $scope.subAccounts = $firebaseArray(childrenQuery);
+            $scope.subAccounts.$loaded(function (x) {
+                console.log($scope.subAccounts);
+            });
         }
+        AccountCtrl.resolve = function () {
+            return {
+                accountReference: ['$stateParams', Budget.DataService.IID, AccountCtrl.getAccount],
+            };
+        };
+        AccountCtrl.getAccount = function ($stateParams, dataService) {
+            console.log("Getting account: ");
+            console.log($stateParams);
+            var accountId = $stateParams.accountId || '';
+            return dataService.getAccountReference(accountId);
+        };
+        AccountCtrl.IID = "accountCtrl";
         AccountCtrl.$inject = [
             '$scope',
-            "$stateParams",
             "$firebaseObject",
+            "$firebaseArray",
             "$log",
-            Budget.DataService.IID
+            Budget.DataService.IID,
+            "accountReference",
         ];
-        AccountCtrl.IID = "accountCtrl";
         return AccountCtrl;
     })();
     Budget.AccountCtrl = AccountCtrl;
