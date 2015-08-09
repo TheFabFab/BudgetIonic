@@ -1,41 +1,67 @@
 ﻿<ion-view>
     <ion-content class="has-header" padding="false">
-        <p>{{accountData.subject}}</p>
-        <ion-list ng-if="subAccounts.length > 0">
-            <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
-                <div class="row">
-                    <div class="col budget-prediction-col">
-                        <div class="overlay-parent">
-                            <div class="budget-prediction-gfx">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     xmlns:xlink="http://www.w3.org/1999/xlink"
-                                     viewBox="0 0 80 80">
-                                    <circle cx="40" cy="5" r="5" fill="{{subAccount.prediction > 100 ? '#ff0000' : '#297f59'}}" />
-                                    <circle cx="{{subAccount.xArcEnd}}" cy="{{subAccount.yArcEnd}}" r="5" fill="{{subAccount.prediction > 100 ? '#ff0000' : '#297f59'}}" />
-                                    <path style="{{'stroke-width:10; fill:none; stroke:' + (subAccount.prediction > 100 ? '#ff0000' : '#297f59')}}" d="{{subAccount.progressPath}}" />
-                                </svg>
+        <div class="account-header">
+            <p class="account-subject">{{accountData.subject}}</p>
+            <p class="account-description">{{accountData.description}}</p>
+        </div>
+        <div class="row">
+            <div class="col-50">
+                <ion-list ng-if="subAccounts.length > 0">
+                    <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
+                        <div class="row" style="height: 120px">
+                            <div class="col budget-prediction-col">
+                                <div class="overlay-parent">
+                                    <div class="budget-prediction-gfx">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             xmlns:xlink="http://www.w3.org/1999/xlink"
+                                             viewBox="0 0 80 80">
+                                            <circle cx="40" cy="5" r="5" fill="{{subAccount.prediction > 100 ? '#ff0000' : '#297f59'}}" />
+                                            <circle cx="{{subAccount.xArcEnd}}" cy="{{subAccount.yArcEnd}}" r="5" fill="{{subAccount.prediction > 100 ? '#ff0000' : '#297f59'}}" />
+                                            <path style="{{'stroke-width:10; fill:none; stroke:' + (subAccount.prediction > 100 ? '#ff0000' : '#297f59')}}" d="{{subAccount.progressPath}}" />
+                                        </svg>
+                                    </div>
+                                    <div class="overlay">
+                                        <div class="budget-prediction">{{subAccount.prediction + '%'}}</div>
+                                        <div class="budget-spent">{{subAccount.debited}}</div>
+                                        <div class="budget-remaining">{{subAccount.remaining}}</div>
+                                        <div class="budget-planned">{{subAccount.credited}}</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="overlay">
-                                <div class="budget-prediction">{{subAccount.prediction + '%'}}</div>
-                                <div class="budget-spent">{{subAccount.debited}}</div>
-                                <div class="budget-remaining">{{subAccount.remaining}}</div>
-                                <div class="budget-planned">{{subAccount.credited}}</div>
+                            <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>
+                            <div class="col budget-item-main">
+                                <div class="budget-name">{{subAccount.subject}}</div>
+                            </div>
+                            <div class="col budget-item-navigation">
+                                <div>
+                                    <span ng-hide="subAccount.subAccounts.length == 0" class="notification">{{subAccount.subAccounts.length}}</span>
+                                    <i class="icon ion-ios-arrow-right"></i>
+                                </div>
                             </div>
                         </div>
+                    </ion-item>
+                </ion-list>
+            </div>
+            <div class="col col-fill">
+                <div class="list" style="margin-top: -5px;">
+                    <div class="row item item-input">
+                        <label class="col item-stacked-label">
+                            <span class="input-label">New account</span>
+                            <input type="text" placeholder="Subject" ng-model="newAccount.subject">
+                        </label>
+                        <button class="col-fill button button-stable button-small" ng-click="addSubAccount()">Add</button>
                     </div>
-                    <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>
-                    <div class="col budget-item-main">
-                        <div class="budget-name">{{subAccount.subject}}</div>
-                    </div>
-                    <div class="col budget-item-navigation">
-                        <div>
-                            <span ng-hide="subAccount.subAccounts.length == 0" class="notification">{{subAccount.subAccounts.length}}</span>
-                            <i class="icon ion-ios-arrow-right"></i>
+                    <label class="item item-input item-stacked-label">
+                        <span class="input-label">Allocate budget</span>
+                        <div class="row">
+                            <input class="col-60" type="text" placeholder="Subject">
+                            <input class="col-20" type="number" placeholder="Amount">
+                            <button class="col-fill button button-stable button-small">Add</button>
                         </div>
-                    </div>
+                    </label>
                 </div>
-            </ion-item>
-        </ion-list>
+            </div>
+        </div>
 
         <div ng-if="account.subAccounts.length == 0">
             <div class="row">

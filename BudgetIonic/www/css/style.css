@@ -147,7 +147,7 @@
 .budget-prediction-col {
     flex-grow: 0;
     flex-shrink: 0;
-    flex-basis: 140px;
+    flex-basis: 100px;
 }
 
 .budget-planned {
@@ -159,14 +159,30 @@
     bottom: 0;
 }
 
-.budget-side-menu {
+.budget-left-menu {
     /*position: relative;*/
     height: 100%;
+    width: 320px;
     display: flex;
     -ms-flex-direction: column;
     flex-direction: column;
     -ms-flex-flow: column;
     flex-flow: column;
+}
+
+.budget-right-menu {
+    /*position: relative;*/
+    height: 100%;
+    width: 320px;
+    display: flex;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    -ms-flex-flow: column;
+    flex-flow: column;
+}
+
+ion-side-menus .menu {
+    width: 320px;
 }
 
 .budget-overview {
@@ -182,6 +198,18 @@
 .budget-overview-row {
     flex-grow: 0;
     flex-shrink: 0;
+}
+
+.account-header {
+    margin: 20px;
+}
+
+.account-subject {
+    font-size: 36px;
+}
+
+.account-description {
+    font-size: 14px;
 }
 
     .budget-overview .budget-remaining {

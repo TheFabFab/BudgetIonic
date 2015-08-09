@@ -207,8 +207,14 @@ var Budget;
 var Budget;
 (function (Budget) {
     'use strict';
+    var NewAccount = (function () {
+        function NewAccount() {
+        }
+        return NewAccount;
+    })();
     var AccountCtrl = (function () {
         function AccountCtrl($scope, $firebaseObject, $firebaseArray, $log, dataService, accountReference) {
+            var _this = this;
             this.$scope = $scope;
             this.$firebaseObject = $firebaseObject;
             this.$firebaseArray = $firebaseArray;
@@ -221,11 +227,18 @@ var Budget;
             var childrenQuery = accounts
                 .orderByChild("parent")
                 .equalTo(accountReference.key());
-            console.log(accountReference.key());
             $scope.subAccounts = $firebaseArray(childrenQuery);
-            $scope.subAccounts.$loaded(function (x) {
-                console.log($scope.subAccounts);
-            });
+            var transactions = new Firebase("https://budgetionic.firebaseio.com/transactions");
+            var creditTransactionQuery = transactions
+                .orderByChild("credit")
+                .equalTo(accountReference.key());
+            $scope.creditTransactions = $firebaseArray(creditTransactionQuery);
+            var debitTransactionQuery = transactions
+                .orderByChild("debit")
+                .equalTo(accountReference.key());
+            $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
+            $scope.newAccount = new NewAccount();
+            $scope.addSubAccount = function () { return _this.addSubAccountCore(); };
         }
         AccountCtrl.resolve = function () {
             return {
@@ -237,6 +250,10 @@ var Budget;
             console.log($stateParams);
             var accountId = $stateParams.accountId || '';
             return dataService.getAccountReference(accountId);
+        };
+        AccountCtrl.prototype.addSubAccountCore = function () {
+            this.$log.debug("Adding sub account with subject in controller: " + this.$scope.newAccount.subject);
+            this.$scope.newAccount.subject = '';
         };
         AccountCtrl.IID = "accountCtrl";
         AccountCtrl.$inject = [

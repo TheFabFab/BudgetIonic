@@ -6,6 +6,14 @@ module Budget {
     export interface IAccountScope extends ng.IScope {
         accountData: IAccountData;
         subAccounts: AngularFireArray;
+        creditTransactions: AngularFireArray;
+        debitTransactions: AngularFireArray;
+        addSubAccount: () => void;
+        newAccount: NewAccount;
+    }
+
+    class NewAccount {
+        public subject: string;
     }
 
     interface IAccountStateParams {
@@ -59,12 +67,31 @@ module Budget {
                 .orderByChild("parent")
                 .equalTo(accountReference.key());
 
-            console.log(accountReference.key());
             $scope.subAccounts = $firebaseArray(childrenQuery);
 
-            $scope.subAccounts.$loaded(x => {
-                console.log($scope.subAccounts);
-            });
+            var transactions = new Firebase("https://budgetionic.firebaseio.com/transactions");
+
+            var creditTransactionQuery =
+                transactions
+                    .orderByChild("credit")
+                    .equalTo(accountReference.key());
+
+            $scope.creditTransactions = $firebaseArray(creditTransactionQuery);
+
+            var debitTransactionQuery =
+                transactions
+                    .orderByChild("debit")
+                    .equalTo(accountReference.key());
+
+            $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
+
+            $scope.newAccount = new NewAccount();
+            $scope.addSubAccount = () => this.addSubAccountCore();
+        }
+
+        private addSubAccountCore(): void {
+            this.$log.debug("Adding sub account with subject in controller: " + this.$scope.newAccount.subject);
+            this.$scope.newAccount.subject = '';
         }
     }
 }
