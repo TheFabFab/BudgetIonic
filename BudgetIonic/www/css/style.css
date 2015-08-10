@@ -168,7 +168,6 @@
 .budget-left-menu {
     /*position: relative;*/
     height: 100%;
-    width: 320px;
     display: flex;
     -ms-flex-direction: column;
     flex-direction: column;
