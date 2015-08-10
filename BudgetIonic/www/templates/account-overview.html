@@ -1,0 +1,23 @@
+﻿<div>
+    <div class="overlay-parent" ng-if="account">
+        <div class="budget-prediction-gfx-container">
+            <div class="budget-prediction-gfx">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     xmlns:xlink="http://www.w3.org/1999/xlink"
+                     viewBox="0 0 80 80"
+                     preserveAspectRatio="xMidYMid meet"
+                     ng-class="accountEx.error ? 'error' : accountEx.warning ? 'warning' : ''">
+                    <circle cx="40" cy="5" r="5" />
+                    <circle ng-attr-cx="{{accountEx.xArcEnd}}" ng-attr-cy="{{accountEx.yArcEnd}}" r="5" />
+                    <path d="M0,0" ng-attr-d="{{accountEx.progressPath}}" />
+                </svg>
+            </div>
+        </div>
+        <div class="overlay center-child">
+            <div class="budget-prediction"><div ng-if="showLabels">Progress</div><div>{{accountEx.progress + '%'}}</div></div>
+            <div class="budget-spent"><div ng-if="showLabels">Credit</div><div>{{account.credited}}</div></div>
+            <div class="budget-remaining"><div ng-if="showLabels">Balance</div><div>{{accountEx.balance}}</div></div>
+            <div class="budget-planned"><div ng-if="showLabels">Debit</div><div>{{account.debited}}</div></div>
+        </div>
+    </div>
+</div>

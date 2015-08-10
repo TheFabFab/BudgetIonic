@@ -9,25 +9,7 @@
                 <ion-list ng-if="subAccounts.length > 0">
                     <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
                         <div class="row" style="height: 120px">
-                            <div class="col budget-prediction-col">
-                                <div class="overlay-parent">
-                                    <div class="budget-prediction-gfx">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             xmlns:xlink="http://www.w3.org/1999/xlink"
-                                             viewBox="0 0 80 80">
-                                            <circle cx="40" cy="5" r="5" fill="{{subAccount.prediction > 100 ? '#ff0000' : '#297f59'}}" />
-                                            <circle cx="{{subAccount.xArcEnd}}" cy="{{subAccount.yArcEnd}}" r="5" fill="{{subAccount.prediction > 100 ? '#ff0000' : '#297f59'}}" />
-                                            <path style="{{'stroke-width:10; fill:none; stroke:' + (subAccount.prediction > 100 ? '#ff0000' : '#297f59')}}" d="{{subAccount.progressPath}}" />
-                                        </svg>
-                                    </div>
-                                    <div class="overlay">
-                                        <div class="budget-prediction">{{subAccount.prediction + '%'}}</div>
-                                        <div class="budget-spent">{{subAccount.debited}}</div>
-                                        <div class="budget-remaining">{{subAccount.remaining}}</div>
-                                        <div class="budget-planned">{{subAccount.credited}}</div>
-                                    </div>
-                                </div>
-                            </div>
+                            <account-overview class="col budget-prediction-col" account="subAccount"></account-overview>
                             <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>
                             <div class="col budget-item-main">
                                 <div class="budget-name">{{subAccount.subject}}</div>

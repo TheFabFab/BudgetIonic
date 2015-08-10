@@ -1,3 +1,4 @@
+/// <reference path="directives/account-overview.ts" />
 /// <reference path="services/aggregator-service.ts" />
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
@@ -18,6 +19,7 @@ module Budget {
         angular.module('budget-app', ['ionic', 'firebase'])
             .service(AggregatorService.IID, AggregatorService)
             .service(DataService.IID, DataService)
+            .directive(AccountOverview.IID, AccountOverview.factory())
             .controller(MainCtrl.IID, MainCtrl)
             .controller(AccountCtrl.IID, AccountCtrl);
 

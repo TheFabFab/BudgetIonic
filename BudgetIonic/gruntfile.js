@@ -29,6 +29,12 @@ module.exports = function (grunt) {
                     spawn: false,
                 },
             },
+            www: {
+                options: {
+                    livereload: true,
+                },
+                files: ['www/**/*.*'],
+            },
         },
         commands: {
             "tsc-tests": {
@@ -40,25 +46,12 @@ module.exports = function (grunt) {
                 force: true
             }
         },
-        'http-server': {
-            'dev': {
-                root: ['www', 'scripts'],
-                port: 8282,
-                host: "0.0.0.0",
-                showDir: false,
-                autoIndex: true,
-                cache: 1,
-                ext: "html",
-                runInBackground: false,
-            }
-        },
         connect: {
             server: {
                 options: {
                     port: 8181,
                     hostname: '0.0.0.0',
                     base: ['www', './'],
-                    keepalive: true,
                     livereload: true,
                 }
             }
@@ -66,6 +59,7 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask("default", ["bower:install"]);
+    grunt.registerTask("serve", ["connect:server", "watch:www"])
 
     grunt.loadNpmTasks("grunt-bower-task");
     grunt.loadNpmTasks("grunt-commands");

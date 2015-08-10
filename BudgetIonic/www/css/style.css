@@ -78,6 +78,9 @@
     right: 0;
     top: 0;
     bottom: 0;
+}
+
+.center-child {
     display: flex;
     -ms-flex-direction: column;
     flex-direction: column;
@@ -142,6 +145,9 @@
 
 .budget-prediction-gfx {
     margin: 10px;
+}
+
+.budget-prediction-gfx-container {
 }
 
 .budget-prediction-col {
@@ -230,4 +236,30 @@ ion-side-menus .menu {
 
     .budget-overview .budget-prediction-gfx {
         margin: 30px;
+    }
+
+    .budget-prediction-gfx circle {
+        fill: #297f59;
+    }
+
+    .budget-prediction-gfx path {
+        stroke-width: 10;
+        fill: none;
+        stroke: #297f59;
+    }
+
+    .budget-prediction-gfx .warning circle {
+        fill: yellow;
+    }
+
+    .budget-prediction-gfx .warning path {
+        stroke: yellow;
+    }
+
+    .budget-prediction-gfx .error circle {
+        fill: red;
+    }
+
+    .budget-prediction-gfx .error path {
+        stroke: red;
     }
