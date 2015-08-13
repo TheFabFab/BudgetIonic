@@ -1,55 +1,32 @@
-/// <reference path="../typings/angularjs/angular.d.ts" />
 var Budget;
 (function (Budget) {
-    var AccountEx = (function () {
-        function AccountEx() {
+    var Command = (function () {
+        function Command(label, link) {
+            this.label = label;
+            this.link = link;
         }
-        AccountEx.prototype.recalculate = function () {
-            var progress = this.progress || 0;
-            this.warning = progress > 90;
-            this.error = progress > 100;
-            var alpha = 2 * Math.PI * progress / 100;
-            var x = 40 + 35 * Math.sin(alpha);
-            var y = 40 - 35 * Math.cos(alpha);
-            var largeArcFlag = progress > 50 ? 1 : 0;
-            this.progressPath = 'M40,5 A35,35 0 ' + largeArcFlag + ',1 ' + x + ',' + y;
-            this.xArcEnd = x;
-            this.yArcEnd = y;
-        };
-        return AccountEx;
+        return Command;
     })();
-    var AccountOverview = (function () {
-        function AccountOverview($log) {
-            this.$log = $log;
-            this.restrict = 'E';
-            this.replace = false;
-            this.templateUrl = '/templates/account-overview.html';
-            this.scope = {
-                account: '=',
-                showLabels: '=',
-            };
-            this.link = function (scope, elements) {
-                scope.accountEx = new AccountEx();
-                scope.$watch('account', function () {
-                    scope.accountEx.balance = scope.account.credited - scope.account.debited;
-                    scope.accountEx.progress =
-                        scope.account.credited
-                            ? Math.round(100 * scope.account.debited / scope.account.credited)
-                            : 0;
-                    scope.accountEx.recalculate();
-                });
-            };
-            $log.debug("Constructing account overview");
+    Budget.Command = Command;
+})(Budget || (Budget = {}));
+/// <reference path="../models/command.ts" />
+var Budget;
+(function (Budget) {
+    var CommandService = (function () {
+        function CommandService() {
+            this.contextCommands = [];
         }
-        AccountOverview.factory = function () {
-            var directive = function ($log) { return new AccountOverview($log); };
-            directive.$inject = ['$log'];
-            return directive;
+        CommandService.prototype.registerContextCommands = function (commands) {
+            var _this = this;
+            this.contextCommands.length = 0;
+            commands.forEach(function (c) {
+                _this.contextCommands.push(c);
+            });
         };
-        AccountOverview.IID = "accountOverview";
-        return AccountOverview;
+        CommandService.IID = "commandService";
+        return CommandService;
     })();
-    Budget.AccountOverview = AccountOverview;
+    Budget.CommandService = CommandService;
 })(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
@@ -158,6 +135,9 @@ var Budget;
         };
         DataService.prototype.getAccountReference = function (key) {
             console.log("Resolving account for key: " + key);
+            if (key == 'root') {
+                key = '';
+            }
             var deferred = this.$q.defer();
             if (key === '') {
                 var query = this._accountsReference
@@ -255,27 +235,101 @@ var Budget;
     })();
     Budget.DataService = DataService;
 })(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    'use strict';
+    var NewAccountCtrl = (function () {
+        function NewAccountCtrl($stateParams, $scope, $log, dataService) {
+            $log.debug("Initializing new account controller", $stateParams);
+            this.parentId = $stateParams.parentId || 'root';
+        }
+        NewAccountCtrl.prototype.add = function () {
+            this.subject = '';
+            this.description = '';
+        };
+        NewAccountCtrl.IID = "newAccountCtrl";
+        NewAccountCtrl.$inject = [
+            '$stateParams',
+            "$scope",
+            "$log",
+            Budget.DataService.IID,
+        ];
+        return NewAccountCtrl;
+    })();
+    Budget.NewAccountCtrl = NewAccountCtrl;
+})(Budget || (Budget = {}));
+/// <reference path="../typings/angularjs/angular.d.ts" />
+var Budget;
+(function (Budget) {
+    var AccountEx = (function () {
+        function AccountEx() {
+        }
+        AccountEx.prototype.recalculate = function () {
+            var progress = this.progress || 0;
+            this.warning = progress > 90;
+            this.error = progress > 100;
+            var alpha = 2 * Math.PI * progress / 100;
+            var x = 40 + 35 * Math.sin(alpha);
+            var y = 40 - 35 * Math.cos(alpha);
+            var largeArcFlag = progress > 50 ? 1 : 0;
+            this.progressPath = 'M40,5 A35,35 0 ' + largeArcFlag + ',1 ' + x + ',' + y;
+            this.xArcEnd = x;
+            this.yArcEnd = y;
+        };
+        return AccountEx;
+    })();
+    var AccountOverview = (function () {
+        function AccountOverview($log) {
+            this.$log = $log;
+            this.restrict = 'E';
+            this.replace = false;
+            this.templateUrl = '/templates/account-overview.html';
+            this.scope = {
+                account: '=',
+                showLabels: '=',
+            };
+            this.link = function (scope, elements) {
+                scope.accountEx = new AccountEx();
+                scope.$watch('account', function () {
+                    scope.accountEx.balance = scope.account.credited - scope.account.debited;
+                    scope.accountEx.progress =
+                        scope.account.credited
+                            ? Math.round(100 * scope.account.debited / scope.account.credited)
+                            : 0;
+                    scope.accountEx.recalculate();
+                });
+            };
+            $log.debug("Constructing account overview");
+        }
+        AccountOverview.factory = function () {
+            var directive = function ($log) { return new AccountOverview($log); };
+            directive.$inject = ['$log'];
+            return directive;
+        };
+        AccountOverview.IID = "accountOverview";
+        return AccountOverview;
+    })();
+    Budget.AccountOverview = AccountOverview;
+})(Budget || (Budget = {}));
+/// <reference path="../services/command-service.ts" />
 /// <reference path="../typings/extensions.d.ts" />
 /// <reference path="../services/data-service.ts" />
 var Budget;
 (function (Budget) {
     'use strict';
-    var NewAccount = (function () {
-        function NewAccount() {
-        }
-        return NewAccount;
-    })();
     var AccountCtrl = (function () {
-        function AccountCtrl($scope, $firebaseObject, $firebaseArray, $log, dataService, accountReference) {
+        function AccountCtrl($scope, $firebaseObject, $firebaseArray, $log, dataService, commandService, accountReference) {
             var _this = this;
             this.$scope = $scope;
             this.$firebaseObject = $firebaseObject;
             this.$firebaseArray = $firebaseArray;
             this.$log = $log;
             this.dataService = dataService;
+            this.commandService = commandService;
             this.accountReference = accountReference;
             $log.debug("Initializing account controller", arguments);
-            $firebaseObject(accountReference).$bindTo($scope, "accountData");
+            $firebaseObject(accountReference).$bindTo($scope, "accountData")
+                .then(function (x) { return _this.activate(); });
             var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
             var childrenQuery = accounts
                 .orderByChild("parent")
@@ -290,8 +344,6 @@ var Budget;
                 .orderByChild("debit")
                 .equalTo(accountReference.key());
             $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
-            $scope.newAccount = new NewAccount();
-            $scope.addSubAccount = function () { return _this.addSubAccountCore(); };
         }
         AccountCtrl.resolve = function () {
             return {
@@ -304,9 +356,10 @@ var Budget;
             var accountId = $stateParams.accountId || '';
             return dataService.getAccountReference(accountId);
         };
-        AccountCtrl.prototype.addSubAccountCore = function () {
-            this.$log.debug("Adding sub account with subject in controller: " + this.$scope.newAccount.subject);
-            this.$scope.newAccount.subject = '';
+        AccountCtrl.prototype.activate = function () {
+            this.commandService.registerContextCommands([
+                new Budget.Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key())
+            ]);
         };
         AccountCtrl.IID = "accountCtrl";
         AccountCtrl.$inject = [
@@ -315,6 +368,7 @@ var Budget;
             "$firebaseArray",
             "$log",
             Budget.DataService.IID,
+            Budget.CommandService.IID,
             "accountReference",
         ];
         return AccountCtrl;
@@ -326,14 +380,16 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $firebaseObject, $log, dataService, rootAccountReference) {
+        function MainCtrl($scope, $firebaseObject, $log, dataService, commandService, rootAccountReference) {
             this.$scope = $scope;
             this.$firebaseObject = $firebaseObject;
             this.$log = $log;
             this.dataService = dataService;
+            this.commandService = commandService;
             this.rootAccountReference = rootAccountReference;
             console.log("Initializing main controller");
             $firebaseObject(rootAccountReference).$bindTo($scope, "rootAccount");
+            $scope.contextCommands = commandService.contextCommands;
         }
         MainCtrl.resolve = function () {
             return {
@@ -348,6 +404,7 @@ var Budget;
             "$firebaseObject",
             "$log",
             Budget.DataService.IID,
+            Budget.CommandService.IID,
             'rootAccountReference',
         ];
         MainCtrl.IID = "mainCtrl";
@@ -355,13 +412,15 @@ var Budget;
     })();
     Budget.MainCtrl = MainCtrl;
 })(Budget || (Budget = {}));
-/// <reference path="directives/account-overview.ts" />
+/// <reference path="services/command-service.ts" />
 /// <reference path="services/aggregator-service.ts" />
+/// <reference path="services/data-service.ts" />
+/// <reference path="controllers/new-account-ctrl.ts" />
+/// <reference path="directives/account-overview.ts" />
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
-/// <reference path="services/data-service.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="typings/angular-ui-router/angular-ui-router.d.ts" />
 // For an introduction to the Blank template, see the following documentation:
@@ -374,9 +433,11 @@ var Budget;
     var budgetModule = angular.module('budget-app', ['ionic', 'firebase'])
         .service(Budget.AggregatorService.IID, Budget.AggregatorService)
         .service(Budget.DataService.IID, Budget.DataService)
+        .service(Budget.CommandService.IID, Budget.CommandService)
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
-        .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl);
+        .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
+        .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl);
     budgetModule
         .run(function ($ionicPlatform, $rootScope) {
         $ionicPlatform.ready(function () {
@@ -445,8 +506,16 @@ var Budget;
                 },
             },
         });
+        $stateProvider.state("app.new-account", {
+            url: "/new/:parentId",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/new-account.html",
+                },
+            },
+        });
         // if none of the above states are matched, use this as the fallback
-        $urlRouterProvider.otherwise('/budget/home');
+        $urlRouterProvider.otherwise('/budget/account/root');
         // configure html5 to get links working on jsfiddle
         $locationProvider.html5Mode(false);
     });

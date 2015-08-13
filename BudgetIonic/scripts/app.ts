@@ -1,10 +1,12 @@
-/// <reference path="directives/account-overview.ts" />
+/// <reference path="services/command-service.ts" />
 /// <reference path="services/aggregator-service.ts" />
+/// <reference path="services/data-service.ts" />
+/// <reference path="controllers/new-account-ctrl.ts" />
+/// <reference path="directives/account-overview.ts" />
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
-/// <reference path="services/data-service.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="typings/angular-ui-router/angular-ui-router.d.ts" />
 
@@ -19,9 +21,11 @@ module Budget {
         angular.module('budget-app', ['ionic', 'firebase'])
             .service(AggregatorService.IID, AggregatorService)
             .service(DataService.IID, DataService)
+            .service(CommandService.IID, CommandService)
             .directive(AccountOverview.IID, AccountOverview.factory())
             .controller(MainCtrl.IID, MainCtrl)
-            .controller(AccountCtrl.IID, AccountCtrl);
+            .controller(AccountCtrl.IID, AccountCtrl)
+            .controller(NewAccountCtrl.IID, NewAccountCtrl);
 
 
     budgetModule
@@ -105,8 +109,20 @@ module Budget {
                 },
             });
 
+            $stateProvider.state("app.new-account", {
+                url: "/new/:parentId",
+                views: {
+                    'main-content': {
+                        templateUrl: "templates/new-account.html",
+                        //resolve: AccountCtrl.resolve(),   
+                        //controller: NewAccountCtrl.IID,
+                        //controllerAs: 'newAccount',
+                    },
+                },
+            });
+
             // if none of the above states are matched, use this as the fallback
-            $urlRouterProvider.otherwise('/budget/home');
+            $urlRouterProvider.otherwise('/budget/account/root');
 
             // configure html5 to get links working on jsfiddle
             $locationProvider.html5Mode(false);

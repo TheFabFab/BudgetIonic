@@ -15,6 +15,11 @@
                 <div class="budget-left-menu">
                     <div class="row row-fill">
                         <!-- Put further content here -->
+                        <ul class="list col">
+                            <li class="item" ng-repeat="command in contextCommands">
+                                <a class="row" ng-href="{{command.link}}"><div>{{command.label}}</div></a>
+                            </li>
+                        </ul>
                     </div>
                     <div class="row budget-overview-row">
                         <account-overview class="budget-overview" account="rootAccount" show-labels="true"></account-overview>

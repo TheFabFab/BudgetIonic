@@ -4,6 +4,7 @@ module Budget {
 
     export interface IMainScope extends ng.IScope {
         rootAccount: IAccountData;
+        contextCommands: Command[];
     }
 
     export class MainCtrl {
@@ -12,6 +13,7 @@ module Budget {
             "$firebaseObject",
             "$log",
             DataService.IID,
+            CommandService.IID,
             'rootAccountReference',
         ];
 
@@ -32,11 +34,13 @@ module Budget {
             private $firebaseObject: AngularFireObjectService,
             private $log: ng.ILogService,
             private dataService: IDataService,
+            private commandService: CommandService,
             private rootAccountReference: Firebase) {
 
             console.log("Initializing main controller");
 
             $firebaseObject(rootAccountReference).$bindTo($scope, "rootAccount");
+            $scope.contextCommands = commandService.contextCommands;
         }
     }
 }

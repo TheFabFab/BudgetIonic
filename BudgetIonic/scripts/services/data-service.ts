@@ -51,6 +51,10 @@
 
         public getAccountReference(key: string): ng.IPromise<Firebase> {
             console.log("Resolving account for key: " + key);
+            
+            if (key == 'root') {
+                key = '';
+            }
 
             var deferred = this.$q.defer<Firebase>();
 

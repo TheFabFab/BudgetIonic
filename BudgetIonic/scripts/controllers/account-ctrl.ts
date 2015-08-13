@@ -1,4 +1,5 @@
-﻿/// <reference path="../typings/extensions.d.ts" />
+﻿/// <reference path="../services/command-service.ts" />
+ /// <reference path="../typings/extensions.d.ts" />
 /// <reference path="../services/data-service.ts" />
 module Budget {
     'use strict';
@@ -9,11 +10,6 @@ module Budget {
         creditTransactions: AngularFireArray;
         debitTransactions: AngularFireArray;
         addSubAccount: () => void;
-        newAccount: NewAccount;
-    }
-
-    class NewAccount {
-        public subject: string;
     }
 
     interface IAccountStateParams {
@@ -45,6 +41,7 @@ module Budget {
             "$firebaseArray",
             "$log",
             DataService.IID,
+            CommandService.IID,
             "accountReference",
         ];
 
@@ -54,11 +51,13 @@ module Budget {
             private $firebaseArray: AngularFireArrayService,
             private $log: ng.ILogService,
             private dataService: IDataService,
+            private commandService: CommandService,
             private accountReference: Firebase) {
 
             $log.debug("Initializing account controller", arguments);
 
-            $firebaseObject(accountReference).$bindTo($scope, "accountData");
+            $firebaseObject(accountReference).$bindTo($scope, "accountData")
+                .then(x => this.activate());
 
             var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
 
@@ -84,14 +83,12 @@ module Budget {
                     .equalTo(accountReference.key());
 
             $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
-
-            $scope.newAccount = new NewAccount();
-            $scope.addSubAccount = () => this.addSubAccountCore();
         }
 
-        private addSubAccountCore(): void {
-            this.$log.debug("Adding sub account with subject in controller: " + this.$scope.newAccount.subject);
-            this.$scope.newAccount.subject = '';
+        public activate(): void {
+            this.commandService.registerContextCommands([
+                new Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key())
+            ]);
         }
     }
 }

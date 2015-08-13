@@ -262,3 +262,18 @@ ion-side-menus .menu {
     .budget-prediction-gfx .error path {
         stroke: red;
     }
+
+.dialog-button-container {
+    padding: 20px;
+    display: flex;
+    -ms-flex-direction: row;
+    -webkit-flex-direction: row; 
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+    .dialog-button-container button {
+        margin: 10px;
+        width: auto;
+        flex-grow: 0;
+    }

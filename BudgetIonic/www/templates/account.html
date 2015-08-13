@@ -4,64 +4,22 @@
             <p class="account-subject">{{accountData.subject}}</p>
             <p class="account-description">{{accountData.description}}</p>
         </div>
-        <div class="row">
-            <div class="col-50">
-                <ion-list ng-if="subAccounts.length > 0">
-                    <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
-                        <div class="row" style="height: 120px">
-                            <account-overview class="col budget-prediction-col" account="subAccount"></account-overview>
-                            <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>
-                            <div class="col budget-item-main">
-                                <div class="budget-name">{{subAccount.subject}}</div>
-                            </div>
-                            <div class="col budget-item-navigation">
-                                <div>
-                                    <span ng-hide="subAccount.subAccounts.length == 0" class="notification">{{subAccount.subAccounts.length}}</span>
-                                    <i class="icon ion-ios-arrow-right"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </ion-item>
-                </ion-list>
-            </div>
-            <div class="col col-fill">
-                <div class="list" style="margin-top: -5px;">
-                    <div class="row item item-input">
-                        <label class="col item-stacked-label">
-                            <span class="input-label">New account</span>
-                            <input type="text" placeholder="Subject" ng-model="newAccount.subject">
-                        </label>
-                        <button class="col-fill button button-stable button-small" ng-click="addSubAccount()">Add</button>
+        <ion-list ng-if="subAccounts.length > 0">
+            <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
+                <div class="row" style="height: 120px">
+                    <account-overview class="col budget-prediction-col" account="subAccount"></account-overview>
+                    <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>
+                    <div class="col budget-item-main">
+                        <div class="budget-name">{{subAccount.subject}}</div>
                     </div>
-                    <label class="item item-input item-stacked-label">
-                        <span class="input-label">Allocate budget</span>
-                        <div class="row">
-                            <input class="col-60" type="text" placeholder="Subject">
-                            <input class="col-20" type="number" placeholder="Amount">
-                            <button class="col-fill button button-stable button-small">Add</button>
+                    <div class="col budget-item-navigation">
+                        <div>
+                            <span ng-hide="subAccount.subAccounts.length == 0" class="notification">{{subAccount.subAccounts.length}}</span>
+                            <i class="icon ion-ios-arrow-right"></i>
                         </div>
-                    </label>
+                    </div>
                 </div>
-            </div>
-        </div>
-
-        <div ng-if="account.subAccounts.length == 0">
-            <div class="row">
-                <label class="col item item-input item-stacked-label">
-                    <span class="input-label">Description</span>
-                    <textarea placeholder="Enter a description..." ng-model="account.description"></textarea>
-                </label>
-            </div>
-            <div class="row responsive-sm">
-                <label class="col item item-input item-stacked-label">
-                    <span class="input-label">Planned</span>
-                    <input type="number" placeholder="Planned" ng-model="account.planned">
-                </label>
-                <label class="col item item-input item-stacked-label">
-                    <span class="input-label">Spent</span>
-                    <input type="number" placeholder="Spent" ng-model="account.spent">
-                </label>
-            </div>
-        </div>
+            </ion-item>
+        </ion-list>
     </ion-content>
 </ion-view>
