@@ -159,6 +159,37 @@ var Budget;
             }
             return deferred.promise;
         };
+        DataService.prototype.addChildAccount = function (parentKey, subject, description) {
+            var _this = this;
+            var deferred = this.$q.defer();
+            var parentKeyReferred = this.$q.defer();
+            if (parentKey == 'root') {
+                parentKey = '';
+            }
+            if (parentKey == '') {
+                this.getRootAccountReference().then(function (x) { return parentKeyReferred.resolve(x.key()); });
+            }
+            else {
+                parentKeyReferred.resolve(parentKey);
+            }
+            parentKeyReferred.promise
+                .then(function (key) {
+                _this._accountsReference.push({
+                    subject: subject,
+                    description: description,
+                    parent: key,
+                    debited: 0,
+                    credited: 0,
+                    lastAggregationTime: 0,
+                }, function (error) {
+                    if (error == null)
+                        deferred.resolve();
+                    else
+                        deferred.reject(error);
+                });
+            });
+            return deferred.promise;
+        };
         DataService.prototype.addAccount = function (subject, parent, description) {
             if (parent === void 0) { parent = null; }
             if (description === void 0) { description = ''; }
@@ -239,17 +270,26 @@ var Budget;
 (function (Budget) {
     'use strict';
     var NewAccountCtrl = (function () {
-        function NewAccountCtrl($stateParams, $scope, $log, dataService) {
+        function NewAccountCtrl($stateParams, ionicHistory, $scope, $log, dataService) {
+            this.ionicHistory = ionicHistory;
+            this.dataService = dataService;
+            this.subject = '';
+            this.description = '';
             $log.debug("Initializing new account controller", $stateParams);
             this.parentId = $stateParams.parentId || 'root';
         }
-        NewAccountCtrl.prototype.add = function () {
-            this.subject = '';
-            this.description = '';
+        NewAccountCtrl.prototype.ok = function () {
+            var _this = this;
+            this.dataService.addChildAccount(this.parentId, this.subject, this.description)
+                .then(function (x) { return _this.ionicHistory.goBack(); });
+        };
+        NewAccountCtrl.prototype.cancel = function () {
+            this.ionicHistory.goBack();
         };
         NewAccountCtrl.IID = "newAccountCtrl";
         NewAccountCtrl.$inject = [
             '$stateParams',
+            '$ionicHistory',
             "$scope",
             "$log",
             Budget.DataService.IID,
@@ -360,7 +400,7 @@ var Budget;
         };
         AccountCtrl.prototype.setContextCommands = function () {
             this.commandService.registerContextCommands([
-                new Budget.Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key())
+                new Budget.Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key()),
             ]);
         };
         AccountCtrl.IID = "accountCtrl";

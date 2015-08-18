@@ -1,4 +1,4 @@
-﻿<ion-view view-title="New account">
+﻿<ion-view>
     <ion-content class="has-header" padding="false" ng-controller="newAccountCtrl as newAccount">
         <form>
             <div class="list list-inset">
@@ -17,8 +17,8 @@
             </div>
             <div class="row">
                 <div class="row dialog-button-container">
-                    <button class="button button-positive" ng-click="newAccount.add()" ui-sref="app.budget-account({accountId: newAccount.parentId})">Add</button>
-                    <button class="button button-stable" ui-sref="app.budget-account({accountId: newAccount.parentId})">Cancel</button>
+                    <button class="button button-positive" ng-click="newAccount.ok()">Add</button>
+                    <button class="button button-stable" ng-click="newAccount.cancel()">Cancel</button>
                 </div>
             </div>
         </form>

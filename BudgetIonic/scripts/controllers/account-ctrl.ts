@@ -90,7 +90,7 @@ module Budget {
 
         public setContextCommands(): void {
             this.commandService.registerContextCommands([
-                new Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key())
+                new Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key()),
             ]);
         }
     }

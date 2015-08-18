@@ -18,6 +18,7 @@
     export interface IDataService {
         getAccountReference(key: string): ng.IPromise<Firebase>;
         getRootAccountReference(): ng.IPromise<Firebase>;
+        addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any>;
     }
 
     export class DataService implements IDataService {
@@ -78,6 +79,40 @@
                         deferred.resolve(snapshot.ref());
                 });
             }
+
+            return deferred.promise;
+        }
+        
+        public addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any> {
+            var deferred = this.$q.defer();
+            var parentKeyReferred = this.$q.defer();
+
+            if (parentKey == 'root') {
+                parentKey = '';
+            }
+
+            if (parentKey == '') {
+                this.getRootAccountReference().then(x => parentKeyReferred.resolve(x.key()));
+            }
+            else {
+                parentKeyReferred.resolve(parentKey);
+            }
+
+            parentKeyReferred.promise
+                .then(key => {
+                    this._accountsReference.push(<IAccountData>{
+                        subject: subject,
+                        description: description,
+                        parent: key,
+                        debited: 0,
+                        credited: 0,
+                        lastAggregationTime: 0,
+                },
+                error => {
+                    if (error == null) deferred.resolve();
+                    else deferred.reject(error);
+                });
+            });
 
             return deferred.promise;
         }
