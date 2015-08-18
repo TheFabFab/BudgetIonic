@@ -109,17 +109,17 @@
             var deferred = this.$q.defer();
 
             this.addAccount('My budget', null, 'This is the root node')
-                .then(rootNode => this.$q.all([
+                .then(rootNode => this.$q.all<Firebase>([
                 this.addAccount('Item1', rootNode.key()),
                 this.addAccount('Item2', rootNode.key()),
                 this.addAccount('Item3', rootNode.key())
-                    .then(item3 => this.$q.all([
+                    .then(item3 => this.$q.all<Firebase>([
                         this.addAccount('Item3.1', item3.key()),
                         this.addAccount('Item3.2', item3.key()),
                         this.addAccount('Item3.3', item3.key()),
                     ]))
             ]).then(subitems => {
-                this.$q.all([
+                this.$q.all<Firebase>([
                     this.addTransaction({
                         debit: null,
                         credit: rootNode.key(),

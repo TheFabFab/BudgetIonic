@@ -417,12 +417,11 @@ var Budget;
 /// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
 /// <reference path="directives/account-overview.ts" />
+/// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
-/// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
-/// <reference path="typings/angular-ui-router/angular-ui-router.d.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 

@@ -1,11 +1,13 @@
+/// <reference path="services/command-service.ts" />
 /// <reference path="services/aggregator-service.ts" />
+/// <reference path="services/data-service.ts" />
+/// <reference path="controllers/new-account-ctrl.ts" />
+/// <reference path="directives/account-overview.ts" />
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
-/// <reference path="services/data-service.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
-/// <reference path="typings/angular-ui-router/angular-ui-router.d.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 
@@ -16,8 +18,11 @@ var Budget;
     var budgetModule = angular.module('budget-app', ['ionic', 'firebase'])
         .service(Budget.AggregatorService.IID, Budget.AggregatorService)
         .service(Budget.DataService.IID, Budget.DataService)
+        .service(Budget.CommandService.IID, Budget.CommandService)
+        .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
-        .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl);
+        .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
+        .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl);
     budgetModule
         .run(function ($ionicPlatform, $rootScope) {
         $ionicPlatform.ready(function () {
@@ -86,8 +91,16 @@ var Budget;
                 },
             },
         });
+        $stateProvider.state("app.new-account", {
+            url: "/new/:parentId",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/new-account.html",
+                },
+            },
+        });
         // if none of the above states are matched, use this as the fallback
-        $urlRouterProvider.otherwise('/budget/home');
+        $urlRouterProvider.otherwise('/budget/account/root');
         // configure html5 to get links working on jsfiddle
         $locationProvider.html5Mode(false);
     });
