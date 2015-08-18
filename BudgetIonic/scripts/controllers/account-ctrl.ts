@@ -56,8 +56,7 @@ module Budget {
 
             $log.debug("Initializing account controller", arguments);
 
-            $firebaseObject(accountReference).$bindTo($scope, "accountData")
-                .then(x => this.activate());
+            $firebaseObject(accountReference).$bindTo($scope, "accountData");
 
             var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
 
@@ -83,9 +82,13 @@ module Budget {
                     .equalTo(accountReference.key());
 
             $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
+
+            $scope.$on('$ionicView.enter', () => {
+                this.setContextCommands();
+            });
         }
 
-        public activate(): void {
+        public setContextCommands(): void {
             this.commandService.registerContextCommands([
                 new Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key())
             ]);

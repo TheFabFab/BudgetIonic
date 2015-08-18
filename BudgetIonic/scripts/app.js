@@ -3,9 +3,9 @@
 /// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
 /// <reference path="directives/account-overview.ts" />
+/// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
-/// <reference path="typings/cordova/cordova.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
 // For an introduction to the Blank template, see the following documentation:

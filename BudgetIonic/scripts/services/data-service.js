@@ -14,6 +14,9 @@ var Budget;
         };
         DataService.prototype.getAccountReference = function (key) {
             console.log("Resolving account for key: " + key);
+            if (key == 'root') {
+                key = '';
+            }
             var deferred = this.$q.defer();
             if (key === '') {
                 var query = this._accountsReference
