@@ -1,4 +1,5 @@
-﻿module Budget {
+﻿/// <reference path="../constants.ts" />
+module Budget {
     export interface ITransactionData {
         debit: string;
         credit: string;
@@ -16,9 +17,10 @@
     }
 
     export interface IDataService {
-        getAccountReference(key: string): ng.IPromise<Firebase>;
-        getRootAccountReference(): ng.IPromise<Firebase>;
+        getAccountSnapshot(key: string): ng.IPromise<FirebaseDataSnapshot>;
+        getRootAccountSnapshot(): ng.IPromise<FirebaseDataSnapshot>;
         addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any>;
+        deleteAccount(accountId: string): ng.IPromise<any>;
     }
 
     export class DataService implements IDataService {
@@ -44,20 +46,31 @@
 
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
+
+            this._accountsReference
+                .orderByChild("parent")
+                .limitToFirst(1)
+                .once(
+                    FirebaseEvents.value, 
+                    snapshot => {
+                        if (!snapshot.val()) {
+                            this.createDemoData();
+                        }
+                    });
         }
 
-        public getRootAccountReference(): ng.IPromise<Firebase> {
-            return this.getAccountReference('');
+        public getRootAccountSnapshot(): ng.IPromise<FirebaseDataSnapshot> {
+            return this.getAccountSnapshot('');
         }
 
-        public getAccountReference(key: string): ng.IPromise<Firebase> {
+        public getAccountSnapshot(key: string): ng.IPromise<FirebaseDataSnapshot> {
             console.log("Resolving account for key: " + key);
-            
+
             if (key == 'root') {
                 key = '';
             }
 
-            var deferred = this.$q.defer<Firebase>();
+            var deferred = this.$q.defer<FirebaseDataSnapshot>();
 
             if (key === '') {
                 var query =
@@ -65,40 +78,33 @@
                         .orderByChild("parent")
                         .equalTo(null);
 
-                query.once('value', snapshot => {
+                query.once(FirebaseEvents.value, snapshot => {
                     var child: FirebaseDataSnapshot;
                     snapshot.forEach(x => child = x);
-                    deferred.resolve(child.ref());
+                    if (child) {
+                        deferred.resolve(child);
+                    } else {
+                        deferred.reject();
+                    }
                 });
             } else {
                 console.log("Resolving account by key " + key);
                 this._accountsReference.child(key).once(
-                    'value', snapshot => {
+                    FirebaseEvents.value,
+                    snapshot => {
                         console.log("Resolved account by id:");
                         console.log(snapshot);
-                        deferred.resolve(snapshot.ref());
-                });
+                        deferred.resolve(snapshot);
+                    });
             }
 
             return deferred.promise;
         }
-        
+
         public addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any> {
             var deferred = this.$q.defer();
-            var parentKeyReferred = this.$q.defer();
 
-            if (parentKey == 'root') {
-                parentKey = '';
-            }
-
-            if (parentKey == '') {
-                this.getRootAccountReference().then(x => parentKeyReferred.resolve(x.key()));
-            }
-            else {
-                parentKeyReferred.resolve(parentKey);
-            }
-
-            parentKeyReferred.promise
+            this.normalizeAccountKey(parentKey)
                 .then(key => {
                     this._accountsReference.push(<IAccountData>{
                         subject: subject,
@@ -107,14 +113,45 @@
                         debited: 0,
                         credited: 0,
                         lastAggregationTime: 0,
-                },
-                error => {
-                    if (error == null) deferred.resolve();
-                    else deferred.reject(error);
+                    },
+                    error => {
+                        if (error == null) deferred.resolve();
+                        else deferred.reject(error);
+                    });
                 });
-            });
 
             return deferred.promise;
+        }
+
+        public deleteAccount(accountId: string): ng.IPromise<any> {
+            var deferred = this.$q.defer();
+
+            this.getAccountSnapshot(accountId)
+                .then(accountReference => {
+                    accountReference.ref().remove(error => {
+                        if (error) deferred.reject(error);
+                        else deferred.resolve();
+                    });
+                });
+
+            return deferred.promise;
+        }
+
+        private normalizeAccountKey(accountKey: string): ng.IPromise<string> {
+            var accountKeyDeferred = this.$q.defer();
+
+            if (accountKey == 'root') {
+                accountKey = '';
+            }
+
+            if (accountKey == '') {
+                this.getRootAccountSnapshot().then(x => accountKeyDeferred.resolve(x.key()));
+            }
+            else {
+                accountKeyDeferred.resolve(accountKey);
+            }
+
+            return accountKeyDeferred.promise;
         }
 
         private addAccount(subject: string, parent: string = null, description: string = ''): ng.IPromise<Firebase> {

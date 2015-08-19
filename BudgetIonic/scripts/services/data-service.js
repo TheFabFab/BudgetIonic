@@ -1,18 +1,28 @@
+/// <reference path="../constants.ts" />
 var Budget;
 (function (Budget) {
     var DataService = (function () {
         function DataService($q, $firebaseArray, aggregatorService) {
+            var _this = this;
             this.$q = $q;
             console.log("Creating data service");
             aggregatorService.start();
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
+            this._accountsReference
+                .orderByChild("parent")
+                .limitToFirst(1)
+                .once(Budget.FirebaseEvents.value, function (snapshot) {
+                if (!snapshot.val()) {
+                    _this.createDemoData();
+                }
+            });
         }
-        DataService.prototype.getRootAccountReference = function () {
-            return this.getAccountReference('');
+        DataService.prototype.getRootAccountSnapshot = function () {
+            return this.getAccountSnapshot('');
         };
-        DataService.prototype.getAccountReference = function (key) {
+        DataService.prototype.getAccountSnapshot = function (key) {
             console.log("Resolving account for key: " + key);
             if (key == 'root') {
                 key = '';
@@ -22,21 +32,73 @@ var Budget;
                 var query = this._accountsReference
                     .orderByChild("parent")
                     .equalTo(null);
-                query.once('value', function (snapshot) {
+                query.once(Budget.FirebaseEvents.value, function (snapshot) {
                     var child;
                     snapshot.forEach(function (x) { return child = x; });
-                    deferred.resolve(child.ref());
+                    if (child) {
+                        deferred.resolve(child);
+                    }
+                    else {
+                        deferred.reject();
+                    }
                 });
             }
             else {
                 console.log("Resolving account by key " + key);
-                this._accountsReference.child(key).once('value', function (snapshot) {
+                this._accountsReference.child(key).once(Budget.FirebaseEvents.value, function (snapshot) {
                     console.log("Resolved account by id:");
                     console.log(snapshot);
-                    deferred.resolve(snapshot.ref());
+                    deferred.resolve(snapshot);
                 });
             }
             return deferred.promise;
+        };
+        DataService.prototype.addChildAccount = function (parentKey, subject, description) {
+            var _this = this;
+            var deferred = this.$q.defer();
+            this.normalizeAccountKey(parentKey)
+                .then(function (key) {
+                _this._accountsReference.push({
+                    subject: subject,
+                    description: description,
+                    parent: key,
+                    debited: 0,
+                    credited: 0,
+                    lastAggregationTime: 0,
+                }, function (error) {
+                    if (error == null)
+                        deferred.resolve();
+                    else
+                        deferred.reject(error);
+                });
+            });
+            return deferred.promise;
+        };
+        DataService.prototype.deleteAccount = function (accountId) {
+            var deferred = this.$q.defer();
+            this.getAccountSnapshot(accountId)
+                .then(function (accountReference) {
+                accountReference.ref().remove(function (error) {
+                    if (error)
+                        deferred.reject(error);
+                    else
+                        deferred.resolve();
+                });
+            });
+            return deferred.promise;
+        };
+        DataService.prototype.normalizeAccountKey = function (accountKey) {
+            var accountKeyDeferred = this.$q.defer();
+            if (accountKey == 'root') {
+                accountKey = '';
+            }
+            if (accountKey == '') {
+                this.getRootAccountSnapshot().then(function (x) { return accountKeyDeferred.resolve(x.key()); });
+            }
+            else {
+                accountKeyDeferred.resolve(accountKey);
+            }
+            return accountKeyDeferred.promise;
         };
         DataService.prototype.addAccount = function (subject, parent, description) {
             if (parent === void 0) { parent = null; }

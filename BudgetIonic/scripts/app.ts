@@ -8,6 +8,7 @@
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
+/// <reference path="controllers/delete-account-ctrl.ts" />
 
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
@@ -24,7 +25,8 @@ module Budget {
             .directive(AccountOverview.IID, AccountOverview.factory())
             .controller(MainCtrl.IID, MainCtrl)
             .controller(AccountCtrl.IID, AccountCtrl)
-            .controller(NewAccountCtrl.IID, NewAccountCtrl);
+            .controller(NewAccountCtrl.IID, NewAccountCtrl)
+            .controller(DeleteAccountCtrl.IID, DeleteAccountCtrl);
 
 
     budgetModule
@@ -113,6 +115,18 @@ module Budget {
                 views: {
                     'main-content': {
                         templateUrl: "templates/new-account.html",
+                        //resolve: AccountCtrl.resolve(),   
+                        //controller: NewAccountCtrl.IID,
+                        //controllerAs: 'newAccount',
+                    },
+                },
+            });
+
+            $stateProvider.state("app.delete-account", {
+                url: "/delete/:accountId",
+                views: {
+                    'main-content': {
+                        templateUrl: "templates/delete-account.html",
                         //resolve: AccountCtrl.resolve(),   
                         //controller: NewAccountCtrl.IID,
                         //controllerAs: 'newAccount',

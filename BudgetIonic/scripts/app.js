@@ -8,6 +8,7 @@
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
+/// <reference path="controllers/delete-account-ctrl.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 
@@ -22,7 +23,8 @@ var Budget;
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
         .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
-        .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl);
+        .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl)
+        .controller(Budget.DeleteAccountCtrl.IID, Budget.DeleteAccountCtrl);
     budgetModule
         .run(function ($ionicPlatform, $rootScope) {
         $ionicPlatform.ready(function () {
@@ -96,6 +98,14 @@ var Budget;
             views: {
                 'main-content': {
                     templateUrl: "templates/new-account.html",
+                },
+            },
+        });
+        $stateProvider.state("app.delete-account", {
+            url: "/delete/:accountId",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/delete-account.html",
                 },
             },
         });

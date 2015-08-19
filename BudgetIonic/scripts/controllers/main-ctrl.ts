@@ -14,17 +14,17 @@ module Budget {
             "$log",
             DataService.IID,
             CommandService.IID,
-            'rootAccountReference',
+            'rootAccount',
         ];
 
         public static resolve() {
             return {
-                rootAccountReference: [DataService.IID, MainCtrl.getAccount],
+                rootAccount: [DataService.IID, MainCtrl.getAccount],
             };
         }
 
-        public static getAccount(dataService: IDataService): ng.IPromise<Firebase> {
-            return dataService.getRootAccountReference();
+        public static getAccount(dataService: IDataService): ng.IPromise<FirebaseDataSnapshot> {
+            return dataService.getRootAccountSnapshot();
         }
 
         public static IID = "mainCtrl";
@@ -35,11 +35,11 @@ module Budget {
             private $log: ng.ILogService,
             private dataService: IDataService,
             private commandService: CommandService,
-            private rootAccountReference: Firebase) {
+            private rootAccount: FirebaseDataSnapshot) {
 
             console.log("Initializing main controller");
 
-            $firebaseObject(rootAccountReference).$bindTo($scope, "rootAccount");
+            $firebaseObject(rootAccount.ref()).$bindTo($scope, "rootAccount");
             $scope.contextCommands = commandService.contextCommands;
         }
     }

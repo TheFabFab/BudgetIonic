@@ -18,7 +18,7 @@
 
         constructor(
             $stateParams,
-            private ionicHistory,
+            private $ionicHistory,
             $scope: ng.IScope,
             $log: ng.ILogService,
             private dataService: IDataService) {
@@ -29,11 +29,11 @@
 
         public ok(): void {
             this.dataService.addChildAccount(this.parentId, this.subject, this.description)
-                .then(x => this.ionicHistory.goBack());
+                .then(x => this.$ionicHistory.goBack());
         }
 
         public cancel(): void {
-            this.ionicHistory.goBack();
+            this.$ionicHistory.goBack();
         }
     }
 }

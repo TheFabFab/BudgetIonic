@@ -3,15 +3,15 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $firebaseObject, $log, dataService, commandService, rootAccountReference) {
+        function MainCtrl($scope, $firebaseObject, $log, dataService, commandService, rootAccount) {
             this.$scope = $scope;
             this.$firebaseObject = $firebaseObject;
             this.$log = $log;
             this.dataService = dataService;
             this.commandService = commandService;
-            this.rootAccountReference = rootAccountReference;
+            this.rootAccount = rootAccount;
             console.log("Initializing main controller");
-            $firebaseObject(rootAccountReference).$bindTo($scope, "rootAccount");
+            $firebaseObject(rootAccount.ref()).$bindTo($scope, "rootAccount");
             $scope.contextCommands = commandService.contextCommands;
         }
         MainCtrl.resolve = function () {
@@ -20,7 +20,7 @@ var Budget;
             };
         };
         MainCtrl.getAccount = function (dataService) {
-            return dataService.getRootAccountReference();
+            return dataService.getRootAccountSnapshot();
         };
         MainCtrl.$inject = [
             '$scope',
@@ -28,7 +28,7 @@ var Budget;
             "$log",
             Budget.DataService.IID,
             Budget.CommandService.IID,
-            'rootAccountReference',
+            'rootAccount',
         ];
         MainCtrl.IID = "mainCtrl";
         return MainCtrl;

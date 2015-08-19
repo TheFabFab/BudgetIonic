@@ -121,19 +121,43 @@ var Budget;
 })(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
+    var FirebaseEvents = (function () {
+        function FirebaseEvents() {
+        }
+        FirebaseEvents.value = 'value';
+        FirebaseEvents.child_added = 'child_added';
+        FirebaseEvents.child_changed = 'child_changed';
+        FirebaseEvents.child_removed = 'child_removed';
+        FirebaseEvents.child_moved = 'child_moved';
+        return FirebaseEvents;
+    })();
+    Budget.FirebaseEvents = FirebaseEvents;
+})(Budget || (Budget = {}));
+/// <reference path="../constants.ts" />
+var Budget;
+(function (Budget) {
     var DataService = (function () {
         function DataService($q, $firebaseArray, aggregatorService) {
+            var _this = this;
             this.$q = $q;
             console.log("Creating data service");
             aggregatorService.start();
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
+            this._accountsReference
+                .orderByChild("parent")
+                .limitToFirst(1)
+                .once(Budget.FirebaseEvents.value, function (snapshot) {
+                if (!snapshot.val()) {
+                    _this.createDemoData();
+                }
+            });
         }
-        DataService.prototype.getRootAccountReference = function () {
-            return this.getAccountReference('');
+        DataService.prototype.getRootAccountSnapshot = function () {
+            return this.getAccountSnapshot('');
         };
-        DataService.prototype.getAccountReference = function (key) {
+        DataService.prototype.getAccountSnapshot = function (key) {
             console.log("Resolving account for key: " + key);
             if (key == 'root') {
                 key = '';
@@ -143,18 +167,23 @@ var Budget;
                 var query = this._accountsReference
                     .orderByChild("parent")
                     .equalTo(null);
-                query.once('value', function (snapshot) {
+                query.once(Budget.FirebaseEvents.value, function (snapshot) {
                     var child;
                     snapshot.forEach(function (x) { return child = x; });
-                    deferred.resolve(child.ref());
+                    if (child) {
+                        deferred.resolve(child);
+                    }
+                    else {
+                        deferred.reject();
+                    }
                 });
             }
             else {
                 console.log("Resolving account by key " + key);
-                this._accountsReference.child(key).once('value', function (snapshot) {
+                this._accountsReference.child(key).once(Budget.FirebaseEvents.value, function (snapshot) {
                     console.log("Resolved account by id:");
                     console.log(snapshot);
-                    deferred.resolve(snapshot.ref());
+                    deferred.resolve(snapshot);
                 });
             }
             return deferred.promise;
@@ -162,17 +191,7 @@ var Budget;
         DataService.prototype.addChildAccount = function (parentKey, subject, description) {
             var _this = this;
             var deferred = this.$q.defer();
-            var parentKeyReferred = this.$q.defer();
-            if (parentKey == 'root') {
-                parentKey = '';
-            }
-            if (parentKey == '') {
-                this.getRootAccountReference().then(function (x) { return parentKeyReferred.resolve(x.key()); });
-            }
-            else {
-                parentKeyReferred.resolve(parentKey);
-            }
-            parentKeyReferred.promise
+            this.normalizeAccountKey(parentKey)
                 .then(function (key) {
                 _this._accountsReference.push({
                     subject: subject,
@@ -189,6 +208,32 @@ var Budget;
                 });
             });
             return deferred.promise;
+        };
+        DataService.prototype.deleteAccount = function (accountId) {
+            var deferred = this.$q.defer();
+            this.getAccountSnapshot(accountId)
+                .then(function (accountReference) {
+                accountReference.ref().remove(function (error) {
+                    if (error)
+                        deferred.reject(error);
+                    else
+                        deferred.resolve();
+                });
+            });
+            return deferred.promise;
+        };
+        DataService.prototype.normalizeAccountKey = function (accountKey) {
+            var accountKeyDeferred = this.$q.defer();
+            if (accountKey == 'root') {
+                accountKey = '';
+            }
+            if (accountKey == '') {
+                this.getRootAccountSnapshot().then(function (x) { return accountKeyDeferred.resolve(x.key()); });
+            }
+            else {
+                accountKeyDeferred.resolve(accountKey);
+            }
+            return accountKeyDeferred.promise;
         };
         DataService.prototype.addAccount = function (subject, parent, description) {
             if (parent === void 0) { parent = null; }
@@ -270,8 +315,8 @@ var Budget;
 (function (Budget) {
     'use strict';
     var NewAccountCtrl = (function () {
-        function NewAccountCtrl($stateParams, ionicHistory, $scope, $log, dataService) {
-            this.ionicHistory = ionicHistory;
+        function NewAccountCtrl($stateParams, $ionicHistory, $scope, $log, dataService) {
+            this.$ionicHistory = $ionicHistory;
             this.dataService = dataService;
             this.subject = '';
             this.description = '';
@@ -281,10 +326,10 @@ var Budget;
         NewAccountCtrl.prototype.ok = function () {
             var _this = this;
             this.dataService.addChildAccount(this.parentId, this.subject, this.description)
-                .then(function (x) { return _this.ionicHistory.goBack(); });
+                .then(function (x) { return _this.$ionicHistory.goBack(); });
         };
         NewAccountCtrl.prototype.cancel = function () {
-            this.ionicHistory.goBack();
+            this.$ionicHistory.goBack();
         };
         NewAccountCtrl.IID = "newAccountCtrl";
         NewAccountCtrl.$inject = [
@@ -358,7 +403,7 @@ var Budget;
 (function (Budget) {
     'use strict';
     var AccountCtrl = (function () {
-        function AccountCtrl($scope, $firebaseObject, $firebaseArray, $log, dataService, commandService, accountReference) {
+        function AccountCtrl($scope, $firebaseObject, $firebaseArray, $log, dataService, commandService, accountSnapshot) {
             var _this = this;
             this.$scope = $scope;
             this.$firebaseObject = $firebaseObject;
@@ -366,22 +411,22 @@ var Budget;
             this.$log = $log;
             this.dataService = dataService;
             this.commandService = commandService;
-            this.accountReference = accountReference;
+            this.accountSnapshot = accountSnapshot;
             $log.debug("Initializing account controller", arguments);
-            $firebaseObject(accountReference).$bindTo($scope, "accountData");
+            $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
             var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
             var childrenQuery = accounts
                 .orderByChild("parent")
-                .equalTo(accountReference.key());
+                .equalTo(accountSnapshot.key());
             $scope.subAccounts = $firebaseArray(childrenQuery);
             var transactions = new Firebase("https://budgetionic.firebaseio.com/transactions");
             var creditTransactionQuery = transactions
                 .orderByChild("credit")
-                .equalTo(accountReference.key());
+                .equalTo(accountSnapshot.key());
             $scope.creditTransactions = $firebaseArray(creditTransactionQuery);
             var debitTransactionQuery = transactions
                 .orderByChild("debit")
-                .equalTo(accountReference.key());
+                .equalTo(accountSnapshot.key());
             $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
             $scope.$on('$ionicView.enter', function () {
                 _this.setContextCommands();
@@ -389,18 +434,19 @@ var Budget;
         }
         AccountCtrl.resolve = function () {
             return {
-                accountReference: ['$stateParams', Budget.DataService.IID, AccountCtrl.getAccount],
+                accountSnapshot: ['$stateParams', Budget.DataService.IID, AccountCtrl.getAccount],
             };
         };
         AccountCtrl.getAccount = function ($stateParams, dataService) {
             console.log("Getting account: ");
             console.log($stateParams);
             var accountId = $stateParams.accountId || '';
-            return dataService.getAccountReference(accountId);
+            return dataService.getAccountSnapshot(accountId);
         };
         AccountCtrl.prototype.setContextCommands = function () {
             this.commandService.registerContextCommands([
-                new Budget.Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key()),
+                new Budget.Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountSnapshot.key()),
+                new Budget.Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key()),
             ]);
         };
         AccountCtrl.IID = "accountCtrl";
@@ -411,7 +457,7 @@ var Budget;
             "$log",
             Budget.DataService.IID,
             Budget.CommandService.IID,
-            "accountReference",
+            "accountSnapshot",
         ];
         return AccountCtrl;
     })();
@@ -422,24 +468,24 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $firebaseObject, $log, dataService, commandService, rootAccountReference) {
+        function MainCtrl($scope, $firebaseObject, $log, dataService, commandService, rootAccount) {
             this.$scope = $scope;
             this.$firebaseObject = $firebaseObject;
             this.$log = $log;
             this.dataService = dataService;
             this.commandService = commandService;
-            this.rootAccountReference = rootAccountReference;
+            this.rootAccount = rootAccount;
             console.log("Initializing main controller");
-            $firebaseObject(rootAccountReference).$bindTo($scope, "rootAccount");
+            $firebaseObject(rootAccount.ref()).$bindTo($scope, "rootAccount");
             $scope.contextCommands = commandService.contextCommands;
         }
         MainCtrl.resolve = function () {
             return {
-                rootAccountReference: [Budget.DataService.IID, MainCtrl.getAccount],
+                rootAccount: [Budget.DataService.IID, MainCtrl.getAccount],
             };
         };
         MainCtrl.getAccount = function (dataService) {
-            return dataService.getRootAccountReference();
+            return dataService.getRootAccountSnapshot();
         };
         MainCtrl.$inject = [
             '$scope',
@@ -447,12 +493,46 @@ var Budget;
             "$log",
             Budget.DataService.IID,
             Budget.CommandService.IID,
-            'rootAccountReference',
+            'rootAccount',
         ];
         MainCtrl.IID = "mainCtrl";
         return MainCtrl;
     })();
     Budget.MainCtrl = MainCtrl;
+})(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    'use strict';
+    var DeleteAccountCtrl = (function () {
+        function DeleteAccountCtrl($stateParams, $ionicHistory, $log, dataService) {
+            var _this = this;
+            this.$ionicHistory = $ionicHistory;
+            this.dataService = dataService;
+            $log.debug("Initializing delete account controller", $stateParams);
+            this.accountId = $stateParams.accountId || 'root';
+            this.dataService.getAccountSnapshot(this.accountId)
+                .then(function (snapshot) {
+                _this.account = snapshot.exportVal();
+            });
+        }
+        DeleteAccountCtrl.prototype.ok = function () {
+            var _this = this;
+            this.dataService.deleteAccount(this.accountId)
+                .then(function (x) { return _this.$ionicHistory.goBack(); });
+        };
+        DeleteAccountCtrl.prototype.cancel = function () {
+            this.$ionicHistory.goBack();
+        };
+        DeleteAccountCtrl.IID = "deleteAccountCtrl";
+        DeleteAccountCtrl.$inject = [
+            '$stateParams',
+            '$ionicHistory',
+            '$log',
+            Budget.DataService.IID
+        ];
+        return DeleteAccountCtrl;
+    })();
+    Budget.DeleteAccountCtrl = DeleteAccountCtrl;
 })(Budget || (Budget = {}));
 /// <reference path="services/command-service.ts" />
 /// <reference path="services/aggregator-service.ts" />
@@ -464,6 +544,7 @@ var Budget;
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
+/// <reference path="controllers/delete-account-ctrl.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 
@@ -478,7 +559,8 @@ var Budget;
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
         .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
-        .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl);
+        .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl)
+        .controller(Budget.DeleteAccountCtrl.IID, Budget.DeleteAccountCtrl);
     budgetModule
         .run(function ($ionicPlatform, $rootScope) {
         $ionicPlatform.ready(function () {
@@ -552,6 +634,14 @@ var Budget;
             views: {
                 'main-content': {
                     templateUrl: "templates/new-account.html",
+                },
+            },
+        });
+        $stateProvider.state("app.delete-account", {
+            url: "/delete/:accountId",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/delete-account.html",
                 },
             },
         });

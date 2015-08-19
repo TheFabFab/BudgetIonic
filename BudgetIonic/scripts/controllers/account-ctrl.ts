@@ -21,18 +21,18 @@ module Budget {
 
         public static resolve() {
             return {
-                accountReference: ['$stateParams', DataService.IID, AccountCtrl.getAccount],
+                accountSnapshot: ['$stateParams', DataService.IID, AccountCtrl.getAccount],
             };
         }
 
         public static getAccount(
             $stateParams: IAccountStateParams,
-            dataService: IDataService): ng.IPromise<Firebase> {
+            dataService: IDataService): ng.IPromise<FirebaseDataSnapshot> {
             console.log("Getting account: ");
             console.log($stateParams);
             var accountId = $stateParams.accountId || '';
 
-            return dataService.getAccountReference(accountId);
+            return dataService.getAccountSnapshot(accountId);
         }
 
         public static $inject = [
@@ -42,7 +42,7 @@ module Budget {
             "$log",
             DataService.IID,
             CommandService.IID,
-            "accountReference",
+            "accountSnapshot",
         ];
 
         constructor(
@@ -52,18 +52,18 @@ module Budget {
             private $log: ng.ILogService,
             private dataService: IDataService,
             private commandService: CommandService,
-            private accountReference: Firebase) {
+            private accountSnapshot: FirebaseDataSnapshot) {
 
             $log.debug("Initializing account controller", arguments);
 
-            $firebaseObject(accountReference).$bindTo($scope, "accountData");
+            $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
 
             var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
 
             var childrenQuery =
                 accounts
                 .orderByChild("parent")
-                .equalTo(accountReference.key());
+                .equalTo(accountSnapshot.key());
 
             $scope.subAccounts = $firebaseArray(childrenQuery);
 
@@ -72,14 +72,14 @@ module Budget {
             var creditTransactionQuery =
                 transactions
                     .orderByChild("credit")
-                    .equalTo(accountReference.key());
+                    .equalTo(accountSnapshot.key());
 
             $scope.creditTransactions = $firebaseArray(creditTransactionQuery);
 
             var debitTransactionQuery =
                 transactions
                     .orderByChild("debit")
-                    .equalTo(accountReference.key());
+                    .equalTo(accountSnapshot.key());
 
             $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
 
@@ -90,7 +90,8 @@ module Budget {
 
         public setContextCommands(): void {
             this.commandService.registerContextCommands([
-                new Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountReference.key()),
+                new Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountSnapshot.key()),
+                new Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key()),
             ]);
         }
     }
