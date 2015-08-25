@@ -1,0 +1,16 @@
+{
+  "name": "BudgetIonicService",
+  "version": "0.0.0",
+  "description": "BudgetIonicService",
+  "main": "app.js",
+  "author": {
+    "name": "Csaba",
+    "email": ""
+  },
+  "devDependencies": {
+    "bower": "^1.5.1"
+  },
+  "dependencies": {
+    "firebase": "^2.2.9"
+  }
+}

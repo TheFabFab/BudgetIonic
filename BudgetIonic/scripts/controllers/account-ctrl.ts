@@ -35,6 +35,10 @@ module Budget {
             return dataService.getAccountSnapshot(accountId);
         }
 
+        private addSubaccountCommand: Command;
+        private deleteCommand: Command;
+        private allocateBudgetCommand: Command;
+
         public static $inject = [
             '$scope',
             "$firebaseObject",
@@ -55,6 +59,12 @@ module Budget {
             private accountSnapshot: FirebaseDataSnapshot) {
 
             $log.debug("Initializing account controller", arguments);
+
+            var accountData: IAccountData = accountSnapshot.exportVal<IAccountData>();
+
+            this.addSubaccountCommand = new Command("Add subaccount to " + accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
+            this.deleteCommand = new Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key(), false);
+            this.allocateBudgetCommand = new Command("Allocate budget", "/#/budget/allocate/" + this.accountSnapshot.key());
 
             $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
 
@@ -84,14 +94,32 @@ module Budget {
             $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
 
             $scope.$on('$ionicView.enter', () => {
+                $log.debug("Entering account controller", this.$scope);
+                this.updateContextCommands();
                 this.setContextCommands();
             });
+
+            $scope.subAccounts.$watch((event, key, prevChild) => this.updateContextCommands());
+            $scope.creditTransactions.$watch((event, key, prevChild) => this.updateContextCommands());
+            $scope.debitTransactions.$watch((event, key, prevChild) => this.updateContextCommands());
+        }
+
+        private updateContextCommands(): void {
+            var hasData =
+                this.$scope.subAccounts.length == 0 &&
+                this.$scope.creditTransactions.length == 0 &&
+                this.$scope.debitTransactions.length == 0;
+
+            if (this.deleteCommand != null) {
+                this.deleteCommand.isEnabled = hasData;
+            }
         }
 
         public setContextCommands(): void {
             this.commandService.registerContextCommands([
-                new Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountSnapshot.key()),
-                new Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key()),
+                this.allocateBudgetCommand,
+                this.addSubaccountCommand,
+                this.deleteCommand,
             ]);
         }
     }

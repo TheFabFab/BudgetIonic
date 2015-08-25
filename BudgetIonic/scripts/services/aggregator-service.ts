@@ -2,26 +2,31 @@
     class AccountAggregate {
         constructor(
             public accountSnapshot: FirebaseDataSnapshot,
-            public credited: number = 0,
-            public debited: number = 0,
-            public lastAggregationTime: number = 0) {
+            public credited,
+            public debited,
+            public lastAggregationTime,
+            public newAggregationTime) {
+        }
 
-            if (this.lastAggregationTime == 0) {
-                var account: IAccountData = accountSnapshot.val();
-                this.credited = account.credited;
-                this.debited = account.debited;
-                this.lastAggregationTime = account.lastAggregationTime;
-            }
+        public static fromAccount(accountSnapshot: FirebaseDataSnapshot): AccountAggregate {
+            var account = accountSnapshot.exportVal<IAccountData>();
+            return new AccountAggregate(accountSnapshot, account.credited, account.debited, account.lastAggregationTime, 0);
         }
 
         public aggregate(transaction: ITransactionData): AccountAggregate {
 
             var snapshot = this.accountSnapshot;
-            var credited = this.credited + (transaction.credit == snapshot.key() ? transaction.amount : 0);
-            var debited = this.debited + (transaction.debit == snapshot.key() ? transaction.amount : 0);
-            var aggregationTime = (transaction.timestamp > this.lastAggregationTime) ? transaction.timestamp : this.lastAggregationTime;
+            var credited = this.credited;
+            var debited = this.debited;
+            var newAggregationTime = this.lastAggregationTime;
 
-            return new AccountAggregate(snapshot, credited, debited, aggregationTime);
+            if (this.lastAggregationTime < transaction.timestamp) {
+                credited += (transaction.credit == snapshot.key() ? transaction.amount : 0);
+                debited += (transaction.debit == snapshot.key() ? transaction.amount : 0);
+                newAggregationTime = Math.max(newAggregationTime, transaction.timestamp);
+            }
+
+            return new AccountAggregate(snapshot, credited, debited, this.lastAggregationTime, newAggregationTime);
         }
     };
 
@@ -56,7 +61,7 @@
 
             this._transactionsReference.on('child_added', transactionSnapshot => {
                 var transaction: ITransactionData = transactionSnapshot.val();
-                this.$log.debug("Transaction received", transaction);
+                this.$log.debug("Transaction received for aggregation", transaction);
 
                 var relatedAccounts: FirebaseDataSnapshot[] =
                     [this._accountMap[transaction.debit], this._accountMap[transaction.credit]];
@@ -69,7 +74,7 @@
                                 this.$log.info("Account " + account.subject + " is not aggregated");
                                 var previous: AccountAggregate =
                                     this._accountsToAggregate[accountSnapshot.key()] ||
-                                    new AccountAggregate(accountSnapshot);
+                                    AccountAggregate.fromAccount(accountSnapshot);
                                 
                                 this._accountsToAggregate[accountSnapshot.key()] = previous.aggregate(transaction);
                                 this.$timeout(() => this.updateAccounts());
@@ -93,7 +98,7 @@
                     aggregate.accountSnapshot.ref().update({
                         credited: aggregate.credited,
                         debited: aggregate.debited,
-                        lastAggregationTime: aggregate.lastAggregationTime,
+                        lastAggregationTime: aggregate.newAggregationTime,
                     });
 
                     delete this._accountsToAggregate[property];

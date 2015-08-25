@@ -16,7 +16,7 @@
                     <div class="row row-fill">
                         <!-- Put further content here -->
                         <ul class="list col">
-                            <li class="item" ng-repeat="command in contextCommands">
+                            <li class="item" ng-repeat="command in contextCommands" ng-if="command.isEnabled">
                                 <a class="row" ng-href="{{command.link}}"><div>{{command.label}}</div></a>
                             </li>
                         </ul>

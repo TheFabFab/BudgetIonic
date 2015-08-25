@@ -9,6 +9,7 @@
 /// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="controllers/delete-account-ctrl.ts" />
+/// <reference path="controllers/allocate-ctrl.ts" />
 
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
@@ -26,7 +27,8 @@ module Budget {
             .controller(MainCtrl.IID, MainCtrl)
             .controller(AccountCtrl.IID, AccountCtrl)
             .controller(NewAccountCtrl.IID, NewAccountCtrl)
-            .controller(DeleteAccountCtrl.IID, DeleteAccountCtrl);
+            .controller(DeleteAccountCtrl.IID, DeleteAccountCtrl)
+            .controller(AllocateBudgetCtrl.IID, AllocateBudgetCtrl);
 
 
     budgetModule
@@ -128,6 +130,18 @@ module Budget {
                     'main-content': {
                         templateUrl: "templates/delete-account.html",
                         //resolve: AccountCtrl.resolve(),   
+                        //controller: NewAccountCtrl.IID,
+                        //controllerAs: 'newAccount',
+                    },
+                },
+            });
+
+            $stateProvider.state("app.allocate", {
+                url: "/allocate/:accountId",
+                views: {
+                    'main-content': {
+                        templateUrl: "templates/allocate.html",
+                        //resolve: AllocateBudgetCtrl.resolve(),   
                         //controller: NewAccountCtrl.IID,
                         //controllerAs: 'newAccount',
                     },

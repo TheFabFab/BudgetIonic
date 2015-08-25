@@ -1,26 +1,37 @@
 ﻿/// <reference path="../constants.ts" />
+/// <reference path="../models/server-interfaces.ts" />
 module Budget {
-    export interface ITransactionData {
-        debit: string;
-        credit: string;
-        amount: number;
-        timestamp: number;
-    }
-
-    export interface IAccountData {
-        subject: string;
-        description: string;
-        parent: string;
-        debited: number;
-        credited: number;
-        lastAggregationTime: number;
-    }
 
     export interface IDataService {
         getAccountSnapshot(key: string): ng.IPromise<FirebaseDataSnapshot>;
         getRootAccountSnapshot(): ng.IPromise<FirebaseDataSnapshot>;
         addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any>;
         deleteAccount(accountId: string): ng.IPromise<any>;
+        addTransaction(transaction: ITransactionData);
+    }
+
+    export class AccountData implements IAccountData {
+        constructor(
+            public subject: string,
+            public description: string,
+            public parent: string,
+            public debited: number,
+            public credited: number,
+            public lastAggregationTime: number,
+            public key: string) {
+        }
+
+        public static copy(other: IAccountData, key: string): AccountData {
+            return new AccountData(
+                other.subject,
+                other.description,
+                other.parent,
+                other.debited,
+                other.credited,
+                other.lastAggregationTime,
+                key);
+        }
+
     }
 
     export class DataService implements IDataService {
@@ -29,7 +40,6 @@ module Budget {
         public static $inject = [
             '$q',
             '$firebaseArray',
-            AggregatorService.IID,
         ];
 
         private _database: Firebase;
@@ -37,21 +47,23 @@ module Budget {
         private _accountsReference: Firebase;
         private _transactionsReference: Firebase;
 
-        constructor(private $q: ng.IQService, $firebaseArray: AngularFireArrayService, aggregatorService: AggregatorService) {
+        constructor(private $q: ng.IQService, $firebaseArray: AngularFireArrayService) {
             console.log("Creating data service");
-
-            aggregatorService.start();
 
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
 
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
 
+            this.ensureData();
+        }
+
+        private ensureData() {
             this._accountsReference
                 .orderByChild("parent")
                 .limitToFirst(1)
                 .once(
-                    FirebaseEvents.value, 
+                    FirebaseEvents.value,
                     snapshot => {
                         if (!snapshot.val()) {
                             this.createDemoData();
@@ -76,7 +88,7 @@ module Budget {
                 var query =
                     this._accountsReference
                         .orderByChild("parent")
-                        .equalTo(null);
+                        .equalTo('');
 
                 query.once(FirebaseEvents.value, snapshot => {
                     var child: FirebaseDataSnapshot;
@@ -169,7 +181,7 @@ module Budget {
             return deferred.promise;
         }
 
-        private addTransaction(transaction: ITransactionData): ng.IPromise<Firebase> {
+        public addTransaction(transaction: ITransactionData): ng.IPromise<Firebase> {
             var deferred = this.$q.defer<Firebase>();
             var reference = this._transactionsReference.push(transaction, x => {
                 deferred.resolve(reference);
@@ -180,17 +192,24 @@ module Budget {
         private createDemoData(): ng.IPromise<{}> {
             var deferred = this.$q.defer();
 
-            this.addAccount('My budget', null, 'This is the root node')
+            console.log("Creating demo data...");
+
+            this.addAccount('My budget', '', 'This is the root node')
                 .then(rootNode => this.$q.all<Firebase>([
-                this.addAccount('Item1', rootNode.key()),
-                this.addAccount('Item2', rootNode.key()),
-                this.addAccount('Item3', rootNode.key())
-                    .then(item3 => this.$q.all<Firebase>([
-                        this.addAccount('Item3.1', item3.key()),
-                        this.addAccount('Item3.2', item3.key()),
-                        this.addAccount('Item3.3', item3.key()),
-                    ]))
-            ]).then(subitems => {
+                    this.addAccount('Item1', rootNode.key()),
+                    this.addAccount('Item2', rootNode.key()),
+                    this.addAccount('Item3', rootNode.key())
+                        .then(item3 => {
+                            this.$q.all<Firebase>([
+                                this.addAccount('Item3.1', item3.key()),
+                                this.addAccount('Item3.2', item3.key()),
+                                this.addAccount('Item3.3', item3.key()),
+                            ]);
+
+                            return item3;
+                        })
+                ])
+                .then(subitems => {
                 this.$q.all<Firebase>([
                     this.addTransaction({
                         debit: null,
@@ -213,7 +232,7 @@ module Budget {
                     this.addTransaction({
                         debit: rootNode.key(),
                         credit: subitems[2].key(),
-                        amount: 20000,
+                        amount: 10000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     })
                 ]).then(x => deferred.resolve());

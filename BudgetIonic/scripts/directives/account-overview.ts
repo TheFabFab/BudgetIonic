@@ -42,12 +42,14 @@ module Budget {
             scope.accountEx = new AccountEx();
 
             scope.$watch('account', () => {
-                scope.accountEx.balance = scope.account.credited - scope.account.debited;
-                scope.accountEx.progress =
+                if (scope.account) {
+                    scope.accountEx.balance = scope.account.credited - scope.account.debited;
+                    scope.accountEx.progress =
                     scope.account.credited
                         ? Math.round(100 * scope.account.debited / scope.account.credited)
                         : 0;
-                scope.accountEx.recalculate();
+                    scope.accountEx.recalculate();
+                }
             });
 
         };

@@ -1,9 +1,11 @@
 var Budget;
 (function (Budget) {
     var Command = (function () {
-        function Command(label, link) {
+        function Command(label, link, isEnabled) {
+            if (isEnabled === void 0) { isEnabled = true; }
             this.label = label;
             this.link = link;
+            this.isEnabled = isEnabled;
         }
         return Command;
     })();
@@ -31,27 +33,28 @@ var Budget;
 var Budget;
 (function (Budget) {
     var AccountAggregate = (function () {
-        function AccountAggregate(accountSnapshot, credited, debited, lastAggregationTime) {
-            if (credited === void 0) { credited = 0; }
-            if (debited === void 0) { debited = 0; }
-            if (lastAggregationTime === void 0) { lastAggregationTime = 0; }
+        function AccountAggregate(accountSnapshot, credited, debited, lastAggregationTime, newAggregationTime) {
             this.accountSnapshot = accountSnapshot;
             this.credited = credited;
             this.debited = debited;
             this.lastAggregationTime = lastAggregationTime;
-            if (this.lastAggregationTime == 0) {
-                var account = accountSnapshot.val();
-                this.credited = account.credited;
-                this.debited = account.debited;
-                this.lastAggregationTime = account.lastAggregationTime;
-            }
+            this.newAggregationTime = newAggregationTime;
         }
+        AccountAggregate.fromAccount = function (accountSnapshot) {
+            var account = accountSnapshot.exportVal();
+            return new AccountAggregate(accountSnapshot, account.credited, account.debited, account.lastAggregationTime, 0);
+        };
         AccountAggregate.prototype.aggregate = function (transaction) {
             var snapshot = this.accountSnapshot;
-            var credited = this.credited + (transaction.credit == snapshot.key() ? transaction.amount : 0);
-            var debited = this.debited + (transaction.debit == snapshot.key() ? transaction.amount : 0);
-            var aggregationTime = (transaction.timestamp > this.lastAggregationTime) ? transaction.timestamp : this.lastAggregationTime;
-            return new AccountAggregate(snapshot, credited, debited, aggregationTime);
+            var credited = this.credited;
+            var debited = this.debited;
+            var newAggregationTime = this.lastAggregationTime;
+            if (this.lastAggregationTime < transaction.timestamp) {
+                credited += (transaction.credit == snapshot.key() ? transaction.amount : 0);
+                debited += (transaction.debit == snapshot.key() ? transaction.amount : 0);
+                newAggregationTime = Math.max(newAggregationTime, transaction.timestamp);
+            }
+            return new AccountAggregate(snapshot, credited, debited, this.lastAggregationTime, newAggregationTime);
         };
         return AccountAggregate;
     })();
@@ -75,7 +78,7 @@ var Budget;
             });
             this._transactionsReference.on('child_added', function (transactionSnapshot) {
                 var transaction = transactionSnapshot.val();
-                _this.$log.debug("Transaction received", transaction);
+                _this.$log.debug("Transaction received for aggregation", transaction);
                 var relatedAccounts = [_this._accountMap[transaction.debit], _this._accountMap[transaction.credit]];
                 relatedAccounts
                     .forEach(function (accountSnapshot) {
@@ -84,7 +87,7 @@ var Budget;
                         if (account.lastAggregationTime < transaction.timestamp) {
                             _this.$log.info("Account " + account.subject + " is not aggregated");
                             var previous = _this._accountsToAggregate[accountSnapshot.key()] ||
-                                new AccountAggregate(accountSnapshot);
+                                AccountAggregate.fromAccount(accountSnapshot);
                             _this._accountsToAggregate[accountSnapshot.key()] = previous.aggregate(transaction);
                             _this.$timeout(function () { return _this.updateAccounts(); });
                         }
@@ -104,7 +107,7 @@ var Budget;
                     aggregate.accountSnapshot.ref().update({
                         credited: aggregate.credited,
                         debited: aggregate.debited,
-                        lastAggregationTime: aggregate.lastAggregationTime,
+                        lastAggregationTime: aggregate.newAggregationTime,
                     });
                     delete this._accountsToAggregate[property];
                 }
@@ -134,17 +137,36 @@ var Budget;
     Budget.FirebaseEvents = FirebaseEvents;
 })(Budget || (Budget = {}));
 /// <reference path="../constants.ts" />
+/// <reference path="../models/server-interfaces.ts" />
 var Budget;
 (function (Budget) {
+    var AccountData = (function () {
+        function AccountData(subject, description, parent, debited, credited, lastAggregationTime, key) {
+            this.subject = subject;
+            this.description = description;
+            this.parent = parent;
+            this.debited = debited;
+            this.credited = credited;
+            this.lastAggregationTime = lastAggregationTime;
+            this.key = key;
+        }
+        AccountData.copy = function (other, key) {
+            return new AccountData(other.subject, other.description, other.parent, other.debited, other.credited, other.lastAggregationTime, key);
+        };
+        return AccountData;
+    })();
+    Budget.AccountData = AccountData;
     var DataService = (function () {
-        function DataService($q, $firebaseArray, aggregatorService) {
-            var _this = this;
+        function DataService($q, $firebaseArray) {
             this.$q = $q;
             console.log("Creating data service");
-            aggregatorService.start();
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
             this._transactionsReference = this._database.child("transactions");
             this._accountsReference = this._database.child("accounts");
+            this.ensureData();
+        }
+        DataService.prototype.ensureData = function () {
+            var _this = this;
             this._accountsReference
                 .orderByChild("parent")
                 .limitToFirst(1)
@@ -153,7 +175,7 @@ var Budget;
                     _this.createDemoData();
                 }
             });
-        }
+        };
         DataService.prototype.getRootAccountSnapshot = function () {
             return this.getAccountSnapshot('');
         };
@@ -166,7 +188,7 @@ var Budget;
             if (key === '') {
                 var query = this._accountsReference
                     .orderByChild("parent")
-                    .equalTo(null);
+                    .equalTo('');
                 query.once(Budget.FirebaseEvents.value, function (snapshot) {
                     var child;
                     snapshot.forEach(function (x) { return child = x; });
@@ -261,17 +283,22 @@ var Budget;
         DataService.prototype.createDemoData = function () {
             var _this = this;
             var deferred = this.$q.defer();
-            this.addAccount('My budget', null, 'This is the root node')
+            console.log("Creating demo data...");
+            this.addAccount('My budget', '', 'This is the root node')
                 .then(function (rootNode) { return _this.$q.all([
                 _this.addAccount('Item1', rootNode.key()),
                 _this.addAccount('Item2', rootNode.key()),
                 _this.addAccount('Item3', rootNode.key())
-                    .then(function (item3) { return _this.$q.all([
-                    _this.addAccount('Item3.1', item3.key()),
-                    _this.addAccount('Item3.2', item3.key()),
-                    _this.addAccount('Item3.3', item3.key()),
-                ]); })
-            ]).then(function (subitems) {
+                    .then(function (item3) {
+                    _this.$q.all([
+                        _this.addAccount('Item3.1', item3.key()),
+                        _this.addAccount('Item3.2', item3.key()),
+                        _this.addAccount('Item3.3', item3.key()),
+                    ]);
+                    return item3;
+                })
+            ])
+                .then(function (subitems) {
                 _this.$q.all([
                     _this.addTransaction({
                         debit: null,
@@ -294,7 +321,7 @@ var Budget;
                     _this.addTransaction({
                         debit: rootNode.key(),
                         credit: subitems[2].key(),
-                        amount: 20000,
+                        amount: 10000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     })
                 ]).then(function (x) { return deferred.resolve(); });
@@ -305,7 +332,6 @@ var Budget;
         DataService.$inject = [
             '$q',
             '$firebaseArray',
-            Budget.AggregatorService.IID,
         ];
         return DataService;
     })();
@@ -376,12 +402,14 @@ var Budget;
             this.link = function (scope, elements) {
                 scope.accountEx = new AccountEx();
                 scope.$watch('account', function () {
-                    scope.accountEx.balance = scope.account.credited - scope.account.debited;
-                    scope.accountEx.progress =
-                        scope.account.credited
-                            ? Math.round(100 * scope.account.debited / scope.account.credited)
-                            : 0;
-                    scope.accountEx.recalculate();
+                    if (scope.account) {
+                        scope.accountEx.balance = scope.account.credited - scope.account.debited;
+                        scope.accountEx.progress =
+                            scope.account.credited
+                                ? Math.round(100 * scope.account.debited / scope.account.credited)
+                                : 0;
+                        scope.accountEx.recalculate();
+                    }
                 });
             };
             $log.debug("Constructing account overview");
@@ -413,6 +441,10 @@ var Budget;
             this.commandService = commandService;
             this.accountSnapshot = accountSnapshot;
             $log.debug("Initializing account controller", arguments);
+            var accountData = accountSnapshot.exportVal();
+            this.addSubaccountCommand = new Budget.Command("Add subaccount to " + accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
+            this.deleteCommand = new Budget.Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key(), false);
+            this.allocateBudgetCommand = new Budget.Command("Allocate budget", "/#/budget/allocate/" + this.accountSnapshot.key());
             $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
             var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
             var childrenQuery = accounts
@@ -429,8 +461,13 @@ var Budget;
                 .equalTo(accountSnapshot.key());
             $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
             $scope.$on('$ionicView.enter', function () {
+                $log.debug("Entering account controller", _this.$scope);
+                _this.updateContextCommands();
                 _this.setContextCommands();
             });
+            $scope.subAccounts.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
+            $scope.creditTransactions.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
+            $scope.debitTransactions.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
         }
         AccountCtrl.resolve = function () {
             return {
@@ -443,10 +480,19 @@ var Budget;
             var accountId = $stateParams.accountId || '';
             return dataService.getAccountSnapshot(accountId);
         };
+        AccountCtrl.prototype.updateContextCommands = function () {
+            var hasData = this.$scope.subAccounts.length == 0 &&
+                this.$scope.creditTransactions.length == 0 &&
+                this.$scope.debitTransactions.length == 0;
+            if (this.deleteCommand != null) {
+                this.deleteCommand.isEnabled = hasData;
+            }
+        };
         AccountCtrl.prototype.setContextCommands = function () {
             this.commandService.registerContextCommands([
-                new Budget.Command("Add subaccount to " + this.$scope.accountData.subject, "/#/budget/new/" + this.accountSnapshot.key()),
-                new Budget.Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key()),
+                this.allocateBudgetCommand,
+                this.addSubaccountCommand,
+                this.deleteCommand,
             ]);
         };
         AccountCtrl.IID = "accountCtrl";
@@ -518,7 +564,7 @@ var Budget;
         DeleteAccountCtrl.prototype.ok = function () {
             var _this = this;
             this.dataService.deleteAccount(this.accountId)
-                .then(function (x) { return _this.$ionicHistory.goBack(); });
+                .then(function (x) { return _this.$ionicHistory.goBack(2); });
         };
         DeleteAccountCtrl.prototype.cancel = function () {
             this.$ionicHistory.goBack();
@@ -534,6 +580,88 @@ var Budget;
     })();
     Budget.DeleteAccountCtrl = DeleteAccountCtrl;
 })(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    'use strict';
+    var AllocateBudgetCtrl = (function () {
+        function AllocateBudgetCtrl($stateParams, $scope, $firebaseObject, $firebaseArray, $log, $ionicHistory, $q, dataService) {
+            var _this = this;
+            this.$scope = $scope;
+            this.$firebaseObject = $firebaseObject;
+            this.$firebaseArray = $firebaseArray;
+            this.$log = $log;
+            this.$ionicHistory = $ionicHistory;
+            this.$q = $q;
+            this.dataService = dataService;
+            this.amount = 0;
+            $log.debug("Initializing allocate controller", arguments);
+            this.creditAccountId = $stateParams.accountId || 'root';
+            this.dataService.getAccountSnapshot(this.creditAccountId)
+                .then(function (snapshot) {
+                _this.creditAccount = snapshot.exportVal();
+            })
+                .then(function (x) {
+                _this.getAncestors().then(function (ancestors) { return _this.ancestors = ancestors; });
+            });
+        }
+        AllocateBudgetCtrl.prototype.ok = function () {
+            var _this = this;
+            if (this.debitAccount) {
+                this.dataService.addTransaction({
+                    amount: this.amount,
+                    debit: this.debitAccount.key,
+                    credit: this.creditAccountId,
+                    timestamp: Firebase.ServerValue.TIMESTAMP
+                })
+                    .then(function (x) { return _this.$ionicHistory.goBack(); });
+            }
+        };
+        AllocateBudgetCtrl.prototype.cancel = function () {
+            this.$ionicHistory.goBack();
+        };
+        AllocateBudgetCtrl.prototype.getAncestors = function (account) {
+            var _this = this;
+            if (account === void 0) { account = null; }
+            if (!account)
+                account = this.creditAccount;
+            var deferred = this.$q.defer();
+            if (account.parent) {
+                this.dataService.getAccountSnapshot(account.parent)
+                    .then(function (parentSnapshot) {
+                    if (parentSnapshot) {
+                        var parent = Budget.AccountData.copy(parentSnapshot.exportVal(), parentSnapshot.key());
+                        _this.$log.debug("Ancestor:", parent);
+                        _this.getAncestors(parent)
+                            .then(function (parentAncestors) {
+                            parentAncestors.push(parent);
+                            deferred.resolve(parentAncestors);
+                        });
+                    }
+                    else {
+                        deferred.resolve([]);
+                    }
+                });
+            }
+            else {
+                deferred.resolve([]);
+            }
+            return deferred.promise;
+        };
+        AllocateBudgetCtrl.IID = "allocateBudgetCtrl";
+        AllocateBudgetCtrl.$inject = [
+            '$stateParams',
+            '$scope',
+            "$firebaseObject",
+            "$firebaseArray",
+            "$log",
+            "$ionicHistory",
+            "$q",
+            Budget.DataService.IID,
+        ];
+        return AllocateBudgetCtrl;
+    })();
+    Budget.AllocateBudgetCtrl = AllocateBudgetCtrl;
+})(Budget || (Budget = {}));
 /// <reference path="services/command-service.ts" />
 /// <reference path="services/aggregator-service.ts" />
 /// <reference path="services/data-service.ts" />
@@ -545,6 +673,7 @@ var Budget;
 /// <reference path="controllers/account-ctrl.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="controllers/delete-account-ctrl.ts" />
+/// <reference path="controllers/allocate-ctrl.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 
@@ -560,7 +689,8 @@ var Budget;
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
         .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
         .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl)
-        .controller(Budget.DeleteAccountCtrl.IID, Budget.DeleteAccountCtrl);
+        .controller(Budget.DeleteAccountCtrl.IID, Budget.DeleteAccountCtrl)
+        .controller(Budget.AllocateBudgetCtrl.IID, Budget.AllocateBudgetCtrl);
     budgetModule
         .run(function ($ionicPlatform, $rootScope) {
         $ionicPlatform.ready(function () {
@@ -642,6 +772,14 @@ var Budget;
             views: {
                 'main-content': {
                     templateUrl: "templates/delete-account.html",
+                },
+            },
+        });
+        $stateProvider.state("app.allocate", {
+            url: "/allocate/:accountId",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/allocate.html",
                 },
             },
         });

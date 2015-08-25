@@ -1,0 +1,28 @@
+﻿<ion-view>
+    <ion-content class="has-header" padding="false" ng-controller="allocateBudgetCtrl as vm">
+        <form>
+            <div class="row">
+                <p class="question">Allocate budget to '{{vm.creditAccount.subject}}'</p>
+            </div>
+            <div class="list list-inset">
+                <div class="item item-input">
+                    <label class="item-stacked-label col col-fill">
+                        <span class="input-label">Amount</span>
+                        <input type="number" autofocus placeholder="Amount" ng-model="vm.amount">
+                    </label>
+                </div>
+                <label ng-repeat="ancestor in vm.ancestors" class="item item-radio">
+                    <input type="radio" name="group" ng-value="ancestor" ng-model="vm.debitAccount">
+                    <div class="item-content">{{ancestor.subject}}</div>
+                    <i class="radio-icon ion-checkmark"></i>
+                </label>
+            </div>
+            <div class="row">
+                <div class="row dialog-button-container">
+                    <button class="button button-positive" ng-click="vm.ok()">Allocate</button>
+                    <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </ion-content>
+</ion-view>
