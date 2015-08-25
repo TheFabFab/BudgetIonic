@@ -1,5 +1,4 @@
 /// <reference path="services/command-service.ts" />
-/// <reference path="services/aggregator-service.ts" />
 /// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
 /// <reference path="directives/account-overview.ts" />
@@ -20,7 +19,6 @@ module Budget {
 
     var budgetModule =
         angular.module('budget-app', ['ionic', 'firebase'])
-            .service(AggregatorService.IID, AggregatorService)
             .service(DataService.IID, DataService)
             .service(CommandService.IID, CommandService)
             .directive(AccountOverview.IID, AccountOverview.factory())

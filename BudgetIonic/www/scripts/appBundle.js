@@ -32,98 +32,6 @@ var Budget;
 })(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
-    var AccountAggregate = (function () {
-        function AccountAggregate(accountSnapshot, credited, debited, lastAggregationTime, newAggregationTime) {
-            this.accountSnapshot = accountSnapshot;
-            this.credited = credited;
-            this.debited = debited;
-            this.lastAggregationTime = lastAggregationTime;
-            this.newAggregationTime = newAggregationTime;
-        }
-        AccountAggregate.fromAccount = function (accountSnapshot) {
-            var account = accountSnapshot.exportVal();
-            return new AccountAggregate(accountSnapshot, account.credited, account.debited, account.lastAggregationTime, 0);
-        };
-        AccountAggregate.prototype.aggregate = function (transaction) {
-            var snapshot = this.accountSnapshot;
-            var credited = this.credited;
-            var debited = this.debited;
-            var newAggregationTime = this.lastAggregationTime;
-            if (this.lastAggregationTime < transaction.timestamp) {
-                credited += (transaction.credit == snapshot.key() ? transaction.amount : 0);
-                debited += (transaction.debit == snapshot.key() ? transaction.amount : 0);
-                newAggregationTime = Math.max(newAggregationTime, transaction.timestamp);
-            }
-            return new AccountAggregate(snapshot, credited, debited, this.lastAggregationTime, newAggregationTime);
-        };
-        return AccountAggregate;
-    })();
-    ;
-    var AggregatorService = (function () {
-        function AggregatorService($log, $timeout) {
-            this.$log = $log;
-            this.$timeout = $timeout;
-            this._accountMap = [];
-            this._accountsToAggregate = [];
-            this._database = new Firebase("https://budgetionic.firebaseio.com/");
-            this._transactionsReference = this._database.child("transactions");
-            this._accountsReference = this._database.child("accounts");
-        }
-        AggregatorService.prototype.start = function () {
-            var _this = this;
-            this.$log.debug("Starting aggregator service");
-            this._accountsReference.on('child_added', function (accountSnapshot) {
-                _this.$log.debug("Received account", accountSnapshot.val());
-                _this._accountMap[accountSnapshot.key()] = accountSnapshot;
-            });
-            this._transactionsReference.on('child_added', function (transactionSnapshot) {
-                var transaction = transactionSnapshot.val();
-                _this.$log.debug("Transaction received for aggregation", transaction);
-                var relatedAccounts = [_this._accountMap[transaction.debit], _this._accountMap[transaction.credit]];
-                relatedAccounts
-                    .forEach(function (accountSnapshot) {
-                    if (accountSnapshot != null) {
-                        var account = accountSnapshot.val();
-                        if (account.lastAggregationTime < transaction.timestamp) {
-                            _this.$log.info("Account " + account.subject + " is not aggregated");
-                            var previous = _this._accountsToAggregate[accountSnapshot.key()] ||
-                                AccountAggregate.fromAccount(accountSnapshot);
-                            _this._accountsToAggregate[accountSnapshot.key()] = previous.aggregate(transaction);
-                            _this.$timeout(function () { return _this.updateAccounts(); });
-                        }
-                    }
-                });
-            });
-        };
-        AggregatorService.prototype.updateAccounts = function () {
-            var logged = false;
-            for (var property in this._accountsToAggregate) {
-                if (this._accountsToAggregate.hasOwnProperty(property)) {
-                    if (!logged) {
-                        this.$log.debug("Preparing to update accounts:", this._accountsToAggregate);
-                        logged = true;
-                    }
-                    var aggregate = this._accountsToAggregate[property];
-                    aggregate.accountSnapshot.ref().update({
-                        credited: aggregate.credited,
-                        debited: aggregate.debited,
-                        lastAggregationTime: aggregate.newAggregationTime,
-                    });
-                    delete this._accountsToAggregate[property];
-                }
-            }
-        };
-        AggregatorService.IID = "aggregatorService";
-        AggregatorService.$inject = [
-            "$log",
-            '$timeout',
-        ];
-        return AggregatorService;
-    })();
-    Budget.AggregatorService = AggregatorService;
-})(Budget || (Budget = {}));
-var Budget;
-(function (Budget) {
     var FirebaseEvents = (function () {
         function FirebaseEvents() {
         }
@@ -663,7 +571,6 @@ var Budget;
     Budget.AllocateBudgetCtrl = AllocateBudgetCtrl;
 })(Budget || (Budget = {}));
 /// <reference path="services/command-service.ts" />
-/// <reference path="services/aggregator-service.ts" />
 /// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
 /// <reference path="directives/account-overview.ts" />
@@ -682,7 +589,6 @@ var Budget;
 (function (Budget) {
     "use strict";
     var budgetModule = angular.module('budget-app', ['ionic', 'firebase'])
-        .service(Budget.AggregatorService.IID, Budget.AggregatorService)
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.CommandService.IID, Budget.CommandService)
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
