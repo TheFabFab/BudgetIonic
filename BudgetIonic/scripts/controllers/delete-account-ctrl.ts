@@ -6,6 +6,7 @@
 
         public static $inject = [
             '$stateParams',
+            '$state',
             '$ionicHistory',
             '$log',
             DataService.IID
@@ -16,6 +17,7 @@
 
         constructor(
             $stateParams,
+            private $state: ng.ui.IStateService,
             private $ionicHistory,
             $log: ng.ILogService,
             private dataService: IDataService) {
@@ -31,7 +33,7 @@
 
         public ok(): void {
             this.dataService.deleteAccount(this.accountId)
-                .then(x => this.$ionicHistory.goBack(2));
+                .then(x => this.$state.go("app.budget-account", <IAccountStateParams>{ accountId: this.account.parent }));
         }
 
         public cancel(): void {

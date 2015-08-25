@@ -12,7 +12,7 @@ module Budget {
         addSubAccount: () => void;
     }
 
-    interface IAccountStateParams {
+    export interface IAccountStateParams {
         accountId: string;
     }
 

@@ -458,8 +458,9 @@ var Budget;
 (function (Budget) {
     'use strict';
     var DeleteAccountCtrl = (function () {
-        function DeleteAccountCtrl($stateParams, $ionicHistory, $log, dataService) {
+        function DeleteAccountCtrl($stateParams, $state, $ionicHistory, $log, dataService) {
             var _this = this;
+            this.$state = $state;
             this.$ionicHistory = $ionicHistory;
             this.dataService = dataService;
             $log.debug("Initializing delete account controller", $stateParams);
@@ -472,7 +473,7 @@ var Budget;
         DeleteAccountCtrl.prototype.ok = function () {
             var _this = this;
             this.dataService.deleteAccount(this.accountId)
-                .then(function (x) { return _this.$ionicHistory.goBack(2); });
+                .then(function (x) { return _this.$state.go("app.budget-account", { accountId: _this.account.parent }); });
         };
         DeleteAccountCtrl.prototype.cancel = function () {
             this.$ionicHistory.goBack();
@@ -480,6 +481,7 @@ var Budget;
         DeleteAccountCtrl.IID = "deleteAccountCtrl";
         DeleteAccountCtrl.$inject = [
             '$stateParams',
+            '$state',
             '$ionicHistory',
             '$log',
             Budget.DataService.IID
