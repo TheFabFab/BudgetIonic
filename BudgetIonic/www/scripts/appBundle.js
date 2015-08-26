@@ -476,7 +476,7 @@ var Budget;
                 .then(function (x) { return _this.$state.go("app.budget-account", { accountId: _this.account.parent }); });
         };
         DeleteAccountCtrl.prototype.cancel = function () {
-            this.$ionicHistory.goBack();
+            this.$state.go("app.budget-account", { accountId: this.accountId });
         };
         DeleteAccountCtrl.IID = "deleteAccountCtrl";
         DeleteAccountCtrl.$inject = [
@@ -493,10 +493,18 @@ var Budget;
 var Budget;
 (function (Budget) {
     'use strict';
+    var HelperCommand = (function () {
+        function HelperCommand(label, action) {
+            this.label = label;
+            this.action = action;
+        }
+        return HelperCommand;
+    })();
     var AllocateBudgetCtrl = (function () {
-        function AllocateBudgetCtrl($stateParams, $scope, $firebaseObject, $firebaseArray, $log, $ionicHistory, $q, dataService) {
+        function AllocateBudgetCtrl($stateParams, $scope, $state, $firebaseObject, $firebaseArray, $log, $ionicHistory, $q, dataService) {
             var _this = this;
             this.$scope = $scope;
+            this.$state = $state;
             this.$firebaseObject = $firebaseObject;
             this.$firebaseArray = $firebaseArray;
             this.$log = $log;
@@ -504,6 +512,8 @@ var Budget;
             this.$q = $q;
             this.dataService = dataService;
             this.amount = 0;
+            this.isEnabled = false;
+            this.helperCommands = [];
             $log.debug("Initializing allocate controller", arguments);
             this.creditAccountId = $stateParams.accountId || 'root';
             this.dataService.getAccountSnapshot(this.creditAccountId)
@@ -511,8 +521,16 @@ var Budget;
                 _this.creditAccount = snapshot.exportVal();
             })
                 .then(function (x) {
-                _this.getAncestors().then(function (ancestors) { return _this.ancestors = ancestors; });
-            });
+                _this.getAncestors()
+                    .then(function (ancestors) {
+                    console.assert(ancestors.length > 0);
+                    _this.ancestors = ancestors;
+                    _this.debitAccount = ancestors[0];
+                });
+            })
+                .then(function (_) { return _this.validate(); });
+            var us1 = this.$scope.$watch(function () { return _this.amount; }, function (_) { return _this.validate(); });
+            var us2 = this.$scope.$watch(function () { return _this.debitAccount; }, function (_) { return _this.validate(); });
         }
         AllocateBudgetCtrl.prototype.ok = function () {
             var _this = this;
@@ -552,12 +570,33 @@ var Budget;
                     });
                     // wait for all to get saved, then return
                     this.$q.all(promises)
-                        .then(function (x) { return _this.$ionicHistory.goBack(); });
+                        .then(function (x) { return _this.close(); });
                 }
             }
         };
         AllocateBudgetCtrl.prototype.cancel = function () {
-            this.$ionicHistory.goBack();
+            this.close();
+        };
+        AllocateBudgetCtrl.prototype.close = function () {
+            this.$state.go("app.budget-account", { accountId: this.creditAccount.parent });
+        };
+        AllocateBudgetCtrl.prototype.validate = function () {
+            var _this = this;
+            var result = false;
+            this.helperCommands = [];
+            if (this.creditAccount != null &&
+                this.debitAccount != null &&
+                this.amount > 0) {
+                var debitAccountBalance = this.debitAccount.credited - this.debitAccount.debited;
+                if (debitAccountBalance < this.amount) {
+                    this.helperCommands.push(new HelperCommand("The balance  on '" + this.debitAccount.subject + "' is " + debitAccountBalance + ". Tap to adjust the amount.", function () { return _this.amount = debitAccountBalance; }));
+                    this.helperCommands.push(new HelperCommand("Or you could get the amount from free balances", null));
+                }
+                else {
+                    result = true;
+                }
+            }
+            this.isEnabled = result;
         };
         AllocateBudgetCtrl.prototype.getAncestors = function (account) {
             var _this = this;
@@ -591,6 +630,7 @@ var Budget;
         AllocateBudgetCtrl.$inject = [
             '$stateParams',
             '$scope',
+            '$state',
             "$firebaseObject",
             "$firebaseArray",
             "$log",

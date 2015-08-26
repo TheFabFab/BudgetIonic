@@ -37,7 +37,7 @@
         }
 
         public cancel(): void {
-            this.$ionicHistory.goBack();
+            this.$state.go("app.budget-account", <IAccountStateParams>{ accountId: this.accountId });
         }
     }
 }
