@@ -10,4 +10,5 @@ interface Firebase {
 	 * Atomically modifies the data at this location.
 	 */
     transaction<T>(updateFunction: (currentData: T) => T, onComplete?: (error: any, committed: boolean, snapshot: FirebaseDataSnapshot) => void, applyLocally?: boolean): void;
+    transaction<T>(updateFunction: (account: T) => any);
 }

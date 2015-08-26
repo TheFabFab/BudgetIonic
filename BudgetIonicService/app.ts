@@ -7,7 +7,7 @@ var database = new Firebase("https://budgetionic.firebaseio.com/");
 var transactionsReference = database.child("transactions");
 var accountsReference = database.child("accounts");
 
-accountsReference.once('value', accountsSnapshot => {
+accountsReference.once("value", accountsSnapshot => {
     accountsSnapshot.forEach(accountSnapshot => {
         var accountReference = accountsReference.child(accountSnapshot.key());
         console.log(accountReference.key(), accountSnapshot.exportVal());
@@ -28,12 +28,12 @@ accountsReference.once('value', accountsSnapshot => {
         });
     });
 
-    transactionsReference.on('child_added', transactionSnapshot => {
+    transactionsReference.on("child_added", transactionSnapshot => {
 
         var transaction = transactionSnapshot.exportVal<Budget.ITransactionData>();
         console.log("Received transaction", transaction);
 
-        if (transaction.credit && transaction.credit != '') {
+        if (transaction.credit && transaction.credit !== "") {
             accountsReference.child(transaction.credit)
                 .transaction<Budget.IAccountData>(oldValue => {
                     if (oldValue) {
@@ -51,7 +51,7 @@ accountsReference.once('value', accountsSnapshot => {
             });
         }
 
-        if (transaction.debit && transaction.debit != '') {
+        if (transaction.debit && transaction.debit !== "") {
             accountsReference.child(transaction.debit)
                 .transaction<Budget.IAccountData>(oldValue => {
                     if (oldValue) {

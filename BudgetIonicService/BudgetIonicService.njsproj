@@ -33,6 +33,9 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <TypeScriptCompile Include="..\BudgetIonic\scripts\models\server-interfaces.ts">
+      <Link>Scripts\typings\server-interfaces.ts</Link>
+    </TypeScriptCompile>
     <TypeScriptCompile Include="app.ts" />
     <Content Include="package.json" />
     <Content Include="README.md" />
