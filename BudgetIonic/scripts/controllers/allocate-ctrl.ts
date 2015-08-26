@@ -48,13 +48,51 @@
 
         public ok(): void {
             if (this.debitAccount) {
-                this.dataService.addTransaction({
-                    amount: this.amount,
-                    debit: this.debitAccount.key,
-                    credit: this.creditAccountId,
-                    timestamp: Firebase.ServerValue.TIMESTAMP
-                })
-                .then(x => this.$ionicHistory.goBack());
+                var promises: ng.IPromise<any>[] = [];
+
+                var balance = this.debitAccount.credited - this.debitAccount.debited;
+                if (this.amount < this.amount) {
+                    /// TODO: Error handling
+                    if (this.debitAccount.parent == null) {
+                    } else {
+                    }
+                } else {
+                    // Bubble up the amount to the requested account
+                    var previousAccount = null;
+
+                    // make a copy
+                    var accounts = this.ancestors.slice(0);
+
+                    // add the credit account itself
+                    accounts.push(AccountData.copy(this.creditAccount, this.creditAccountId));
+
+                    // remove up to (including) the debit account
+                    while (previousAccount == null || previousAccount.key != this.debitAccount.key) {
+                        previousAccount = accounts.shift();
+                    }
+
+                    // do the credit bubbling
+                    accounts.forEach(account => {
+                        var debitAccount = previousAccount;
+                        var creditAccount = account;
+
+                        var promise =
+                            this.dataService.addTransaction({
+                                amount: this.amount,
+                                debit: debitAccount.key,
+                                credit: creditAccount.key,
+                                timestamp: Firebase.ServerValue.TIMESTAMP
+                            });
+
+                        promises.push(promise);
+
+                        previousAccount = account;
+                    });
+
+                    // wait for all to get saved, then return
+                    this.$q.all(promises)
+                        .then(x => this.$ionicHistory.goBack());
+                }
             }
         }
 

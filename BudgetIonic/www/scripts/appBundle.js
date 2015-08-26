@@ -517,13 +517,43 @@ var Budget;
         AllocateBudgetCtrl.prototype.ok = function () {
             var _this = this;
             if (this.debitAccount) {
-                this.dataService.addTransaction({
-                    amount: this.amount,
-                    debit: this.debitAccount.key,
-                    credit: this.creditAccountId,
-                    timestamp: Firebase.ServerValue.TIMESTAMP
-                })
-                    .then(function (x) { return _this.$ionicHistory.goBack(); });
+                var promises = [];
+                var balance = this.debitAccount.credited - this.debitAccount.debited;
+                if (this.amount < this.amount) {
+                    /// TODO: Error handling
+                    if (this.debitAccount.parent == null) {
+                    }
+                    else {
+                    }
+                }
+                else {
+                    // Bubble up the amount to the requested account
+                    var previousAccount = null;
+                    // make a copy
+                    var accounts = this.ancestors.slice(0);
+                    // add the credit account itself
+                    accounts.push(Budget.AccountData.copy(this.creditAccount, this.creditAccountId));
+                    // remove up to (including) the debit account
+                    while (previousAccount == null || previousAccount.key != this.debitAccount.key) {
+                        previousAccount = accounts.shift();
+                    }
+                    // do the credit bubbling
+                    accounts.forEach(function (account) {
+                        var debitAccount = previousAccount;
+                        var creditAccount = account;
+                        var promise = _this.dataService.addTransaction({
+                            amount: _this.amount,
+                            debit: debitAccount.key,
+                            credit: creditAccount.key,
+                            timestamp: Firebase.ServerValue.TIMESTAMP
+                        });
+                        promises.push(promise);
+                        previousAccount = account;
+                    });
+                    // wait for all to get saved, then return
+                    this.$q.all(promises)
+                        .then(function (x) { return _this.$ionicHistory.goBack(); });
+                }
             }
         };
         AllocateBudgetCtrl.prototype.cancel = function () {
