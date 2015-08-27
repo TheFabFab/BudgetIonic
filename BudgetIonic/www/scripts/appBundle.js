@@ -295,6 +295,8 @@ var Budget;
             var progress = this.progress || 0;
             this.warning = progress > 90;
             this.error = progress > 100;
+            if (progress > 100)
+                progress = 100;
             var alpha = 2 * Math.PI * progress / 100;
             var x = 40 + 35 * Math.sin(alpha);
             var y = 40 - 35 * Math.cos(alpha);
@@ -324,7 +326,9 @@ var Budget;
                             scope.account.credited
                                 ? Math.round(100 * scope.account.debited / scope.account.credited)
                                 : 0;
-                        scope.showSpent = scope.accountEx.progress > 0;
+                        var spent = scope.accountEx.progress;
+                        scope.showArc = spent > 0 && spent < 100;
+                        scope.showFullCircle = spent >= 100;
                         scope.accountEx.recalculate();
                     }
                 });
@@ -370,6 +374,7 @@ var Budget;
             this.addSubaccountCommand = new Budget.Command("Add subaccount to " + accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
             this.deleteCommand = new Budget.Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key(), false);
             this.allocateBudgetCommand = new Budget.Command("Allocate budget", "/#/budget/allocate/" + this.accountSnapshot.key());
+            this.addExpenseCommand = new Budget.Command("Register expense", "/#/budget/expense/" + this.accountSnapshot.key());
             $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
             var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
             var childrenQuery = accounts
@@ -435,6 +440,7 @@ var Budget;
         AccountCtrl.prototype.setContextCommands = function () {
             this.commandService.registerContextCommands([
                 this.allocateBudgetCommand,
+                this.addExpenseCommand,
                 this.addSubaccountCommand,
                 this.deleteCommand,
             ]);
@@ -680,6 +686,71 @@ var Budget;
     })();
     Budget.AllocateBudgetCtrl = AllocateBudgetCtrl;
 })(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    "use strict";
+    var AddExpenseCtrl = (function () {
+        function AddExpenseCtrl($stateParams, $scope, $state, $firebaseObject, $firebaseArray, $log, $ionicHistory, $q, dataService) {
+            var _this = this;
+            this.$scope = $scope;
+            this.$state = $state;
+            this.$firebaseObject = $firebaseObject;
+            this.$firebaseArray = $firebaseArray;
+            this.$log = $log;
+            this.$ionicHistory = $ionicHistory;
+            this.$q = $q;
+            this.dataService = dataService;
+            this.amount = 0;
+            this.isEnabled = false;
+            $log.debug("Initializing add expense controller", arguments);
+            var debitAccountId = $stateParams.accountId || "root";
+            this.dataService.getAccountSnapshot(debitAccountId)
+                .then(function (snapshot) {
+                _this.debitAccount = Budget.AccountData.copy(snapshot.exportVal(), snapshot.key());
+                _this.validate();
+            });
+            var us1 = this.$scope.$watch(function () { return _this.amount; }, function (_) { return _this.validate(); });
+        }
+        AddExpenseCtrl.prototype.ok = function () {
+            var _this = this;
+            this.dataService.addTransaction({
+                amount: this.amount,
+                credit: "",
+                creditAccountName: "",
+                debit: this.debitAccount.key,
+                debitAccountName: this.debitAccount.subject,
+                timestamp: Firebase.ServerValue.TIMESTAMP
+            }).then(function (x) { return _this.close(); });
+        };
+        AddExpenseCtrl.prototype.cancel = function () {
+            this.close();
+        };
+        AddExpenseCtrl.prototype.close = function () {
+            this.$state.go("app.budget-account", { accountId: this.debitAccount.key });
+        };
+        AddExpenseCtrl.prototype.validate = function () {
+            var result = false;
+            if (this.debitAccount.credited - this.debitAccount.debited >= this.amount) {
+                result = true;
+            }
+            this.isEnabled = result;
+        };
+        AddExpenseCtrl.IID = "addExpenseCtrl";
+        AddExpenseCtrl.$inject = [
+            '$stateParams',
+            '$scope',
+            '$state',
+            "$firebaseObject",
+            "$firebaseArray",
+            "$log",
+            "$ionicHistory",
+            "$q",
+            Budget.DataService.IID,
+        ];
+        return AddExpenseCtrl;
+    })();
+    Budget.AddExpenseCtrl = AddExpenseCtrl;
+})(Budget || (Budget = {}));
 /// <reference path="services/command-service.ts" />
 /// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
@@ -691,6 +762,7 @@ var Budget;
 /// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="controllers/delete-account-ctrl.ts" />
 /// <reference path="controllers/allocate-ctrl.ts" />
+/// <reference path="controllers/add-expense-ctrl.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 
@@ -706,7 +778,8 @@ var Budget;
         .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
         .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl)
         .controller(Budget.DeleteAccountCtrl.IID, Budget.DeleteAccountCtrl)
-        .controller(Budget.AllocateBudgetCtrl.IID, Budget.AllocateBudgetCtrl);
+        .controller(Budget.AllocateBudgetCtrl.IID, Budget.AllocateBudgetCtrl)
+        .controller(Budget.AddExpenseCtrl.IID, Budget.AddExpenseCtrl);
     budgetModule
         .run(function ($ionicPlatform, $rootScope) {
         $ionicPlatform.ready(function () {
@@ -796,6 +869,14 @@ var Budget;
             views: {
                 'main-content': {
                     templateUrl: "templates/allocate.html",
+                },
+            },
+        });
+        $stateProvider.state("app.expense", {
+            url: "/expense/:accountId",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/expense.html",
                 },
             },
         });

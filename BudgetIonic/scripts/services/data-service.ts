@@ -7,7 +7,7 @@ module Budget {
         getRootAccountSnapshot(): ng.IPromise<FirebaseDataSnapshot>;
         addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any>;
         deleteAccount(accountId: string): ng.IPromise<any>;
-        addTransaction(transaction: ITransactionData);
+        addTransaction(transaction: ITransactionData): ng.IPromise<any>;
     }
 
     export class AccountData implements IAccountData {

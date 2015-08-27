@@ -42,6 +42,7 @@ module Budget {
         private addSubaccountCommand: Command;
         private deleteCommand: Command;
         private allocateBudgetCommand: Command;
+        private addExpenseCommand: Command;
 
         private transactions: TransactionViewModel[] = [];
 
@@ -71,6 +72,7 @@ module Budget {
             this.addSubaccountCommand = new Command("Add subaccount to " + accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
             this.deleteCommand = new Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key(), false);
             this.allocateBudgetCommand = new Command("Allocate budget", "/#/budget/allocate/" + this.accountSnapshot.key());
+            this.addExpenseCommand = new Command("Register expense", "/#/budget/expense/" + this.accountSnapshot.key());
 
             $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
 
@@ -144,6 +146,7 @@ module Budget {
         public setContextCommands(): void {
             this.commandService.registerContextCommands([
                 this.allocateBudgetCommand,
+                this.addExpenseCommand,
                 this.addSubaccountCommand,
                 this.deleteCommand,
             ]);

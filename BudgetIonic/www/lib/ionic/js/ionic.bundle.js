@@ -25147,7 +25147,7 @@ var originUrl = urlResolve(window.location.href);
  *   | href          | A normalized version of the provided URL if it was not an absolute URL |
  *   | protocol      | The protocol including the trailing colon                              |
  *   | host          | The host and port (if the port is non-default) of the normalizedUrl    |
- *   | search        | The search params, minus the question mark                             |
+ *   | search        | The search params, minus the dialog-title mark                             |
  *   | hash          | The hash string, minus the hash symbol
  *   | hostname      | The hostname
  *   | port          | The port, without ":"

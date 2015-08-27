@@ -4,7 +4,8 @@ module Budget {
     interface IAccountOverviewScope extends ng.IScope {
         account: any;
         showLabels: boolean;
-        showSpent: boolean;
+        showArc: boolean;
+        showFullCircle: boolean;
         accountEx: AccountEx;
     }
 
@@ -21,6 +22,7 @@ module Budget {
             var progress = this.progress || 0;
             this.warning = progress > 90;
             this.error = progress > 100;
+            if (progress > 100) progress = 100;
             var alpha = 2 * Math.PI * progress / 100;
             var x = 40 + 35 * Math.sin(alpha);
             var y = 40 - 35 * Math.cos(alpha);
@@ -49,7 +51,10 @@ module Budget {
                         scope.account.credited
                             ? Math.round(100 * scope.account.debited / scope.account.credited)
                         : 0;
-                    scope.showSpent = scope.accountEx.progress > 0;
+
+                    var spent = scope.accountEx.progress;
+                    scope.showArc = spent > 0 && spent < 100;
+                    scope.showFullCircle = spent >= 100;
                     scope.accountEx.recalculate();
                 }
             });

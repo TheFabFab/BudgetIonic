@@ -39,10 +39,16 @@
   opacity: 0.4;
 }
 
-.question {
+.dialog-title {
     font-size: x-large;
     margin: 20px;
     text-align: center;
+}
+
+.dialog-sub-title {
+    font-size: medium;
+    margin-left: 20px;
+    text-align: center;    
 }
 
 .budget-name {
