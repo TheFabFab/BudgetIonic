@@ -128,16 +128,16 @@
     text-align: right;
 }
 
-.budget-remaining {
-    font-size: 14px;
+.account-overview-balance {
+    font-size: 16px;
     font-weight: 200;
     position: absolute;
     left: 0;
     top: 0;
 }
 
-.budget-spent {
-    font-size: 14px;
+.account-overview-credit {
+    font-size: 16px;
     font-weight: 200;
     position: absolute;
     text-align: right;
@@ -145,33 +145,32 @@
     top: 0;
 }
 
-.budget-prediction {
+.account-overview-spent div {
     font-size: 18px;
     font-weight: 100;
     font-stretch: condensed;
     text-align: center;
 }
 
-.budget-prediction-gfx {
-    margin: 10px;
+.account-overview-debit {
+    position: absolute;
+    left: 0;
+    bottom: 0;
 }
 
-.budget-prediction-gfx-container {
+.account-overview-debit div {
+    font-size: 16px;
+    font-weight: 100;
+}
+
+.account-overview-gfx {
+    margin: 10px;
 }
 
 .budget-prediction-col {
     flex-grow: 0;
     flex-shrink: 0;
-    flex-basis: 100px;
-}
-
-.budget-planned {
-    font-size: 20px;
-    font-weight: 100;
-    font-stretch: condensed;
-    position: absolute;
-    left: 0;
-    bottom: 0;
+    flex-basis: 110px;
 }
 
 .budget-left-menu {
@@ -222,6 +221,15 @@ ion-side-menus .menu {
     margin: 20px;
 }
 
+.account-header .budget-prediction-col {
+    flex-basis: 180px;
+}
+
+.account-title {
+    margin-left: 20px;
+    margin-top: 6px;
+}
+
 .account-subject {
     font-size: 36px;
 }
@@ -230,49 +238,49 @@ ion-side-menus .menu {
     font-size: 14px;
 }
 
-    .budget-overview .budget-remaining {
+    .budget-overview .account-overview-balance {
         font-size: 18px;
     }
 
-    .budget-overview .budget-spent {
+    .budget-overview .account-overview-credit {
         font-size: 18px;
     }
 
-    .budget-overview .budget-prediction {
+    .budget-overview .account-overview-spent div {
         font-size: 20px;
     }
 
-    .budget-overview .budget-planned {
-        font-size: 22px;
+    .budget-overview .account-overview-debit div {
+        font-size: 18px;
     }
 
-    .budget-overview .budget-prediction-gfx {
+    .budget-overview .account-overview-gfx {
         margin: 30px;
     }
 
-    .budget-prediction-gfx circle {
+    .account-overview-gfx circle {
         fill: #297f59;
     }
 
-    .budget-prediction-gfx path {
+    .account-overview-gfx path {
         stroke-width: 10;
         fill: none;
         stroke: #297f59;
     }
 
-    .budget-prediction-gfx .warning circle {
+    .account-overview-gfx .warning circle {
         fill: yellow;
     }
 
-    .budget-prediction-gfx .warning path {
+    .account-overview-gfx .warning path {
         stroke: yellow;
     }
 
-    .budget-prediction-gfx .error circle {
+    .account-overview-gfx .error circle {
         fill: red;
     }
 
-    .budget-prediction-gfx .error path {
+    .account-overview-gfx .error path {
         stroke: red;
     }
 

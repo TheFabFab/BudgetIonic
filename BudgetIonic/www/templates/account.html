@@ -1,8 +1,13 @@
 ﻿<ion-view>
     <ion-content class="has-header" padding="false">
         <div class="account-header">
-            <p class="account-subject">{{accountData.subject}}</p>
-            <p class="account-description">{{accountData.description}}</p>
+            <div class="row">
+                <account-overview class="col budget-prediction-col" account="accountData" show-labels="true"></account-overview>
+                <div class="col col-fill account-title">
+                    <p class="account-subject">{{accountData.subject}}</p>
+                    <p class="account-description">{{accountData.description}}</p>
+                </div>
+            </div>
         </div>
         <ion-list ng-if="subAccounts.length > 0">
             <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
