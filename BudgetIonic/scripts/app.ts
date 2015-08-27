@@ -96,7 +96,7 @@ module Budget {
                         'main-content': {
                             templateUrl: "templates/account.html",
                             resolve: AccountCtrl.resolve(),
-                            controller: AccountCtrl.IID,
+                            controller: AccountCtrl.controllerAs,
                         },
                     },
                 });
@@ -107,7 +107,7 @@ module Budget {
                     'main-content': {
                         templateUrl: "templates/account.html",
                         resolve: AccountCtrl.resolve(),
-                        controller: AccountCtrl.IID,
+                        controller: AccountCtrl.controllerAs,
                     },
                 },
             });

@@ -2,16 +2,16 @@
     <ion-content class="has-header" padding="false">
         <div class="account-header">
             <div class="row">
-                <account-overview class="col budget-prediction-col" account="accountData" show-labels="true"></account-overview>
+                <account-overview class="col budget-prediction-col" account="vm.accountData" show-labels="true"></account-overview>
                 <div class="col col-fill account-title">
-                    <p class="account-subject">{{accountData.subject}}</p>
-                    <p class="account-description">{{accountData.description}}</p>
+                    <p class="account-subject">{{vm.accountData.subject}}</p>
+                    <p class="account-description">{{vm.accountData.description}}</p>
                 </div>
             </div>
         </div>
         <div class="row responsive-sm">
-            <ion-list class="col col-50" ng-if="subAccounts.length > 0">
-                <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
+            <ion-list class="col col-50" ng-if="vm.subAccounts.length > 0">
+                <ion-item ng-repeat="subAccount in vm.subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
                     <div class="row" style="height: 120px">
                         <account-overview class="col budget-prediction-col" account="subAccount"></account-overview>
                         <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>
@@ -28,7 +28,7 @@
                 </ion-item>
             </ion-list>
             <ion-list class="col col-50">
-                <ion-item ng-repeat="transaction in transactions" item="transaction">
+                <ion-item ng-repeat="transaction in vm.transactions" item="transaction">
                     <div class="row">{{transaction.label}}</div>
                     <div class="time-ago">
                         <span am-time-ago="transaction.timestamp"></span>

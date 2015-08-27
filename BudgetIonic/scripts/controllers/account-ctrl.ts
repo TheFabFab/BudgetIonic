@@ -4,13 +4,6 @@
 module Budget {
     'use strict';
 
-    export interface IAccountScope extends ng.IScope {
-        accountData: IAccountData;
-        subAccounts: AngularFireArray;
-        transactions: TransactionViewModel[];
-        addSubAccount: () => void;
-    }
-
     export interface IAccountStateParams {
         accountId: string;
     }
@@ -22,6 +15,7 @@ module Budget {
 
     export class AccountCtrl {
         public static IID = "accountCtrl";
+        public static controllerAs = AccountCtrl.IID + " as vm";
 
         public static resolve() {
             return {
@@ -44,7 +38,9 @@ module Budget {
         private allocateBudgetCommand: Command;
         private addExpenseCommand: Command;
 
-        private transactions: TransactionViewModel[] = [];
+        public accountData: IAccountData;
+        public subAccounts: AngularFireArray;
+        public transactions: TransactionViewModel[] = [];
 
         public static $inject = [
             '$scope',
@@ -57,7 +53,7 @@ module Budget {
         ];
 
         constructor(
-            private $scope: IAccountScope,
+            private $scope: ng.IScope,
             private $firebaseObject: AngularFireObjectService,
             private $firebaseArray: AngularFireArrayService,
             private $log: ng.ILogService,
@@ -67,25 +63,27 @@ module Budget {
 
             $log.debug("Initializing account controller", arguments);
 
-            var accountData: IAccountData = accountSnapshot.exportVal<IAccountData>();
+            this.accountData = accountSnapshot.exportVal<IAccountData>();
 
-            this.addSubaccountCommand = new Command("Add subaccount to " + accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
+            this.addSubaccountCommand = new Command("Add subaccount to " + this.accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
             this.deleteCommand = new Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key(), false);
             this.allocateBudgetCommand = new Command("Allocate budget", "/#/budget/allocate/" + this.accountSnapshot.key());
             this.addExpenseCommand = new Command("Register expense", "/#/budget/expense/" + this.accountSnapshot.key());
 
             $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
 
-            var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
+            var accounts = dataService.getAccountsReference();
 
             var childrenQuery =
                 accounts
                 .orderByChild("parent")
                 .equalTo(accountSnapshot.key());
 
-            $scope.subAccounts = $firebaseArray(childrenQuery);
+            this.subAccounts = $firebaseArray(childrenQuery);
 
-            var transactions = new Firebase("https://budgetionic.firebaseio.com/transactions");
+            this.subAccounts.$watch(event => $log.debug("subAccounts.watch", event, this.subAccounts));
+
+            var transactions = dataService.getTransactionsReference();
 
             var creditTransactionQuery =
                 transactions
@@ -113,16 +111,14 @@ module Budget {
                 this.insertTransaction(vm);
             });
 
-            $scope.transactions = this.transactions;
-
             $scope.$on('$ionicView.enter', () => {
                 $log.debug("Entering account controller", this.$scope);
                 this.updateContextCommands();
                 this.setContextCommands();
             });
 
-            $scope.subAccounts.$watch((event, key, prevChild) => this.updateContextCommands());
-            $scope.$watch("transactions", () => this.updateContextCommands());
+            this.subAccounts.$watch((event, key, prevChild) => this.updateContextCommands());
+            $scope.$watch(x => this.transactions, () => this.updateContextCommands());
         }
 
         private insertTransaction(transactionVm: TransactionViewModel): void {
@@ -131,12 +127,13 @@ module Budget {
                 if (x.timestamp > transactionVm.timestamp) index++;
             });
             this.transactions.splice(index, 0, transactionVm);
+            this.$scope.$digest();
         }
 
         private updateContextCommands(): void {
             var hasData =
-                this.$scope.subAccounts.length == 0 &&
-                this.$scope.transactions.length == 0;
+                this.subAccounts.length == 0 &&
+                this.transactions.length == 0;
 
             if (this.deleteCommand != null) {
                 this.deleteCommand.isEnabled = hasData;

@@ -84,6 +84,12 @@ var Budget;
                 }
             });
         };
+        DataService.prototype.getAccountsReference = function () {
+            return this._accountsReference;
+        };
+        DataService.prototype.getTransactionsReference = function () {
+            return this._transactionsReference;
+        };
         DataService.prototype.getRootAccountSnapshot = function () {
             return this.getAccountSnapshot('');
         };
@@ -371,18 +377,19 @@ var Budget;
             this.accountSnapshot = accountSnapshot;
             this.transactions = [];
             $log.debug("Initializing account controller", arguments);
-            var accountData = accountSnapshot.exportVal();
-            this.addSubaccountCommand = new Budget.Command("Add subaccount to " + accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
+            this.accountData = accountSnapshot.exportVal();
+            this.addSubaccountCommand = new Budget.Command("Add subaccount to " + this.accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
             this.deleteCommand = new Budget.Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key(), false);
             this.allocateBudgetCommand = new Budget.Command("Allocate budget", "/#/budget/allocate/" + this.accountSnapshot.key());
             this.addExpenseCommand = new Budget.Command("Register expense", "/#/budget/expense/" + this.accountSnapshot.key());
             $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
-            var accounts = new Firebase("https://budgetionic.firebaseio.com/accounts");
+            var accounts = dataService.getAccountsReference();
             var childrenQuery = accounts
                 .orderByChild("parent")
                 .equalTo(accountSnapshot.key());
-            $scope.subAccounts = $firebaseArray(childrenQuery);
-            var transactions = new Firebase("https://budgetionic.firebaseio.com/transactions");
+            this.subAccounts = $firebaseArray(childrenQuery);
+            this.subAccounts.$watch(function (event) { return $log.debug("subAccounts.watch", event, _this.subAccounts); });
+            var transactions = dataService.getTransactionsReference();
             var creditTransactionQuery = transactions
                 .orderByChild("credit")
                 .equalTo(accountSnapshot.key())
@@ -403,14 +410,13 @@ var Budget;
                 var vm = new TransactionViewModel(label, transaction.timestamp);
                 _this.insertTransaction(vm);
             });
-            $scope.transactions = this.transactions;
             $scope.$on('$ionicView.enter', function () {
                 $log.debug("Entering account controller", _this.$scope);
                 _this.updateContextCommands();
                 _this.setContextCommands();
             });
-            $scope.subAccounts.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
-            $scope.$watch("transactions", function () { return _this.updateContextCommands(); });
+            this.subAccounts.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
+            $scope.$watch(function (x) { return _this.transactions; }, function () { return _this.updateContextCommands(); });
         }
         AccountCtrl.resolve = function () {
             return {
@@ -430,10 +436,11 @@ var Budget;
                     index++;
             });
             this.transactions.splice(index, 0, transactionVm);
+            this.$scope.$digest();
         };
         AccountCtrl.prototype.updateContextCommands = function () {
-            var hasData = this.$scope.subAccounts.length == 0 &&
-                this.$scope.transactions.length == 0;
+            var hasData = this.subAccounts.length == 0 &&
+                this.transactions.length == 0;
             if (this.deleteCommand != null) {
                 this.deleteCommand.isEnabled = hasData;
             }
@@ -447,6 +454,7 @@ var Budget;
             ]);
         };
         AccountCtrl.IID = "accountCtrl";
+        AccountCtrl.controllerAs = AccountCtrl.IID + " as vm";
         AccountCtrl.$inject = [
             '$scope',
             "$firebaseObject",
@@ -838,7 +846,7 @@ var Budget;
                 'main-content': {
                     templateUrl: "templates/account.html",
                     resolve: Budget.AccountCtrl.resolve(),
-                    controller: Budget.AccountCtrl.IID,
+                    controller: Budget.AccountCtrl.controllerAs,
                 },
             },
         });
@@ -848,7 +856,7 @@ var Budget;
                 'main-content': {
                     templateUrl: "templates/account.html",
                     resolve: Budget.AccountCtrl.resolve(),
-                    controller: Budget.AccountCtrl.IID,
+                    controller: Budget.AccountCtrl.controllerAs,
                 },
             },
         });

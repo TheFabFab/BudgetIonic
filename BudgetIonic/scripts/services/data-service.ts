@@ -8,6 +8,8 @@ module Budget {
         addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any>;
         deleteAccount(accountId: string): ng.IPromise<any>;
         addTransaction(transaction: ITransactionData): ng.IPromise<any>;
+        getAccountsReference(): Firebase;
+        getTransactionsReference(): Firebase;
     }
 
     export class AccountData implements IAccountData {
@@ -69,6 +71,14 @@ module Budget {
                             this.createDemoData();
                         }
                     });
+        }
+
+        public getAccountsReference(): Firebase {
+            return this._accountsReference;
+        }
+
+        public getTransactionsReference(): Firebase {
+            return this._transactionsReference;
         }
 
         public getRootAccountSnapshot(): ng.IPromise<FirebaseDataSnapshot> {
