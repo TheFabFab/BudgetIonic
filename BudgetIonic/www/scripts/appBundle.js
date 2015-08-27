@@ -210,25 +210,33 @@ var Budget;
                 _this.$q.all([
                     _this.addTransaction({
                         debit: null,
+                        debitAccountName: '',
                         credit: rootNode.key(),
+                        creditAccountName: 'My budget',
                         amount: 65000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     }),
                     _this.addTransaction({
                         debit: rootNode.key(),
+                        debitAccountName: 'My budget',
                         credit: subitems[0].key(),
+                        creditAccountName: 'Item1',
                         amount: 25000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     }),
                     _this.addTransaction({
                         debit: rootNode.key(),
+                        debitAccountName: 'My budget',
                         credit: subitems[1].key(),
+                        creditAccountName: 'Item2',
                         amount: 20000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     }),
                     _this.addTransaction({
                         debit: rootNode.key(),
+                        debitAccountName: 'My budget',
                         credit: subitems[2].key(),
+                        creditAccountName: 'Item3',
                         amount: 10000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     })
@@ -316,6 +324,7 @@ var Budget;
                             scope.account.credited
                                 ? Math.round(100 * scope.account.debited / scope.account.credited)
                                 : 0;
+                        scope.showSpent = scope.accountEx.progress > 0;
                         scope.accountEx.recalculate();
                     }
                 });
@@ -338,6 +347,13 @@ var Budget;
 var Budget;
 (function (Budget) {
     'use strict';
+    var TransactionViewModel = (function () {
+        function TransactionViewModel(label, timestamp) {
+            this.label = label;
+            this.timestamp = timestamp;
+        }
+        return TransactionViewModel;
+    })();
     var AccountCtrl = (function () {
         function AccountCtrl($scope, $firebaseObject, $firebaseArray, $log, dataService, commandService, accountSnapshot) {
             var _this = this;
@@ -348,6 +364,7 @@ var Budget;
             this.dataService = dataService;
             this.commandService = commandService;
             this.accountSnapshot = accountSnapshot;
+            this.transactions = [];
             $log.debug("Initializing account controller", arguments);
             var accountData = accountSnapshot.exportVal();
             this.addSubaccountCommand = new Budget.Command("Add subaccount to " + accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
@@ -362,20 +379,32 @@ var Budget;
             var transactions = new Firebase("https://budgetionic.firebaseio.com/transactions");
             var creditTransactionQuery = transactions
                 .orderByChild("credit")
-                .equalTo(accountSnapshot.key());
-            $scope.creditTransactions = $firebaseArray(creditTransactionQuery);
+                .equalTo(accountSnapshot.key())
+                .limitToFirst(10);
             var debitTransactionQuery = transactions
                 .orderByChild("debit")
-                .equalTo(accountSnapshot.key());
-            $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
+                .equalTo(accountSnapshot.key())
+                .limitToFirst(10);
+            creditTransactionQuery.on(Budget.FirebaseEvents.child_added, function (snapShot) {
+                var transaction = snapShot.exportVal();
+                var label = "Credited " + transaction.amount + " from '" + transaction.debitAccountName + "'.";
+                var vm = new TransactionViewModel(label, transaction.timestamp);
+                _this.insertTransaction(vm);
+            });
+            debitTransactionQuery.on(Budget.FirebaseEvents.child_added, function (snapShot) {
+                var transaction = snapShot.exportVal();
+                var label = "Debited " + transaction.amount + " to '" + transaction.creditAccountName + "'.";
+                var vm = new TransactionViewModel(label, transaction.timestamp);
+                _this.insertTransaction(vm);
+            });
+            $scope.transactions = this.transactions;
             $scope.$on('$ionicView.enter', function () {
                 $log.debug("Entering account controller", _this.$scope);
                 _this.updateContextCommands();
                 _this.setContextCommands();
             });
             $scope.subAccounts.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
-            $scope.creditTransactions.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
-            $scope.debitTransactions.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
+            $scope.$watch("transactions", function () { return _this.updateContextCommands(); });
         }
         AccountCtrl.resolve = function () {
             return {
@@ -388,10 +417,17 @@ var Budget;
             var accountId = $stateParams.accountId || '';
             return dataService.getAccountSnapshot(accountId);
         };
+        AccountCtrl.prototype.insertTransaction = function (transactionVm) {
+            var index = 0;
+            this.transactions.forEach(function (x) {
+                if (x.timestamp > transactionVm.timestamp)
+                    index++;
+            });
+            this.transactions.splice(index, 0, transactionVm);
+        };
         AccountCtrl.prototype.updateContextCommands = function () {
             var hasData = this.$scope.subAccounts.length == 0 &&
-                this.$scope.creditTransactions.length == 0 &&
-                this.$scope.debitTransactions.length == 0;
+                this.$scope.transactions.length == 0;
             if (this.deleteCommand != null) {
                 this.deleteCommand.isEnabled = hasData;
             }
@@ -562,7 +598,9 @@ var Budget;
                         var promise = _this.dataService.addTransaction({
                             amount: _this.amount,
                             debit: debitAccount.key,
+                            debitAccountName: debitAccount.subject,
                             credit: creditAccount.key,
+                            creditAccountName: creditAccount.subject,
                             timestamp: Firebase.ServerValue.TIMESTAMP
                         });
                         promises.push(promise);
@@ -578,7 +616,7 @@ var Budget;
             this.close();
         };
         AllocateBudgetCtrl.prototype.close = function () {
-            this.$state.go("app.budget-account", { accountId: this.creditAccount.parent });
+            this.$state.go("app.budget-account", { accountId: this.creditAccountId });
         };
         AllocateBudgetCtrl.prototype.validate = function () {
             var _this = this;
@@ -660,7 +698,7 @@ var Budget;
 var Budget;
 (function (Budget) {
     "use strict";
-    var budgetModule = angular.module('budget-app', ['ionic', 'firebase'])
+    var budgetModule = angular.module('budget-app', ['ionic', 'firebase', 'angularMoment'])
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.CommandService.IID, Budget.CommandService)
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())

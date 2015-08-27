@@ -2,7 +2,9 @@
   "name": "bower",
   "license": "Apache-2.0",
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "angular-moment": "~0.10.2"
+  },
   "exportsOverride": {
     "bootstrap": {
       "js": "dist/js/*.*",

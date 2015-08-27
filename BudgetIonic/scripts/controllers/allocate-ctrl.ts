@@ -100,7 +100,9 @@
                             this.dataService.addTransaction({
                                 amount: this.amount,
                                 debit: debitAccount.key,
+                                debitAccountName: debitAccount.subject,
                                 credit: creditAccount.key,
+                                creditAccountName: creditAccount.subject,
                                 timestamp: Firebase.ServerValue.TIMESTAMP
                             });
 
@@ -123,7 +125,7 @@
         private close(): void {
             this.$state.go(
                 "app.budget-account",
-                <IAccountStateParams>{ accountId: this.creditAccount.parent });
+                <IAccountStateParams>{ accountId: this.creditAccountId });
         }
 
         private validate(): void {

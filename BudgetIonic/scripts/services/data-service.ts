@@ -213,25 +213,33 @@ module Budget {
                 this.$q.all<Firebase>([
                     this.addTransaction({
                         debit: null,
+                        debitAccountName: '',
                         credit: rootNode.key(),
+                        creditAccountName: 'My budget',
                         amount: 65000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     }),
                     this.addTransaction({
                         debit: rootNode.key(),
+                        debitAccountName: 'My budget',
                         credit: subitems[0].key(),
+                        creditAccountName: 'Item1',
                         amount: 25000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     }),
                     this.addTransaction({
                         debit: rootNode.key(),
+                        debitAccountName: 'My budget',
                         credit: subitems[1].key(),
+                        creditAccountName: 'Item2',
                         amount: 20000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     }),
                     this.addTransaction({
                         debit: rootNode.key(),
+                        debitAccountName: 'My budget',
                         credit: subitems[2].key(),
+                        creditAccountName: 'Item3',
                         amount: 10000,
                         timestamp: Firebase.ServerValue.TIMESTAMP
                     })

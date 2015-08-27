@@ -1,7 +1,9 @@
 ﻿module Budget {
     export interface ITransactionData {
         debit: string;
+        debitAccountName: string;
         credit: string;
+        creditAccountName: string;
         amount: number;
         timestamp: number;
     }

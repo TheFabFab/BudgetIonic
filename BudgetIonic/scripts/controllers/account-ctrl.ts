@@ -7,13 +7,17 @@ module Budget {
     export interface IAccountScope extends ng.IScope {
         accountData: IAccountData;
         subAccounts: AngularFireArray;
-        creditTransactions: AngularFireArray;
-        debitTransactions: AngularFireArray;
+        transactions: TransactionViewModel[];
         addSubAccount: () => void;
     }
 
     export interface IAccountStateParams {
         accountId: string;
+    }
+
+    class TransactionViewModel {
+        constructor(public label: string, public timestamp: number) {
+        }
     }
 
     export class AccountCtrl {
@@ -38,6 +42,8 @@ module Budget {
         private addSubaccountCommand: Command;
         private deleteCommand: Command;
         private allocateBudgetCommand: Command;
+
+        private transactions: TransactionViewModel[] = [];
 
         public static $inject = [
             '$scope',
@@ -82,16 +88,30 @@ module Budget {
             var creditTransactionQuery =
                 transactions
                     .orderByChild("credit")
-                    .equalTo(accountSnapshot.key());
-
-            $scope.creditTransactions = $firebaseArray(creditTransactionQuery);
+                    .equalTo(accountSnapshot.key())
+                    .limitToFirst(10);
 
             var debitTransactionQuery =
                 transactions
                     .orderByChild("debit")
-                    .equalTo(accountSnapshot.key());
+                    .equalTo(accountSnapshot.key())
+                    .limitToFirst(10);
 
-            $scope.debitTransactions = $firebaseArray(debitTransactionQuery);
+            creditTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
+                var transaction = snapShot.exportVal<ITransactionData>();
+                var label = "Credited " + transaction.amount + " from '" + transaction.debitAccountName + "'.";
+                var vm = new TransactionViewModel(label, transaction.timestamp);
+                this.insertTransaction(vm);
+            });
+
+            debitTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
+                var transaction = snapShot.exportVal<ITransactionData>();
+                var label = "Debited " + transaction.amount + " to '" + transaction.creditAccountName + "'.";
+                var vm = new TransactionViewModel(label, transaction.timestamp);
+                this.insertTransaction(vm);
+            });
+
+            $scope.transactions = this.transactions;
 
             $scope.$on('$ionicView.enter', () => {
                 $log.debug("Entering account controller", this.$scope);
@@ -100,15 +120,21 @@ module Budget {
             });
 
             $scope.subAccounts.$watch((event, key, prevChild) => this.updateContextCommands());
-            $scope.creditTransactions.$watch((event, key, prevChild) => this.updateContextCommands());
-            $scope.debitTransactions.$watch((event, key, prevChild) => this.updateContextCommands());
+            $scope.$watch("transactions", () => this.updateContextCommands());
+        }
+
+        private insertTransaction(transactionVm: TransactionViewModel): void {
+            var index = 0;
+            this.transactions.forEach(x => {
+                if (x.timestamp > transactionVm.timestamp) index++;
+            });
+            this.transactions.splice(index, 0, transactionVm);
         }
 
         private updateContextCommands(): void {
             var hasData =
                 this.$scope.subAccounts.length == 0 &&
-                this.$scope.creditTransactions.length == 0 &&
-                this.$scope.debitTransactions.length == 0;
+                this.$scope.transactions.length == 0;
 
             if (this.deleteCommand != null) {
                 this.deleteCommand.isEnabled = hasData;

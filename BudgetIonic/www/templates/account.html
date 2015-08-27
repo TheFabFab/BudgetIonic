@@ -1,4 +1,4 @@
-﻿<ion-view>
+﻿<ion-view class="account-view">
     <ion-content class="has-header" padding="false">
         <div class="account-header">
             <div class="row">
@@ -9,22 +9,32 @@
                 </div>
             </div>
         </div>
-        <ion-list ng-if="subAccounts.length > 0">
-            <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
-                <div class="row" style="height: 120px">
-                    <account-overview class="col budget-prediction-col" account="subAccount"></account-overview>
-                    <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>
-                    <div class="col budget-item-main">
-                        <div class="budget-name">{{subAccount.subject}}</div>
-                    </div>
-                    <div class="col budget-item-navigation">
-                        <div>
-                            <span ng-hide="subAccount.subAccounts.length == 0" class="notification">{{subAccount.subAccounts.length}}</span>
-                            <i class="icon ion-ios-arrow-right"></i>
+        <div class="row responsive-sm">
+            <ion-list class="col col-50" ng-if="subAccounts.length > 0">
+                <ion-item ng-repeat="subAccount in subAccounts" item="subAccount" class="budget-list-item" ui-sref="app.budget-account({accountId: subAccount.$id})">
+                    <div class="row" style="height: 120px">
+                        <account-overview class="col budget-prediction-col" account="subAccount"></account-overview>
+                        <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>
+                        <div class="col budget-item-main">
+                            <div class="budget-name">{{subAccount.subject}}</div>
+                        </div>
+                        <div class="col budget-item-navigation">
+                            <div>
+                                <span ng-hide="subAccount.subAccounts.length == 0" class="notification">{{subAccount.subAccounts.length}}</span>
+                                <i class="icon ion-ios-arrow-right"></i>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </ion-item>
-        </ion-list>
+                </ion-item>
+            </ion-list>
+            <ion-list class="col col-50">
+                <ion-item ng-repeat="transaction in transactions" item="transaction">
+                    <div class="row">{{transaction.label}}</div>
+                    <div class="time-ago">
+                        <span am-time-ago="transaction.timestamp"></span>
+                    </div>
+                </ion-item>
+            </ion-list>
+        </div>
     </ion-content>
 </ion-view>

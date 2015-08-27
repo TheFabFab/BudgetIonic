@@ -4,6 +4,7 @@ module Budget {
     interface IAccountOverviewScope extends ng.IScope {
         account: any;
         showLabels: boolean;
+        showSpent: boolean;
         accountEx: AccountEx;
     }
 
@@ -45,9 +46,10 @@ module Budget {
                 if (scope.account) {
                     scope.accountEx.balance = scope.account.credited - scope.account.debited;
                     scope.accountEx.progress =
-                    scope.account.credited
-                        ? Math.round(100 * scope.account.debited / scope.account.credited)
+                        scope.account.credited
+                            ? Math.round(100 * scope.account.debited / scope.account.credited)
                         : 0;
+                    scope.showSpent = scope.accountEx.progress > 0;
                     scope.accountEx.recalculate();
                 }
             });
