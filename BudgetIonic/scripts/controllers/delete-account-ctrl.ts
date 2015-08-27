@@ -3,6 +3,7 @@
 
     export class DeleteAccountCtrl {
         public static IID = "deleteAccountCtrl";
+        public static controllerAs = DeleteAccountCtrl.IID + " as vm";
 
         public static $inject = [
             '$stateParams',

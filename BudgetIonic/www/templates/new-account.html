@@ -1,24 +1,24 @@
 ﻿<ion-view>
-    <ion-content class="has-header" padding="false" ng-controller="newAccountCtrl as newAccount">
+    <ion-content class="has-header" padding="false">
         <form>
             <div class="list list-inset">
                 <div class="item item-input">
                     <label class="item-stacked-label col col-fill">
                         <span class="input-label">Subject</span>
-                        <input type="text" autofocus placeholder="Subject" ng-model="newAccount.subject">
+                        <input type="text" autofocus placeholder="Subject" ng-model="vm.subject">
                     </label>
                 </div>
                 <div class="item item-input">
                     <label class="item-stacked-label col col-fill">
                         <span class="input-label">Description</span>
-                        <input type="text" placeholder="Description" ng-model="newAccount.description">
+                        <input type="text" placeholder="Description" ng-model="vm.description">
                     </label>
                 </div>
             </div>
             <div class="row">
                 <div class="row dialog-button-container">
-                    <button class="button button-positive" ng-click="newAccount.ok()">Add</button>
-                    <button class="button button-stable" ng-click="newAccount.cancel()">Cancel</button>
+                    <button class="button button-positive" ng-click="vm.ok()">Add</button>
+                    <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
                 </div>
             </div>
         </form>

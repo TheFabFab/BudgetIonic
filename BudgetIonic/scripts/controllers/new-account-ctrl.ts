@@ -3,6 +3,7 @@
 
     export class NewAccountCtrl {
         public static IID = "newAccountCtrl";
+        public static controllerAs = NewAccountCtrl.IID + " as vm";
 
         public static $inject = [
             '$stateParams',

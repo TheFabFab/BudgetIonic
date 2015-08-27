@@ -4,6 +4,7 @@
     export class AddExpenseCtrl {
 
         public static IID: string = "addExpenseCtrl";
+        public static controllerAs = AddExpenseCtrl.IID + " as vm";
 
         public debitAccount: AccountData;
         public amount: number = 0;
@@ -50,7 +51,7 @@
             this.dataService.addTransaction({
                 amount: this.amount,
                 credit: "",
-                creditAccountName: "",
+                creditAccountName: "Expenses",
                 debit: this.debitAccount.key,
                 debitAccountName: this.debitAccount.subject,
                 timestamp: Firebase.ServerValue.TIMESTAMP

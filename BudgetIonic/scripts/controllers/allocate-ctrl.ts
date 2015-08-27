@@ -11,6 +11,7 @@
     export class AllocateBudgetCtrl {
 
         public static IID: string = "allocateBudgetCtrl";
+        public static controllerAs = AllocateBudgetCtrl.IID + " as vm";
 
         private creditAccountId: string;
 

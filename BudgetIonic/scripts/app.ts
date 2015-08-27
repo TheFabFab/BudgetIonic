@@ -118,8 +118,7 @@ module Budget {
                     'main-content': {
                         templateUrl: "templates/new-account.html",
                         //resolve: AccountCtrl.resolve(),   
-                        //controller: NewAccountCtrl.IID,
-                        //controllerAs: 'newAccount',
+                        controller: NewAccountCtrl.IID,
                     },
                 },
             });
@@ -130,8 +129,7 @@ module Budget {
                     'main-content': {
                         templateUrl: "templates/delete-account.html",
                         //resolve: AccountCtrl.resolve(),   
-                        //controller: NewAccountCtrl.IID,
-                        //controllerAs: 'newAccount',
+                        controller: DeleteAccountCtrl.controllerAs,
                     },
                 },
             });
@@ -142,8 +140,7 @@ module Budget {
                     'main-content': {
                         templateUrl: "templates/allocate.html",
                         //resolve: AllocateBudgetCtrl.resolve(),   
-                        //controller: NewAccountCtrl.IID,
-                        //controllerAs: 'newAccount',
+                        controller: AllocateBudgetCtrl.controllerAs,
                     },
                 },
             });
@@ -154,8 +151,7 @@ module Budget {
                     'main-content': {
                         templateUrl: "templates/expense.html",
                         //resolve: AllocateBudgetCtrl.resolve(),   
-                        //controller: NewAccountCtrl.IID,
-                        //controllerAs: 'newAccount',
+                        controller: AddExpenseCtrl.controllerAs,
                     },
                 },
             });

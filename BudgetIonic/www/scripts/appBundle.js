@@ -274,6 +274,7 @@ var Budget;
             this.$ionicHistory.goBack();
         };
         NewAccountCtrl.IID = "newAccountCtrl";
+        NewAccountCtrl.controllerAs = NewAccountCtrl.IID + " as vm";
         NewAccountCtrl.$inject = [
             '$stateParams',
             '$ionicHistory',
@@ -521,6 +522,7 @@ var Budget;
             this.$state.go("app.budget-account", { accountId: this.accountId });
         };
         DeleteAccountCtrl.IID = "deleteAccountCtrl";
+        DeleteAccountCtrl.controllerAs = DeleteAccountCtrl.IID + " as vm";
         DeleteAccountCtrl.$inject = [
             '$stateParams',
             '$state',
@@ -671,6 +673,7 @@ var Budget;
             return deferred.promise;
         };
         AllocateBudgetCtrl.IID = "allocateBudgetCtrl";
+        AllocateBudgetCtrl.controllerAs = AllocateBudgetCtrl.IID + " as vm";
         AllocateBudgetCtrl.$inject = [
             '$stateParams',
             '$scope',
@@ -716,7 +719,7 @@ var Budget;
             this.dataService.addTransaction({
                 amount: this.amount,
                 credit: "",
-                creditAccountName: "",
+                creditAccountName: "Expenses",
                 debit: this.debitAccount.key,
                 debitAccountName: this.debitAccount.subject,
                 timestamp: Firebase.ServerValue.TIMESTAMP
@@ -736,6 +739,7 @@ var Budget;
             this.isEnabled = result;
         };
         AddExpenseCtrl.IID = "addExpenseCtrl";
+        AddExpenseCtrl.controllerAs = AddExpenseCtrl.IID + " as vm";
         AddExpenseCtrl.$inject = [
             '$stateParams',
             '$scope',
@@ -853,6 +857,8 @@ var Budget;
             views: {
                 'main-content': {
                     templateUrl: "templates/new-account.html",
+                    //resolve: AccountCtrl.resolve(),   
+                    controller: Budget.NewAccountCtrl.IID,
                 },
             },
         });
@@ -861,6 +867,8 @@ var Budget;
             views: {
                 'main-content': {
                     templateUrl: "templates/delete-account.html",
+                    //resolve: AccountCtrl.resolve(),   
+                    controller: Budget.DeleteAccountCtrl.controllerAs,
                 },
             },
         });
@@ -869,6 +877,8 @@ var Budget;
             views: {
                 'main-content': {
                     templateUrl: "templates/allocate.html",
+                    //resolve: AllocateBudgetCtrl.resolve(),   
+                    controller: Budget.AllocateBudgetCtrl.controllerAs,
                 },
             },
         });
@@ -877,6 +887,8 @@ var Budget;
             views: {
                 'main-content': {
                     templateUrl: "templates/expense.html",
+                    //resolve: AllocateBudgetCtrl.resolve(),   
+                    controller: Budget.AddExpenseCtrl.controllerAs,
                 },
             },
         });
