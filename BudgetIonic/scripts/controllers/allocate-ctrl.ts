@@ -85,7 +85,7 @@
                     var accounts = this.ancestors.slice(0);
 
                     // add the credit account itself
-                    accounts.push(AccountData.copy(this.creditAccount, this.creditAccountId));
+                    accounts.push(AccountData.fromIAccountData(this.creditAccount, this.creditAccountId));
 
                     // remove up to (including) the debit account
                     while (previousAccount == null || previousAccount.key != this.debitAccount.key) {
@@ -164,7 +164,7 @@
                 this.dataService.getAccountSnapshot(account.parent)
                     .then(parentSnapshot => {
                         if (parentSnapshot) {
-                            var parent = AccountData.copy(parentSnapshot.exportVal<IAccountData>(), parentSnapshot.key());
+                            var parent = AccountData.fromSnapshot(parentSnapshot);
                             this.$log.debug("Ancestor:", parent);
                                 this.getAncestors(parent)
                                     .then(parentAncestors => {
