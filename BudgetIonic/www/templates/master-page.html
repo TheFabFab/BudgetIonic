@@ -1,4 +1,4 @@
-﻿<ion-view view-title="{{rootAccount.subject}}">
+﻿<ion-view view-title="{{vm.rootAccount.subject}}">
     <ion-side-menus enable-menu-with-back-views="true">
         <ion-side-menu-content>
             <!--
@@ -20,14 +20,14 @@
                                 <a class="row" ui-sref="app.budget">
                                     <div>Home</div></a>
                             </li>
-                            <li class="item" ng-repeat="command in contextCommands" ng-if="command.isEnabled">
+                            <li class="item" ng-repeat="command in vm.contextCommands" ng-if="command.isEnabled">
                                 <a class="row" ng-href="{{command.link}}">
                                     <div>{{command.label}}</div></a>
                             </li>
                         </ul>
                     </div>
                     <div class="row budget-overview-row">
-                        <account-overview class="budget-overview" account="rootAccount" show-labels="true"></account-overview>
+                        <account-overview class="budget-overview" account="vm.rootAccount" show-labels="true"></account-overview>
                     </div>
                 </div>
             </ion-content>

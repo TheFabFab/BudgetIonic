@@ -58,8 +58,11 @@ var Budget;
             this.lastAggregationTime = lastAggregationTime;
             this.key = key;
         }
-        AccountData.copy = function (other, key) {
+        AccountData.fromIAccountData = function (other, key) {
             return new AccountData(other.subject, other.description, other.parent, other.debited, other.credited, other.lastAggregationTime, key);
+        };
+        AccountData.fromSnapshot = function (snapshot) {
+            return AccountData.fromIAccountData(snapshot.exportVal(), snapshot.key());
         };
         return AccountData;
     })();
@@ -473,20 +476,19 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $firebaseObject, $log, dataService, commandService, rootAccount) {
+        function MainCtrl($scope, $firebaseObject, $log, dataService, commandService, rootAccountSnapshot) {
             this.$scope = $scope;
             this.$firebaseObject = $firebaseObject;
             this.$log = $log;
             this.dataService = dataService;
             this.commandService = commandService;
-            this.rootAccount = rootAccount;
             console.log("Initializing main controller");
-            $firebaseObject(rootAccount.ref()).$bindTo($scope, "rootAccount");
-            $scope.contextCommands = commandService.contextCommands;
+            this.rootAccount = Budget.AccountData.fromSnapshot(rootAccountSnapshot);
+            this.contextCommands = commandService.contextCommands;
         }
         MainCtrl.resolve = function () {
             return {
-                rootAccount: [Budget.DataService.IID, MainCtrl.getAccount],
+                rootAccountSnapshot: [Budget.DataService.IID, MainCtrl.getAccount],
             };
         };
         MainCtrl.getAccount = function (dataService) {
@@ -498,9 +500,10 @@ var Budget;
             "$log",
             Budget.DataService.IID,
             Budget.CommandService.IID,
-            'rootAccount',
+            'rootAccountSnapshot',
         ];
         MainCtrl.IID = "mainCtrl";
+        MainCtrl.controllerAs = MainCtrl.IID + " as vm";
         return MainCtrl;
     })();
     Budget.MainCtrl = MainCtrl;
@@ -717,7 +720,7 @@ var Budget;
             var debitAccountId = $stateParams.accountId || "root";
             this.dataService.getAccountSnapshot(debitAccountId)
                 .then(function (snapshot) {
-                _this.debitAccount = Budget.AccountData.copy(snapshot.exportVal(), snapshot.key());
+                _this.debitAccount = Budget.AccountData.fromSnapshot(snapshot);
                 _this.validate();
             });
             var us1 = this.$scope.$watch(function () { return _this.amount; }, function (_) { return _this.validate(); });
@@ -749,9 +752,9 @@ var Budget;
         AddExpenseCtrl.IID = "addExpenseCtrl";
         AddExpenseCtrl.controllerAs = AddExpenseCtrl.IID + " as vm";
         AddExpenseCtrl.$inject = [
-            '$stateParams',
-            '$scope',
-            '$state',
+            "$stateParams",
+            "$scope",
+            "$state",
             "$firebaseObject",
             "$firebaseArray",
             "$log",
@@ -834,7 +837,7 @@ var Budget;
             url: "/budget",
             views: {
                 'main-frame': {
-                    controller: Budget.MainCtrl.IID,
+                    controller: Budget.MainCtrl.controllerAs,
                     templateUrl: "templates/master-page.html",
                 },
             },

@@ -2,11 +2,6 @@
 module Budget {
     'use strict';
 
-    export interface IMainScope extends ng.IScope {
-        rootAccount: IAccountData;
-        contextCommands: Command[];
-    }
-
     export class MainCtrl {
         public static $inject = [
             '$scope',
@@ -14,12 +9,12 @@ module Budget {
             "$log",
             DataService.IID,
             CommandService.IID,
-            'rootAccount',
+            'rootAccountSnapshot',
         ];
 
         public static resolve() {
             return {
-                rootAccount: [DataService.IID, MainCtrl.getAccount],
+                rootAccountSnapshot: [DataService.IID, MainCtrl.getAccount],
             };
         }
 
@@ -28,19 +23,23 @@ module Budget {
         }
 
         public static IID = "mainCtrl";
+        public static controllerAs = MainCtrl.IID + " as vm";
+
+        public contextCommands: Command[];
+        public rootAccount: AccountData;
 
         constructor(
-            private $scope: IMainScope,
+            private $scope: ng.IScope,
             private $firebaseObject: AngularFireObjectService,
             private $log: ng.ILogService,
             private dataService: IDataService,
             private commandService: CommandService,
-            private rootAccount: FirebaseDataSnapshot) {
+            rootAccountSnapshot: FirebaseDataSnapshot) {
 
             console.log("Initializing main controller");
 
-            $firebaseObject(rootAccount.ref()).$bindTo($scope, "rootAccount");
-            $scope.contextCommands = commandService.contextCommands;
+            this.rootAccount = AccountData.fromSnapshot(rootAccountSnapshot);
+            this.contextCommands = commandService.contextCommands;
         }
     }
 }

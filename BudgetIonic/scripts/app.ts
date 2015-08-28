@@ -83,7 +83,7 @@ module Budget {
                     url: "/budget",
                     views: {
                         'main-frame': {
-                            controller: MainCtrl.IID,
+                            controller: MainCtrl.controllerAs,
                             templateUrl: "templates/master-page.html",
                         },
                     },

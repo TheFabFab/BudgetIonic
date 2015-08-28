@@ -23,7 +23,7 @@ module Budget {
             public key: string) {
         }
 
-        public static copy(other: IAccountData, key: string): AccountData {
+        public static fromIAccountData(other: IAccountData, key: string): AccountData {
             return new AccountData(
                 other.subject,
                 other.description,
@@ -34,6 +34,9 @@ module Budget {
                 key);
         }
 
+        public static fromSnapshot(snapshot: FirebaseDataSnapshot): AccountData {
+            return AccountData.fromIAccountData(snapshot.exportVal<IAccountData>(), snapshot.key());
+        }
     }
 
     export class DataService implements IDataService {

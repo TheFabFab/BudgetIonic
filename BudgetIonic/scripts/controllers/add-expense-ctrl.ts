@@ -7,13 +7,13 @@
         public static controllerAs = AddExpenseCtrl.IID + " as vm";
 
         public debitAccount: AccountData;
-        public amount: number = 0;
+        public amount = 0;
         public isEnabled = false;
 
         public static $inject = [
-            '$stateParams',
-            '$scope',
-            '$state',
+            "$stateParams",
+            "$scope",
+            "$state",
             "$firebaseObject",
             "$firebaseArray",
             "$log",
@@ -25,7 +25,7 @@
         constructor(
             $stateParams,
             private $scope: ng.IScope,
-            private $state: ng.ui.IStateService,
+            private $state: angular.ui.IStateService,
             private $firebaseObject: AngularFireObjectService,
             private $firebaseArray: AngularFireArrayService,
             private $log: ng.ILogService,
@@ -35,15 +35,13 @@
 
             $log.debug("Initializing add expense controller", arguments);
 
-            var debitAccountId = $stateParams.accountId || "root";
-
+            const debitAccountId = $stateParams.accountId || "root";
             this.dataService.getAccountSnapshot(debitAccountId)
                 .then(snapshot => {
-                    this.debitAccount = AccountData.copy(snapshot.exportVal<IAccountData>(), snapshot.key());
+                    this.debitAccount = AccountData.fromSnapshot(snapshot);
                     this.validate();
                 });
-
-            var us1 = this.$scope.$watch(() => this.amount, _ => this.validate());
+            const us1 = this.$scope.$watch(() => this.amount, _ => this.validate());
         }
 
         public ok(): void {
@@ -69,8 +67,7 @@
         }
 
         private validate(): void {
-            var result = false;
-
+            let result = false;
             if (this.debitAccount.credited - this.debitAccount.debited >= this.amount) {
                 result = true;
             }
