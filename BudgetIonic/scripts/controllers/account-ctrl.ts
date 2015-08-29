@@ -127,7 +127,6 @@ module Budget {
                 if (x.timestamp > transactionVm.timestamp) index++;
             });
             this.transactions.splice(index, 0, transactionVm);
-            this.$scope.$digest();
         }
 
         private updateContextCommands(): void {

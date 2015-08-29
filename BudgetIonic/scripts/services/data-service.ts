@@ -1,8 +1,14 @@
 ﻿/// <reference path="../constants.ts" />
 /// <reference path="../models/server-interfaces.ts" />
+/// <reference path="../models/account-data.ts" />
+
 module Budget {
 
     export interface IDataService {
+        onAuth(onComplete: (authData: FirebaseAuthData) => void): void;
+        offAuth(onComplete: (authData: FirebaseAuthData) => void): void;
+        facebookLogin(): ng.IPromise<FirebaseAuthData>;
+        logOut(): void;
         getAccountSnapshot(key: string): ng.IPromise<FirebaseDataSnapshot>;
         getRootAccountSnapshot(): ng.IPromise<FirebaseDataSnapshot>;
         addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any>;
@@ -12,38 +18,12 @@ module Budget {
         getTransactionsReference(): Firebase;
     }
 
-    export class AccountData implements IAccountData {
-        constructor(
-            public subject: string,
-            public description: string,
-            public parent: string,
-            public debited: number,
-            public credited: number,
-            public lastAggregationTime: number,
-            public key: string) {
-        }
-
-        public static fromIAccountData(other: IAccountData, key: string): AccountData {
-            return new AccountData(
-                other.subject,
-                other.description,
-                other.parent,
-                other.debited,
-                other.credited,
-                other.lastAggregationTime,
-                key);
-        }
-
-        public static fromSnapshot(snapshot: FirebaseDataSnapshot): AccountData {
-            return AccountData.fromIAccountData(snapshot.exportVal<IAccountData>(), snapshot.key());
-        }
-    }
-
     export class DataService implements IDataService {
         public static IID = "dataService";
 
         public static $inject = [
             '$q',
+            "$log",
             '$firebaseArray',
         ];
 
@@ -52,7 +32,7 @@ module Budget {
         private _accountsReference: Firebase;
         private _transactionsReference: Firebase;
 
-        constructor(private $q: ng.IQService, $firebaseArray: AngularFireArrayService) {
+        constructor(private $q: ng.IQService, $log: ng.ILogService, $firebaseArray: AngularFireArrayService) {
             console.log("Creating data service");
 
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
@@ -63,17 +43,32 @@ module Budget {
             this.ensureData();
         }
 
-        private ensureData() {
-            this._accountsReference
-                .orderByChild("parent")
-                .limitToFirst(1)
-                .once(
-                    FirebaseEvents.value,
-                    snapshot => {
-                        if (!snapshot.val()) {
-                            this.createDemoData();
-                        }
-                    });
+        public onAuth(onComplete: (authData: FirebaseAuthData) => void): void {
+            this._database.onAuth(onComplete);
+        }
+
+        public offAuth(onComplete: (authData: FirebaseAuthData) => void): void {
+            this._database.offAuth(onComplete);
+        }
+
+        public facebookLogin(): ng.IPromise<FirebaseAuthData> {
+            var deferred = this.$q.defer<FirebaseAuthData>();
+
+            this._database.authWithOAuthPopup("facebook", function (error, authData) {
+                if (error) {
+                    console.log("Login Failed!", error);
+                    deferred.reject(error);
+                } else {
+                    console.log("Authenticated successfully with payload:", authData);
+                    deferred.resolve(authData);
+                }
+            });
+
+            return deferred.promise;
+        }
+
+        public logOut(): void {
+            this._database.unauth();
         }
 
         public getAccountsReference(): Firebase {
@@ -162,6 +157,27 @@ module Budget {
             return deferred.promise;
         }
 
+        public addTransaction(transaction: ITransactionData): ng.IPromise<Firebase> {
+            var deferred = this.$q.defer<Firebase>();
+            var reference = this._transactionsReference.push(transaction, x => {
+                deferred.resolve(reference);
+            });
+            return deferred.promise;
+        }
+
+        private ensureData() {
+            this._accountsReference
+                .orderByChild("parent")
+                .limitToFirst(1)
+                .once(
+                    FirebaseEvents.value,
+                    snapshot => {
+                        if (!snapshot.val()) {
+                            this.createDemoData();
+                        }
+                    });
+        }
+
         private normalizeAccountKey(accountKey: string): ng.IPromise<string> {
             var accountKeyDeferred = this.$q.defer();
 
@@ -189,14 +205,6 @@ module Budget {
                 debited: 0,
                 lastAggregationTime: 0,
             }, x => {
-                deferred.resolve(reference);
-            });
-            return deferred.promise;
-        }
-
-        public addTransaction(transaction: ITransactionData): ng.IPromise<Firebase> {
-            var deferred = this.$q.defer<Firebase>();
-            var reference = this._transactionsReference.push(transaction, x => {
                 deferred.resolve(reference);
             });
             return deferred.promise;

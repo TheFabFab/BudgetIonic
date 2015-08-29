@@ -10,6 +10,7 @@
 /// <reference path="controllers/delete-account-ctrl.ts" />
 /// <reference path="controllers/allocate-ctrl.ts" />
 /// <reference path="controllers/add-expense-ctrl.ts" />
+/// <reference path="controllers/login-ctrl.ts" />
 
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
@@ -28,61 +29,32 @@ module Budget {
             .controller(NewAccountCtrl.IID, NewAccountCtrl)
             .controller(DeleteAccountCtrl.IID, DeleteAccountCtrl)
             .controller(AllocateBudgetCtrl.IID, AllocateBudgetCtrl)
-            .controller(AddExpenseCtrl.IID, AddExpenseCtrl);
+            .controller(AddExpenseCtrl.IID, AddExpenseCtrl)
+            .controller(LoginCtrl.IID, LoginCtrl);
 
 
-    budgetModule
-        .run(function ($ionicPlatform, $rootScope: ng.IRootScopeService) {
-            $ionicPlatform.ready(() => {
-                // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
-                // for form inputs)
-                if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
-                    cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-                }
-                if (window.StatusBar) {
-                    // org.apache.cordova.statusbar required
-                    window.StatusBar.styleLightContent();
-                }
-            });
-
-            // Credits: Adam's answer in http://stackoverflow.com/a/20786262/69362
-            console.log("Setting up $rootscope logging...");
-
-            $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
-                console.log('$stateChangeStart to ' + toState.to + '- fired when the transition begins. toState,toParams : \n', toState, toParams);
-            });
-
-            $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams) {
-                console.log('$stateChangeError - fired when an error occurs during transition.');
-                console.log(arguments);
-            });
-
-            $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-                console.log('$stateChangeSuccess to ' + toState.name + '- fired once the state transition is complete.');
-            });
-
-            $rootScope.$on('$viewContentLoaded', function (event) {
-                console.log('$viewContentLoaded - fired after dom rendered', event);
-            });
-
-            $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
-                console.log('$stateNotFound ' + unfoundState.to + '  - fired when a state cannot be found by its name.');
-                console.log(unfoundState, fromState, fromParams);
-            });
-        })
-    ;
 
     budgetModule
         .config(($stateProvider: ng.ui.IStateProvider, $urlRouterProvider: ng.ui.IUrlRouterProvider, $locationProvider: ng.ILocationProvider) => {
-            console.log("Configuring routes...");
+            console.debug("Configuring routes...");
 
             $stateProvider
+
+                .state("login", {
+                    url: "/login/:toState/:toParams",
+                    views: {
+                        "main-frame": {
+                            controller: LoginCtrl.controllerAs,
+                            templateUrl: "templates/login.html"
+                        }
+                    }
+                })
                  
                 .state("app", {
                     abstract: true,
                     url: "/budget",
                     views: {
-                        'main-frame': {
+                        "main-frame": {
                             controller: MainCtrl.controllerAs,
                             templateUrl: "templates/master-page.html",
                         },
@@ -90,7 +62,7 @@ module Budget {
                     resolve: MainCtrl.resolve()
                 })
 
-                .state("app.budget", {
+                .state("app.home", {
                     url: "/home",
                     views: {
                         'main-content': {
@@ -167,6 +139,55 @@ module Budget {
 
     export function initialize() {
         document.addEventListener('deviceready', onDeviceReady, false);
+    }
+
+    budgetModule.run(["$ionicPlatform", "$rootScope", "$state", "$log", run]);
+
+    function run($ionicPlatform, $rootScope: ng.IRootScopeService, $state: ng.ui.IStateService, $log: ng.ILogService) {
+        $ionicPlatform.ready(() => {
+            // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
+            // for form inputs)
+            if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
+                cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+            }
+            if (window.StatusBar) {
+                // org.apache.cordova.statusbar required
+                window.StatusBar.styleLightContent();
+            }
+        });
+
+        // Credits: Adam's answer in http://stackoverflow.com/a/20786262/69362
+        $log.debug("Setting up $rootscope logging...");
+
+        $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
+            $log.debug('$stateChangeStart to ' + toState.to + '- fired when the transition begins. toState,toParams : \n', toState, toParams);
+        });
+
+        $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams) {
+            $log.debug('$stateChangeError - fired when an error occurs during transition.');
+            $log.debug(arguments);
+        });
+
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+            $log.debug('$stateChangeSuccess to ' + toState.name + '- fired once the state transition is complete.');
+        });
+
+        $rootScope.$on('$viewContentLoaded', function (event) {
+            $log.debug('$viewContentLoaded - fired after dom rendered', event);
+        });
+
+        $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
+            $log.debug('$stateNotFound ' + unfoundState.to + '  - fired when a state cannot be found by its name.');
+            $log.debug(unfoundState, fromState, fromParams);
+        });
+
+        $log.debug("Setting up authentication...");
+        $rootScope.$on('$stateChangeError', function (event, toState: ng.ui.IState, toParams, fromState, fromParams, reason) {
+            if (reason == "authentication") {
+                event.preventDefault();
+                $state.go("login", { toState: toState.name, toParams: toParams });
+            }
+        });
     }
 
     function onDeviceReady() {

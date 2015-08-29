@@ -17,12 +17,19 @@
                         <!-- Put further content here -->
                         <ul class="list col">
                             <li class="item">
-                                <a class="row" ui-sref="app.budget">
-                                    <div>Home</div></a>
+                                <a class="row" ng-click="vm.logOut()" href="">
+                                    <div>Log out</div>
+                                </a>
+                            </li>
+                            <li class="item">
+                                <a class="row" ui-sref="app.home">
+                                    <div>Home</div>
+                                </a>
                             </li>
                             <li class="item" ng-repeat="command in vm.contextCommands" ng-if="command.isEnabled">
                                 <a class="row" ng-href="{{command.link}}">
-                                    <div>{{command.label}}</div></a>
+                                    <div>{{command.label}}</div>
+                                </a>
                             </li>
                         </ul>
                     </div>

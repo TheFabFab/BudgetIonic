@@ -44,8 +44,6 @@ var Budget;
     })();
     Budget.FirebaseEvents = FirebaseEvents;
 })(Budget || (Budget = {}));
-/// <reference path="../constants.ts" />
-/// <reference path="../models/server-interfaces.ts" />
 var Budget;
 (function (Budget) {
     var AccountData = (function () {
@@ -67,8 +65,14 @@ var Budget;
         return AccountData;
     })();
     Budget.AccountData = AccountData;
+})(Budget || (Budget = {}));
+/// <reference path="../constants.ts" />
+/// <reference path="../models/server-interfaces.ts" />
+/// <reference path="../models/account-data.ts" />
+var Budget;
+(function (Budget) {
     var DataService = (function () {
-        function DataService($q, $firebaseArray) {
+        function DataService($q, $log, $firebaseArray) {
             this.$q = $q;
             console.log("Creating data service");
             this._database = new Firebase("https://budgetionic.firebaseio.com/");
@@ -76,16 +80,28 @@ var Budget;
             this._accountsReference = this._database.child("accounts");
             this.ensureData();
         }
-        DataService.prototype.ensureData = function () {
-            var _this = this;
-            this._accountsReference
-                .orderByChild("parent")
-                .limitToFirst(1)
-                .once(Budget.FirebaseEvents.value, function (snapshot) {
-                if (!snapshot.val()) {
-                    _this.createDemoData();
+        DataService.prototype.onAuth = function (onComplete) {
+            this._database.onAuth(onComplete);
+        };
+        DataService.prototype.offAuth = function (onComplete) {
+            this._database.offAuth(onComplete);
+        };
+        DataService.prototype.facebookLogin = function () {
+            var deferred = this.$q.defer();
+            this._database.authWithOAuthPopup("facebook", function (error, authData) {
+                if (error) {
+                    console.log("Login Failed!", error);
+                    deferred.reject(error);
+                }
+                else {
+                    console.log("Authenticated successfully with payload:", authData);
+                    deferred.resolve(authData);
                 }
             });
+            return deferred.promise;
+        };
+        DataService.prototype.logOut = function () {
+            this._database.unauth();
         };
         DataService.prototype.getAccountsReference = function () {
             return this._accountsReference;
@@ -161,6 +177,24 @@ var Budget;
             });
             return deferred.promise;
         };
+        DataService.prototype.addTransaction = function (transaction) {
+            var deferred = this.$q.defer();
+            var reference = this._transactionsReference.push(transaction, function (x) {
+                deferred.resolve(reference);
+            });
+            return deferred.promise;
+        };
+        DataService.prototype.ensureData = function () {
+            var _this = this;
+            this._accountsReference
+                .orderByChild("parent")
+                .limitToFirst(1)
+                .once(Budget.FirebaseEvents.value, function (snapshot) {
+                if (!snapshot.val()) {
+                    _this.createDemoData();
+                }
+            });
+        };
         DataService.prototype.normalizeAccountKey = function (accountKey) {
             var accountKeyDeferred = this.$q.defer();
             if (accountKey == 'root') {
@@ -186,13 +220,6 @@ var Budget;
                 debited: 0,
                 lastAggregationTime: 0,
             }, function (x) {
-                deferred.resolve(reference);
-            });
-            return deferred.promise;
-        };
-        DataService.prototype.addTransaction = function (transaction) {
-            var deferred = this.$q.defer();
-            var reference = this._transactionsReference.push(transaction, function (x) {
                 deferred.resolve(reference);
             });
             return deferred.promise;
@@ -256,6 +283,7 @@ var Budget;
         DataService.IID = "dataService";
         DataService.$inject = [
             '$q',
+            "$log",
             '$firebaseArray',
         ];
         return DataService;
@@ -439,7 +467,6 @@ var Budget;
                     index++;
             });
             this.transactions.splice(index, 0, transactionVm);
-            this.$scope.$digest();
         };
         AccountCtrl.prototype.updateContextCommands = function () {
             var hasData = this.subAccounts.length == 0 &&
@@ -476,31 +503,63 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $firebaseObject, $log, dataService, commandService, rootAccountSnapshot) {
+        function MainCtrl($scope, $state, $firebaseObject, $log, dataService, commandService, authData, rootAccountSnapshot) {
             this.$scope = $scope;
+            this.$state = $state;
             this.$firebaseObject = $firebaseObject;
             this.$log = $log;
             this.dataService = dataService;
             this.commandService = commandService;
+            this.authData = authData;
             console.log("Initializing main controller");
             this.rootAccount = Budget.AccountData.fromSnapshot(rootAccountSnapshot);
             this.contextCommands = commandService.contextCommands;
         }
         MainCtrl.resolve = function () {
             return {
+                authData: ["$q", "$state", Budget.DataService.IID, MainCtrl.authenticate],
                 rootAccountSnapshot: [Budget.DataService.IID, MainCtrl.getAccount],
             };
+        };
+        MainCtrl.authenticate = function ($q, $state, dataService) {
+            var deferred = $q.defer();
+            var authCallback = function (authData) {
+                if (authData !== null) {
+                    deferred.resolve(authData);
+                }
+                else {
+                    deferred.reject("authentication");
+                }
+            };
+            dataService.onAuth(authCallback);
+            return deferred.promise.then(function (x) {
+                dataService.offAuth(authCallback);
+                return x;
+            });
         };
         MainCtrl.getAccount = function (dataService) {
             return dataService.getRootAccountSnapshot();
         };
+        MainCtrl.prototype.logOut = function () {
+            this.dataService.logOut();
+            this.$state.go("app.home", {}, { reload: true });
+        };
+        MainCtrl.prototype.onAuthenticationChanged = function (authData) {
+            if (authData == null) {
+                this.$state.go("login");
+            }
+            else {
+            }
+        };
         MainCtrl.$inject = [
             '$scope',
+            "$state",
             "$firebaseObject",
             "$log",
             Budget.DataService.IID,
             Budget.CommandService.IID,
-            'rootAccountSnapshot',
+            "authData",
+            "rootAccountSnapshot",
         ];
         MainCtrl.IID = "mainCtrl";
         MainCtrl.controllerAs = MainCtrl.IID + " as vm";
@@ -766,6 +825,35 @@ var Budget;
     })();
     Budget.AddExpenseCtrl = AddExpenseCtrl;
 })(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    var LoginCtrl = (function () {
+        function LoginCtrl($stateParams, $state, $scope, $log, dataService) {
+            this.$stateParams = $stateParams;
+            this.$state = $state;
+            this.dataService = dataService;
+            $log.debug("Initializing login controller", $stateParams);
+        }
+        LoginCtrl.prototype.facebook = function () {
+            var _this = this;
+            this.dataService.facebookLogin()
+                .then(function (authData) {
+                _this.$state.go(_this.$stateParams.toState, _this.$stateParams.toParams);
+            });
+        };
+        LoginCtrl.IID = "loginCtrl";
+        LoginCtrl.controllerAs = LoginCtrl.IID + " as vm";
+        LoginCtrl.$inject = [
+            "$stateParams",
+            "$state",
+            "$scope",
+            "$log",
+            Budget.DataService.IID,
+        ];
+        return LoginCtrl;
+    })();
+    Budget.LoginCtrl = LoginCtrl;
+})(Budget || (Budget = {}));
 /// <reference path="services/command-service.ts" />
 /// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
@@ -778,6 +866,7 @@ var Budget;
 /// <reference path="controllers/delete-account-ctrl.ts" />
 /// <reference path="controllers/allocate-ctrl.ts" />
 /// <reference path="controllers/add-expense-ctrl.ts" />
+/// <reference path="controllers/login-ctrl.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 
@@ -794,56 +883,33 @@ var Budget;
         .controller(Budget.NewAccountCtrl.IID, Budget.NewAccountCtrl)
         .controller(Budget.DeleteAccountCtrl.IID, Budget.DeleteAccountCtrl)
         .controller(Budget.AllocateBudgetCtrl.IID, Budget.AllocateBudgetCtrl)
-        .controller(Budget.AddExpenseCtrl.IID, Budget.AddExpenseCtrl);
-    budgetModule
-        .run(function ($ionicPlatform, $rootScope) {
-        $ionicPlatform.ready(function () {
-            // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
-            // for form inputs)
-            if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
-                cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
-            }
-            if (window.StatusBar) {
-                // org.apache.cordova.statusbar required
-                window.StatusBar.styleLightContent();
-            }
-        });
-        // Credits: Adam's answer in http://stackoverflow.com/a/20786262/69362
-        console.log("Setting up $rootscope logging...");
-        $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
-            console.log('$stateChangeStart to ' + toState.to + '- fired when the transition begins. toState,toParams : \n', toState, toParams);
-        });
-        $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams) {
-            console.log('$stateChangeError - fired when an error occurs during transition.');
-            console.log(arguments);
-        });
-        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-            console.log('$stateChangeSuccess to ' + toState.name + '- fired once the state transition is complete.');
-        });
-        $rootScope.$on('$viewContentLoaded', function (event) {
-            console.log('$viewContentLoaded - fired after dom rendered', event);
-        });
-        $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
-            console.log('$stateNotFound ' + unfoundState.to + '  - fired when a state cannot be found by its name.');
-            console.log(unfoundState, fromState, fromParams);
-        });
-    });
+        .controller(Budget.AddExpenseCtrl.IID, Budget.AddExpenseCtrl)
+        .controller(Budget.LoginCtrl.IID, Budget.LoginCtrl);
     budgetModule
         .config(function ($stateProvider, $urlRouterProvider, $locationProvider) {
-        console.log("Configuring routes...");
+        console.debug("Configuring routes...");
         $stateProvider
+            .state("login", {
+            url: "/login/:toState/:toParams",
+            views: {
+                "main-frame": {
+                    controller: Budget.LoginCtrl.controllerAs,
+                    templateUrl: "templates/login.html"
+                }
+            }
+        })
             .state("app", {
             abstract: true,
             url: "/budget",
             views: {
-                'main-frame': {
+                "main-frame": {
                     controller: Budget.MainCtrl.controllerAs,
                     templateUrl: "templates/master-page.html",
                 },
             },
             resolve: Budget.MainCtrl.resolve()
         })
-            .state("app.budget", {
+            .state("app.home", {
             url: "/home",
             views: {
                 'main-content': {
@@ -913,6 +979,46 @@ var Budget;
         document.addEventListener('deviceready', onDeviceReady, false);
     }
     Budget.initialize = initialize;
+    budgetModule.run(["$ionicPlatform", "$rootScope", "$state", "$log", run]);
+    function run($ionicPlatform, $rootScope, $state, $log) {
+        $ionicPlatform.ready(function () {
+            // Hide the accessory bar by default (remove this to show the accessory bar above the keyboard
+            // for form inputs)
+            if (window.cordova && window.cordova.plugins && window.cordova.plugins.Keyboard) {
+                cordova.plugins.Keyboard.hideKeyboardAccessoryBar(true);
+            }
+            if (window.StatusBar) {
+                // org.apache.cordova.statusbar required
+                window.StatusBar.styleLightContent();
+            }
+        });
+        // Credits: Adam's answer in http://stackoverflow.com/a/20786262/69362
+        $log.debug("Setting up $rootscope logging...");
+        $rootScope.$on('$stateChangeStart', function (event, toState, toParams, fromState, fromParams) {
+            $log.debug('$stateChangeStart to ' + toState.to + '- fired when the transition begins. toState,toParams : \n', toState, toParams);
+        });
+        $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams) {
+            $log.debug('$stateChangeError - fired when an error occurs during transition.');
+            $log.debug(arguments);
+        });
+        $rootScope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+            $log.debug('$stateChangeSuccess to ' + toState.name + '- fired once the state transition is complete.');
+        });
+        $rootScope.$on('$viewContentLoaded', function (event) {
+            $log.debug('$viewContentLoaded - fired after dom rendered', event);
+        });
+        $rootScope.$on('$stateNotFound', function (event, unfoundState, fromState, fromParams) {
+            $log.debug('$stateNotFound ' + unfoundState.to + '  - fired when a state cannot be found by its name.');
+            $log.debug(unfoundState, fromState, fromParams);
+        });
+        $log.debug("Setting up authentication...");
+        $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams, reason) {
+            if (reason == "authentication") {
+                event.preventDefault();
+                $state.go("login", { toState: toState.name, toParams: toParams });
+            }
+        });
+    }
     function onDeviceReady() {
         // Handle the Cordova pause and resume events
         document.addEventListener('pause', onPause, false);
