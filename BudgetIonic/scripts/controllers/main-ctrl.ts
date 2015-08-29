@@ -1,27 +1,20 @@
-﻿/// <reference path="../services/data-service.ts" />
+﻿/// <reference path="../services/authentication-service.ts" />
+/// <reference path="../services/data-service.ts" />
 module Budget {
     'use strict';
 
     export class MainCtrl {
-        public static $inject = [
-            '$scope',
-            "$state",
-            "$firebaseObject",
-            "$log",
-            DataService.IID,
-            CommandService.IID,
-            "authData",
-            "rootAccountSnapshot",
-        ];
+        public static IID = "mainCtrl";
+        public static controllerAs = MainCtrl.IID + " as vm";
 
         public static resolve() {
             return {
-                authData: ["$q", "$state", DataService.IID, MainCtrl.authenticate],
+                authData: ["$q", "$state", AuthenticationService.IID, MainCtrl.authenticate],
                 rootAccountSnapshot: [DataService.IID, MainCtrl.getAccount],
             };
         }
 
-        private static authenticate($q: ng.IQService, $state: ng.ui.IStateService, dataService: IDataService): ng.IPromise<FirebaseAuthData> {
+        private static authenticate($q: ng.IQService, $state: ng.ui.IStateService, authenticationService: IAuthenticationService): ng.IPromise<FirebaseAuthData> {
             var deferred = $q.defer<FirebaseAuthData>();
 
             var authCallback = authData => {
@@ -32,9 +25,9 @@ module Budget {
                 }
             };
 
-            dataService.onAuth(authCallback);
+            authenticationService.onAuth(authCallback);
             return deferred.promise.then(x => {
-                dataService.offAuth(authCallback);
+                authenticationService.offAuth(authCallback);
                 return x;
             });
         }
@@ -43,11 +36,20 @@ module Budget {
             return dataService.getRootAccountSnapshot();
         }
 
-        public static IID = "mainCtrl";
-        public static controllerAs = MainCtrl.IID + " as vm";
-
         public contextCommands: Command[];
         public rootAccount: AccountData;
+
+        public static $inject = [
+            '$scope',
+            "$state",
+            "$firebaseObject",
+            "$log",
+            DataService.IID,
+            AuthenticationService.IID,
+            CommandService.IID,
+            "authData",
+            "rootAccountSnapshot",
+        ];
 
         constructor(
             private $scope: ng.IScope,
@@ -55,6 +57,7 @@ module Budget {
             private $firebaseObject: AngularFireObjectService,
             private $log: ng.ILogService,
             private dataService: IDataService,
+            private authenticationService: IAuthenticationService,
             private commandService: CommandService,
             private authData: FirebaseAuthData,
             rootAccountSnapshot: FirebaseDataSnapshot) {
@@ -66,7 +69,7 @@ module Budget {
         }
 
         public logOut(): void {
-            this.dataService.logOut();
+            this.authenticationService.logOut();
             this.$state.go("app.home", {}, { reload: true });
         }
 

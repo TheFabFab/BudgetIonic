@@ -1,37 +1,5 @@
 var Budget;
 (function (Budget) {
-    var Command = (function () {
-        function Command(label, link, isEnabled) {
-            if (isEnabled === void 0) { isEnabled = true; }
-            this.label = label;
-            this.link = link;
-            this.isEnabled = isEnabled;
-        }
-        return Command;
-    })();
-    Budget.Command = Command;
-})(Budget || (Budget = {}));
-/// <reference path="../models/command.ts" />
-var Budget;
-(function (Budget) {
-    var CommandService = (function () {
-        function CommandService() {
-            this.contextCommands = [];
-        }
-        CommandService.prototype.registerContextCommands = function (commands) {
-            var _this = this;
-            this.contextCommands.length = 0;
-            commands.forEach(function (c) {
-                _this.contextCommands.push(c);
-            });
-        };
-        CommandService.IID = "commandService";
-        return CommandService;
-    })();
-    Budget.CommandService = CommandService;
-})(Budget || (Budget = {}));
-var Budget;
-(function (Budget) {
     var FirebaseEvents = (function () {
         function FirebaseEvents() {
         }
@@ -74,40 +42,25 @@ var Budget;
     var DataService = (function () {
         function DataService($q, $log, $firebaseArray) {
             this.$q = $q;
-            console.log("Creating data service");
-            this._database = new Firebase("https://budgetionic.firebaseio.com/");
-            this._transactionsReference = this._database.child("transactions");
-            this._accountsReference = this._database.child("accounts");
+            this.$log = $log;
+            $log.debug("Creating data service");
+            this.database = new Firebase("https://budgetionic.firebaseio.com/");
+            this.transactionsReference = this.database.child("transactions");
+            this.accountsReference = this.database.child("accounts");
+            this.usersReference = this.database.child("users");
             this.ensureData();
         }
-        DataService.prototype.onAuth = function (onComplete) {
-            this._database.onAuth(onComplete);
-        };
-        DataService.prototype.offAuth = function (onComplete) {
-            this._database.offAuth(onComplete);
-        };
-        DataService.prototype.facebookLogin = function () {
-            var deferred = this.$q.defer();
-            this._database.authWithOAuthPopup("facebook", function (error, authData) {
-                if (error) {
-                    console.log("Login Failed!", error);
-                    deferred.reject(error);
-                }
-                else {
-                    console.log("Authenticated successfully with payload:", authData);
-                    deferred.resolve(authData);
-                }
-            });
-            return deferred.promise;
-        };
-        DataService.prototype.logOut = function () {
-            this._database.unauth();
+        DataService.prototype.getDatabaseReference = function () {
+            return this.database;
         };
         DataService.prototype.getAccountsReference = function () {
-            return this._accountsReference;
+            return this.accountsReference;
         };
         DataService.prototype.getTransactionsReference = function () {
-            return this._transactionsReference;
+            return this.transactionsReference;
+        };
+        DataService.prototype.getUsersReference = function () {
+            return this.usersReference;
         };
         DataService.prototype.getRootAccountSnapshot = function () {
             return this.getAccountSnapshot('');
@@ -119,7 +72,7 @@ var Budget;
             }
             var deferred = this.$q.defer();
             if (key === '') {
-                var query = this._accountsReference
+                var query = this.accountsReference
                     .orderByChild("parent")
                     .equalTo('');
                 query.once(Budget.FirebaseEvents.value, function (snapshot) {
@@ -135,7 +88,7 @@ var Budget;
             }
             else {
                 console.log("Resolving account by key " + key);
-                this._accountsReference.child(key).once(Budget.FirebaseEvents.value, function (snapshot) {
+                this.accountsReference.child(key).once(Budget.FirebaseEvents.value, function (snapshot) {
                     console.log("Resolved account by id:");
                     console.log(snapshot);
                     deferred.resolve(snapshot);
@@ -148,7 +101,7 @@ var Budget;
             var deferred = this.$q.defer();
             this.normalizeAccountKey(parentKey)
                 .then(function (key) {
-                _this._accountsReference.push({
+                _this.accountsReference.push({
                     subject: subject,
                     description: description,
                     parent: key,
@@ -179,14 +132,14 @@ var Budget;
         };
         DataService.prototype.addTransaction = function (transaction) {
             var deferred = this.$q.defer();
-            var reference = this._transactionsReference.push(transaction, function (x) {
+            var reference = this.transactionsReference.push(transaction, function (x) {
                 deferred.resolve(reference);
             });
             return deferred.promise;
         };
         DataService.prototype.ensureData = function () {
             var _this = this;
-            this._accountsReference
+            this.accountsReference
                 .orderByChild("parent")
                 .limitToFirst(1)
                 .once(Budget.FirebaseEvents.value, function (snapshot) {
@@ -212,7 +165,7 @@ var Budget;
             if (parent === void 0) { parent = null; }
             if (description === void 0) { description = ''; }
             var deferred = this.$q.defer();
-            var reference = this._accountsReference.push({
+            var reference = this.accountsReference.push({
                 subject: subject,
                 description: description,
                 parent: parent,
@@ -289,6 +242,95 @@ var Budget;
         return DataService;
     })();
     Budget.DataService = DataService;
+})(Budget || (Budget = {}));
+/// <reference path="data-service.ts" />
+var Budget;
+(function (Budget) {
+    var AuthenticationService = (function () {
+        function AuthenticationService($q, $log, dataService) {
+            this.$q = $q;
+            this.$log = $log;
+            this.dataService = dataService;
+            $log.debug("Creating authentication service");
+            this.database = dataService.getDatabaseReference();
+            this.usersReference = dataService.getUsersReference();
+        }
+        AuthenticationService.prototype.onAuth = function (onComplete) {
+            this.database.onAuth(onComplete);
+        };
+        AuthenticationService.prototype.offAuth = function (onComplete) {
+            this.database.offAuth(onComplete);
+        };
+        AuthenticationService.prototype.facebookLogin = function () {
+            var _this = this;
+            var deferred = this.$q.defer();
+            this.database.authWithOAuthPopup("facebook", function (error, authData) {
+                if (error) {
+                    console.log("Login Failed!", error);
+                    deferred.reject(error);
+                }
+                else {
+                    console.log("Authenticated successfully with payload:", authData);
+                    var userRef = _this.usersReference.child(authData.uid);
+                    userRef.once(Budget.FirebaseEvents.value, function (snapshot) {
+                        var userData = snapshot.exportVal();
+                        if (userData != null) {
+                            deferred.resolve(userData);
+                        }
+                        else {
+                            userData = Budget.UserData.fromFirebaseAuthData(authData);
+                            _this.$log.debug("Registering user:", userData);
+                            userRef.set(userData, function () { return deferred.resolve(userData); });
+                        }
+                    });
+                }
+            });
+            return deferred.promise;
+        };
+        AuthenticationService.prototype.logOut = function () {
+            this.database.unauth();
+        };
+        AuthenticationService.IID = "authenticationService";
+        AuthenticationService.$inject = [
+            "$q",
+            "$log",
+            Budget.DataService.IID
+        ];
+        return AuthenticationService;
+    })();
+    Budget.AuthenticationService = AuthenticationService;
+})(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    var Command = (function () {
+        function Command(label, link, isEnabled) {
+            if (isEnabled === void 0) { isEnabled = true; }
+            this.label = label;
+            this.link = link;
+            this.isEnabled = isEnabled;
+        }
+        return Command;
+    })();
+    Budget.Command = Command;
+})(Budget || (Budget = {}));
+/// <reference path="../models/command.ts" />
+var Budget;
+(function (Budget) {
+    var CommandService = (function () {
+        function CommandService() {
+            this.contextCommands = [];
+        }
+        CommandService.prototype.registerContextCommands = function (commands) {
+            var _this = this;
+            this.contextCommands.length = 0;
+            commands.forEach(function (c) {
+                _this.contextCommands.push(c);
+            });
+        };
+        CommandService.IID = "commandService";
+        return CommandService;
+    })();
+    Budget.CommandService = CommandService;
 })(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
@@ -498,17 +540,19 @@ var Budget;
     })();
     Budget.AccountCtrl = AccountCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="../services/authentication-service.ts" />
 /// <reference path="../services/data-service.ts" />
 var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $state, $firebaseObject, $log, dataService, commandService, authData, rootAccountSnapshot) {
+        function MainCtrl($scope, $state, $firebaseObject, $log, dataService, authenticationService, commandService, authData, rootAccountSnapshot) {
             this.$scope = $scope;
             this.$state = $state;
             this.$firebaseObject = $firebaseObject;
             this.$log = $log;
             this.dataService = dataService;
+            this.authenticationService = authenticationService;
             this.commandService = commandService;
             this.authData = authData;
             console.log("Initializing main controller");
@@ -517,11 +561,11 @@ var Budget;
         }
         MainCtrl.resolve = function () {
             return {
-                authData: ["$q", "$state", Budget.DataService.IID, MainCtrl.authenticate],
+                authData: ["$q", "$state", Budget.AuthenticationService.IID, MainCtrl.authenticate],
                 rootAccountSnapshot: [Budget.DataService.IID, MainCtrl.getAccount],
             };
         };
-        MainCtrl.authenticate = function ($q, $state, dataService) {
+        MainCtrl.authenticate = function ($q, $state, authenticationService) {
             var deferred = $q.defer();
             var authCallback = function (authData) {
                 if (authData !== null) {
@@ -531,9 +575,9 @@ var Budget;
                     deferred.reject("authentication");
                 }
             };
-            dataService.onAuth(authCallback);
+            authenticationService.onAuth(authCallback);
             return deferred.promise.then(function (x) {
-                dataService.offAuth(authCallback);
+                authenticationService.offAuth(authCallback);
                 return x;
             });
         };
@@ -541,7 +585,7 @@ var Budget;
             return dataService.getRootAccountSnapshot();
         };
         MainCtrl.prototype.logOut = function () {
-            this.dataService.logOut();
+            this.authenticationService.logOut();
             this.$state.go("app.home", {}, { reload: true });
         };
         MainCtrl.prototype.onAuthenticationChanged = function (authData) {
@@ -551,18 +595,19 @@ var Budget;
             else {
             }
         };
+        MainCtrl.IID = "mainCtrl";
+        MainCtrl.controllerAs = MainCtrl.IID + " as vm";
         MainCtrl.$inject = [
             '$scope',
             "$state",
             "$firebaseObject",
             "$log",
             Budget.DataService.IID,
+            Budget.AuthenticationService.IID,
             Budget.CommandService.IID,
             "authData",
             "rootAccountSnapshot",
         ];
-        MainCtrl.IID = "mainCtrl";
-        MainCtrl.controllerAs = MainCtrl.IID + " as vm";
         return MainCtrl;
     })();
     Budget.MainCtrl = MainCtrl;
@@ -825,18 +870,19 @@ var Budget;
     })();
     Budget.AddExpenseCtrl = AddExpenseCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="../services/authentication-service.ts" />
 var Budget;
 (function (Budget) {
     var LoginCtrl = (function () {
-        function LoginCtrl($stateParams, $state, $scope, $log, dataService) {
+        function LoginCtrl($stateParams, $state, $scope, $log, authenticationService) {
             this.$stateParams = $stateParams;
             this.$state = $state;
-            this.dataService = dataService;
+            this.authenticationService = authenticationService;
             $log.debug("Initializing login controller", $stateParams.toState, $stateParams.toParams);
         }
         LoginCtrl.prototype.facebook = function () {
             var _this = this;
-            this.dataService.facebookLogin()
+            this.authenticationService.facebookLogin()
                 .then(function (authData) {
                 _this.$state.go(_this.$stateParams.toState, angular.fromJson(_this.$stateParams.toParams));
             });
@@ -848,12 +894,13 @@ var Budget;
             "$state",
             "$scope",
             "$log",
-            Budget.DataService.IID,
+            Budget.AuthenticationService.IID,
         ];
         return LoginCtrl;
     })();
     Budget.LoginCtrl = LoginCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="services/authentication-service.ts" />
 /// <reference path="services/command-service.ts" />
 /// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
@@ -876,6 +923,7 @@ var Budget;
     "use strict";
     var budgetModule = angular.module('budget-app', ['ionic', 'firebase', 'angularMoment'])
         .service(Budget.DataService.IID, Budget.DataService)
+        .service(Budget.AuthenticationService.IID, Budget.AuthenticationService)
         .service(Budget.CommandService.IID, Budget.CommandService)
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
@@ -1053,6 +1101,30 @@ var Budget;
         return LiteEvent;
     })();
     Budget.LiteEvent = LiteEvent;
+})(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    var UserData = (function () {
+        function UserData(uid, provider, expires, token, firstName, lastName, name, displayName, timezone, gender, profileImageUrl) {
+            this.uid = uid;
+            this.provider = provider;
+            this.expires = expires;
+            this.token = token;
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.name = name;
+            this.displayName = displayName;
+            this.timezone = timezone;
+            this.gender = gender;
+            this.profileImageUrl = profileImageUrl;
+        }
+        UserData.fromFirebaseAuthData = function (authData) {
+            var facebookData = authData.facebook;
+            return new UserData(authData.uid, authData.provider, authData.expires, authData.token, facebookData.cachedUserProfile.first_name, facebookData.cachedUserProfile.last_name, facebookData.cachedUserProfile.name, facebookData.displayName, facebookData.cachedUserProfile.timezone, facebookData.cachedUserProfile.gender, facebookData.profileImageURL);
+        };
+        return UserData;
+    })();
+    Budget.UserData = UserData;
 })(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {

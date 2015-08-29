@@ -1,4 +1,5 @@
-﻿module Budget {
+﻿/// <reference path="../services/authentication-service.ts" />
+module Budget {
     export interface ILoginParams {
         toState: string,
         toParams: string,
@@ -13,7 +14,7 @@
             "$state",
             "$scope",
             "$log",
-            DataService.IID,
+            AuthenticationService.IID,
         ];
 
         constructor(
@@ -21,13 +22,13 @@
             private $state: ng.ui.IStateService,
             $scope: ng.IScope,
             $log: ng.ILogService,
-            private dataService: IDataService) {
+            private authenticationService: IAuthenticationService) {
 
             $log.debug("Initializing login controller", $stateParams.toState, $stateParams.toParams);
         }
 
         public facebook() {
-            this.dataService.facebookLogin()
+            this.authenticationService.facebookLogin()
                 .then(authData => {
                     this.$state.go(this.$stateParams.toState, angular.fromJson(this.$stateParams.toParams));
                 });
