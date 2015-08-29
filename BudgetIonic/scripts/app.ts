@@ -185,7 +185,7 @@ module Budget {
         $rootScope.$on('$stateChangeError', function (event, toState: ng.ui.IState, toParams, fromState, fromParams, reason) {
             if (reason == "authentication") {
                 event.preventDefault();
-                $state.go("login", { toState: toState.name, toParams: toParams });
+                $state.go("login", { toState: toState.name, toParams: angular.toJson(toParams) });
             }
         });
     }

@@ -1,7 +1,7 @@
 ﻿module Budget {
     export interface ILoginParams {
         toState: string,
-        toParams: Object,
+        toParams: string,
     }
 
     export class LoginCtrl {
@@ -23,13 +23,13 @@
             $log: ng.ILogService,
             private dataService: IDataService) {
 
-            $log.debug("Initializing login controller", $stateParams);
+            $log.debug("Initializing login controller", $stateParams.toState, $stateParams.toParams);
         }
 
         public facebook() {
             this.dataService.facebookLogin()
                 .then(authData => {
-                    this.$state.go(this.$stateParams.toState, this.$stateParams.toParams);
+                    this.$state.go(this.$stateParams.toState, angular.fromJson(this.$stateParams.toParams));
                 });
         }
     }

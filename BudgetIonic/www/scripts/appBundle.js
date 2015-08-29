@@ -832,13 +832,13 @@ var Budget;
             this.$stateParams = $stateParams;
             this.$state = $state;
             this.dataService = dataService;
-            $log.debug("Initializing login controller", $stateParams);
+            $log.debug("Initializing login controller", $stateParams.toState, $stateParams.toParams);
         }
         LoginCtrl.prototype.facebook = function () {
             var _this = this;
             this.dataService.facebookLogin()
                 .then(function (authData) {
-                _this.$state.go(_this.$stateParams.toState, _this.$stateParams.toParams);
+                _this.$state.go(_this.$stateParams.toState, angular.fromJson(_this.$stateParams.toParams));
             });
         };
         LoginCtrl.IID = "loginCtrl";
@@ -1015,7 +1015,7 @@ var Budget;
         $rootScope.$on('$stateChangeError', function (event, toState, toParams, fromState, fromParams, reason) {
             if (reason == "authentication") {
                 event.preventDefault();
-                $state.go("login", { toState: toState.name, toParams: toParams });
+                $state.go("login", { toState: toState.name, toParams: angular.toJson(toParams) });
             }
         });
     }
