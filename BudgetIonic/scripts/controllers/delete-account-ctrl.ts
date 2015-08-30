@@ -34,11 +34,11 @@
 
         public ok(): void {
             this.dataService.deleteAccount(this.accountId)
-                .then(x => this.$state.go("app.budget-account", <IAccountStateParams>{ accountId: this.account.parent }));
+                .then(x => this.$state.go("logged-in.budget-account", <IAccountStateParams>{ accountId: this.account.parent }));
         }
 
         public cancel(): void {
-            this.$state.go("app.budget-account", <IAccountStateParams>{ accountId: this.accountId });
+            this.$state.go("logged-in.budget-account", <IAccountStateParams>{ accountId: this.accountId });
         }
     }
 }

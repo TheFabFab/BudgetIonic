@@ -62,7 +62,7 @@
 
         private close(): void {
             this.$state.go(
-                "app.budget-account",
+                "logged-in.budget-account",
                 <IAccountStateParams>{ accountId: this.debitAccount.key });
         }
 

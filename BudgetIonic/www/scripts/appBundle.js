@@ -1,5 +1,34 @@
 var Budget;
 (function (Budget) {
+    var ProjectData = (function () {
+        function ProjectData(title, rootAccount) {
+            this.title = title;
+            this.rootAccount = rootAccount;
+        }
+        return ProjectData;
+    })();
+    Budget.ProjectData = ProjectData;
+    var ProjectUserData = (function () {
+        function ProjectUserData(user, projectId, lastAccessTime) {
+            this.user = user;
+            this.projectId = projectId;
+            this.lastAccessTime = lastAccessTime;
+        }
+        return ProjectUserData;
+    })();
+    Budget.ProjectUserData = ProjectUserData;
+    var ProjectOfUser = (function () {
+        function ProjectOfUser(title, lastAccessTime, key) {
+            this.title = title;
+            this.lastAccessTime = lastAccessTime;
+            this.key = key;
+        }
+        return ProjectOfUser;
+    })();
+    Budget.ProjectOfUser = ProjectOfUser;
+})(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
     var FirebaseEvents = (function () {
         function FirebaseEvents() {
         }
@@ -34,6 +63,7 @@ var Budget;
     })();
     Budget.AccountData = AccountData;
 })(Budget || (Budget = {}));
+/// <reference path="../models/project-data.ts" />
 /// <reference path="../constants.ts" />
 /// <reference path="../models/server-interfaces.ts" />
 /// <reference path="../models/account-data.ts" />
@@ -48,6 +78,8 @@ var Budget;
             this.transactionsReference = this.database.child("transactions");
             this.accountsReference = this.database.child("accounts");
             this.usersReference = this.database.child("users");
+            this.projectsReference = this.database.child("projects");
+            this.projectUserReference = this.database.child("project-users");
             this.ensureData();
         }
         DataService.prototype.getDatabaseReference = function () {
@@ -61,6 +93,9 @@ var Budget;
         };
         DataService.prototype.getUsersReference = function () {
             return this.usersReference;
+        };
+        DataService.prototype.getProjectsReference = function () {
+            return this.projectsReference;
         };
         DataService.prototype.getRootAccountSnapshot = function () {
             return this.getAccountSnapshot('');
@@ -134,6 +169,63 @@ var Budget;
             var deferred = this.$q.defer();
             var reference = this.transactionsReference.push(transaction, function (x) {
                 deferred.resolve(reference);
+            });
+            return deferred.promise;
+        };
+        DataService.prototype.getProjectsForUser = function (userId) {
+            var _this = this;
+            var deferred = this.$q.defer();
+            this.projectUserReference
+                .orderByChild("user")
+                .equalTo(userId)
+                .once(Budget.FirebaseEvents.value, function (userProjectIds) {
+                var projectUsers = [];
+                userProjectIds.forEach(function (snapshot) {
+                    var projectUserData = snapshot.exportVal();
+                    projectUsers.push(projectUserData);
+                });
+                projectUsers.sort(function (a, b) { return a.lastAccessTime - b.lastAccessTime; });
+                var projectsPromise = projectUsers.map(function (x) {
+                    var projectDeferred = _this.$q.defer();
+                    var projectTitleReference = _this.projectsReference.child(x.projectId).child("title");
+                    projectTitleReference.once(Budget.FirebaseEvents.value, function (projectSnapshot) {
+                        var projectTitle = projectSnapshot.exportVal();
+                        projectDeferred.resolve(new Budget.ProjectOfUser(projectTitle, x.lastAccessTime, x.projectId));
+                    });
+                    return projectDeferred.promise;
+                });
+                _this.$q.all(projectsPromise).then(function (x) { return deferred.resolve(x); });
+            });
+            return deferred.promise;
+        };
+        DataService.prototype.addNewProject = function (userId, projectTitle) {
+            var _this = this;
+            var deferred = this.$q.defer();
+            var projectReference = this.projectsReference.push({
+                title: projectTitle,
+                rootAccount: '',
+                accounts: {},
+                transactions: {}
+            }, function (error) {
+                var rootAccount = projectReference.child("accounts").push({
+                    subject: projectTitle,
+                    debited: 0,
+                    credited: 0,
+                    parent: "",
+                    description: "",
+                    lastAggregationTime: 0
+                }, function (error) {
+                    projectReference.update({
+                        rootAccount: rootAccount.key()
+                    }, function (error) {
+                        _this.projectUserReference.push(new Budget.ProjectUserData(userId, projectReference.key(), Firebase.ServerValue.TIMESTAMP), function (error) {
+                            deferred.resolve({
+                                title: projectTitle,
+                                rootAccount: rootAccount.key()
+                            });
+                        });
+                    });
+                });
             });
             return deferred.promise;
         };
@@ -582,10 +674,8 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $state, $firebaseObject, $log, dataService, authenticationService, commandService, userData, rootAccountSnapshot) {
-            this.$scope = $scope;
+        function MainCtrl($state, $log, dataService, authenticationService, commandService, userData, rootAccountSnapshot) {
             this.$state = $state;
-            this.$firebaseObject = $firebaseObject;
             this.$log = $log;
             this.dataService = dataService;
             this.authenticationService = authenticationService;
@@ -625,14 +715,12 @@ var Budget;
         };
         MainCtrl.prototype.logOut = function () {
             this.authenticationService.logOut();
-            this.$state.go("app.home", {}, { reload: true });
+            this.$state.go("logged-in.home", {}, { reload: true });
         };
         MainCtrl.IID = "mainCtrl";
         MainCtrl.controllerAs = MainCtrl.IID + " as vm";
         MainCtrl.$inject = [
-            '$scope',
             "$state",
-            "$firebaseObject",
             "$log",
             Budget.DataService.IID,
             Budget.AuthenticationService.IID,
@@ -663,10 +751,10 @@ var Budget;
         DeleteAccountCtrl.prototype.ok = function () {
             var _this = this;
             this.dataService.deleteAccount(this.accountId)
-                .then(function (x) { return _this.$state.go("app.budget-account", { accountId: _this.account.parent }); });
+                .then(function (x) { return _this.$state.go("logged-in.budget-account", { accountId: _this.account.parent }); });
         };
         DeleteAccountCtrl.prototype.cancel = function () {
-            this.$state.go("app.budget-account", { accountId: this.accountId });
+            this.$state.go("logged-in.budget-account", { accountId: this.accountId });
         };
         DeleteAccountCtrl.IID = "deleteAccountCtrl";
         DeleteAccountCtrl.controllerAs = DeleteAccountCtrl.IID + " as vm";
@@ -771,7 +859,7 @@ var Budget;
             this.close();
         };
         AllocateBudgetCtrl.prototype.close = function () {
-            this.$state.go("app.budget-account", { accountId: this.creditAccountId });
+            this.$state.go("logged-in.budget-account", { accountId: this.creditAccountId });
         };
         AllocateBudgetCtrl.prototype.validate = function () {
             var _this = this;
@@ -876,7 +964,7 @@ var Budget;
             this.close();
         };
         AddExpenseCtrl.prototype.close = function () {
-            this.$state.go("app.budget-account", { accountId: this.debitAccount.key });
+            this.$state.go("logged-in.budget-account", { accountId: this.debitAccount.key });
         };
         AddExpenseCtrl.prototype.validate = function () {
             var result = false;
@@ -932,6 +1020,39 @@ var Budget;
     })();
     Budget.LoginCtrl = LoginCtrl;
 })(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    var ProjectsCtrl = (function () {
+        function ProjectsCtrl($log, dataService, authenticationService) {
+            var _this = this;
+            this.$log = $log;
+            this.dataService = dataService;
+            this.authenticationService = authenticationService;
+            this.projects = [];
+            this.newProjectTitle = "";
+            $log.debug("Initializing projects controller.");
+            authenticationService.initialized
+                .then(function (_) { return dataService.getProjectsForUser(authenticationService.userData.uid); })
+                .then(function (projects) { return _this.projects = projects; });
+        }
+        ProjectsCtrl.prototype.onAddNew = function () {
+            var _this = this;
+            console.assert(this.newProjectTitle.length > 0);
+            this.dataService.addNewProject(this.authenticationService.userData.uid, this.newProjectTitle)
+                .then(function (x) { return _this.projects.unshift(x); });
+            this.newProjectTitle = "";
+        };
+        ProjectsCtrl.IID = "projectsCtrl";
+        ProjectsCtrl.controllerAs = ProjectsCtrl.IID + " as vm";
+        ProjectsCtrl.$inject = [
+            "$log",
+            Budget.DataService.IID,
+            Budget.AuthenticationService.IID
+        ];
+        return ProjectsCtrl;
+    })();
+    Budget.ProjectsCtrl = ProjectsCtrl;
+})(Budget || (Budget = {}));
 /// <reference path="services/authentication-service.ts" />
 /// <reference path="services/command-service.ts" />
 /// <reference path="services/data-service.ts" />
@@ -946,6 +1067,7 @@ var Budget;
 /// <reference path="controllers/allocate-ctrl.ts" />
 /// <reference path="controllers/add-expense-ctrl.ts" />
 /// <reference path="controllers/login-ctrl.ts" />
+/// <reference path="controllers/projects-ctrl.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 
@@ -964,7 +1086,8 @@ var Budget;
         .controller(Budget.DeleteAccountCtrl.IID, Budget.DeleteAccountCtrl)
         .controller(Budget.AllocateBudgetCtrl.IID, Budget.AllocateBudgetCtrl)
         .controller(Budget.AddExpenseCtrl.IID, Budget.AddExpenseCtrl)
-        .controller(Budget.LoginCtrl.IID, Budget.LoginCtrl);
+        .controller(Budget.LoginCtrl.IID, Budget.LoginCtrl)
+        .controller(Budget.ProjectsCtrl.IID, Budget.ProjectsCtrl);
     budgetModule
         .config(function ($stateProvider, $urlRouterProvider, $locationProvider) {
         console.debug("Configuring routes...");
@@ -977,8 +1100,8 @@ var Budget;
                     templateUrl: "templates/login.html"
                 }
             }
-        })
-            .state("app", {
+        });
+        $stateProvider.state("logged-in", {
             abstract: true,
             url: "/budget",
             views: {
@@ -988,8 +1111,17 @@ var Budget;
                 },
             },
             resolve: Budget.MainCtrl.resolve()
-        })
-            .state("app.home", {
+        });
+        $stateProvider.state("logged-in.projects", {
+            url: "/projects",
+            views: {
+                'main-content': {
+                    templateUrl: "templates/projects.html",
+                    controller: Budget.ProjectsCtrl.controllerAs,
+                }
+            }
+        });
+        $stateProvider.state("logged-in.home", {
             url: "/home",
             views: {
                 'main-content': {
@@ -999,7 +1131,7 @@ var Budget;
                 },
             },
         });
-        $stateProvider.state("app.budget-account", {
+        $stateProvider.state("logged-in.budget-account", {
             url: "/account/:accountId",
             views: {
                 'main-content': {
@@ -1009,7 +1141,7 @@ var Budget;
                 },
             },
         });
-        $stateProvider.state("app.new-account", {
+        $stateProvider.state("logged-in.new-account", {
             url: "/new/:parentId",
             views: {
                 'main-content': {
@@ -1019,7 +1151,7 @@ var Budget;
                 },
             },
         });
-        $stateProvider.state("app.delete-account", {
+        $stateProvider.state("logged-in.delete-account", {
             url: "/delete/:accountId",
             views: {
                 'main-content': {
@@ -1029,7 +1161,7 @@ var Budget;
                 },
             },
         });
-        $stateProvider.state("app.allocate", {
+        $stateProvider.state("logged-in.allocate", {
             url: "/allocate/:accountId",
             views: {
                 'main-content': {
@@ -1039,7 +1171,7 @@ var Budget;
                 },
             },
         });
-        $stateProvider.state("app.expense", {
+        $stateProvider.state("logged-in.expense", {
             url: "/expense/:accountId",
             views: {
                 'main-content': {
@@ -1137,11 +1269,12 @@ var Budget;
 var Budget;
 (function (Budget) {
     var UserData = (function () {
-        function UserData(uid, provider, expires, token, firstName, lastName, name, displayName, timezone, gender, profileImageUrl) {
+        function UserData(uid, provider, expires, 
+            // public token: string,
+            firstName, lastName, name, displayName, timezone, gender, profileImageUrl) {
             this.uid = uid;
             this.provider = provider;
             this.expires = expires;
-            this.token = token;
             this.firstName = firstName;
             this.lastName = lastName;
             this.name = name;
@@ -1152,7 +1285,9 @@ var Budget;
         }
         UserData.fromFirebaseAuthData = function (authData) {
             var facebookData = authData.facebook;
-            return new UserData(authData.uid, authData.provider, authData.expires, authData.token, facebookData.cachedUserProfile.first_name, facebookData.cachedUserProfile.last_name, facebookData.cachedUserProfile.name, facebookData.displayName, facebookData.cachedUserProfile.timezone, facebookData.cachedUserProfile.gender, facebookData.profileImageURL);
+            return new UserData(authData.uid, authData.provider, authData.expires, 
+            // authData.token,
+            facebookData.cachedUserProfile.first_name, facebookData.cachedUserProfile.last_name, facebookData.cachedUserProfile.name, facebookData.displayName, facebookData.cachedUserProfile.timezone, facebookData.cachedUserProfile.gender, facebookData.profileImageURL);
         };
         return UserData;
     })();

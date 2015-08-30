@@ -1,0 +1,18 @@
+﻿<ion-view>
+    <ion-content class="has-header" padding="false">
+        <ul class="list">
+            <li class="item" ng-repeat="project in vm.projects">
+                <div>{{project.title}}</div>
+            </li>
+            <li ng-if="vm.projects.length == 0">Your project list is empty</li>
+            <li>
+                <div class="row">
+                    <div class="col col-fill">
+                        <input class="item-input" type="text" ng-model="vm.newProjectTitle" />
+                    </div>
+                    <button class="col button button-calm button-small" ng-disabled="vm.newProjectTitle.length == 0" ng-click="vm.onAddNew()">Add new project</button>
+                </div>
+            </li>
+        </ul>
+    </ion-content>
+</ion-view>

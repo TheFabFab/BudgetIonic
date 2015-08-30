@@ -40,9 +40,7 @@ module Budget {
         public imageStyle;
 
         public static $inject = [
-            '$scope',
             "$state",
-            "$firebaseObject",
             "$log",
             DataService.IID,
             AuthenticationService.IID,
@@ -52,9 +50,7 @@ module Budget {
         ];
 
         constructor(
-            private $scope: ng.IScope,
             private $state: ng.ui.IStateService,
-            private $firebaseObject: AngularFireObjectService,
             private $log: ng.ILogService,
             private dataService: IDataService,
             private authenticationService: IAuthenticationService,
@@ -75,7 +71,7 @@ module Budget {
 
         public logOut(): void {
             this.authenticationService.logOut();
-            this.$state.go("app.home", {}, { reload: true });
+            this.$state.go("logged-in.home", {}, { reload: true });
         }
     }
 }

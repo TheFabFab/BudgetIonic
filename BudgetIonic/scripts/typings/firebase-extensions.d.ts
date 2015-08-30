@@ -3,6 +3,12 @@
 	 * Exports the entire contents of the DataSnapshot as a JavaScript object.
 	 */
     exportVal<T>(): T;
+
+	/**
+	 * Generates a new child location using a unique name and returns a Firebase reference to it.
+	 * @returns {Firebase} A Firebase reference for the generated location.
+	 */
+    push<T>(T?: any, onComplete?: (error: any) => void): Firebase;
 }
 
 interface Firebase {

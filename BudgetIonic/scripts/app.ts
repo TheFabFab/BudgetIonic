@@ -12,6 +12,7 @@
 /// <reference path="controllers/allocate-ctrl.ts" />
 /// <reference path="controllers/add-expense-ctrl.ts" />
 /// <reference path="controllers/login-ctrl.ts" />
+/// <reference path="controllers/projects-ctrl.ts" />
 
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
@@ -32,7 +33,8 @@ module Budget {
             .controller(DeleteAccountCtrl.IID, DeleteAccountCtrl)
             .controller(AllocateBudgetCtrl.IID, AllocateBudgetCtrl)
             .controller(AddExpenseCtrl.IID, AddExpenseCtrl)
-            .controller(LoginCtrl.IID, LoginCtrl);
+            .controller(LoginCtrl.IID, LoginCtrl)
+            .controller(ProjectsCtrl.IID, ProjectsCtrl);
 
 
 
@@ -41,7 +43,6 @@ module Budget {
             console.debug("Configuring routes...");
 
             $stateProvider
-
                 .state("login", {
                     url: "/login/:toState/:toParams",
                     views: {
@@ -50,9 +51,9 @@ module Budget {
                             templateUrl: "templates/login.html"
                         }
                     }
-                })
-                 
-                .state("app", {
+                });
+
+            $stateProvider.state("logged-in", {
                     abstract: true,
                     url: "/budget",
                     views: {
@@ -62,9 +63,19 @@ module Budget {
                         },
                     },
                     resolve: MainCtrl.resolve()
-                })
+                });
 
-                .state("app.home", {
+            $stateProvider.state("logged-in.projects", {
+                    url: "/projects",
+                    views: {
+                        'main-content': {
+                            templateUrl: "templates/projects.html",
+                            controller: ProjectsCtrl.controllerAs,
+                        }
+                    }
+                });
+
+            $stateProvider.state("logged-in.home", {
                     url: "/home",
                     views: {
                         'main-content': {
@@ -75,7 +86,7 @@ module Budget {
                     },
                 });
 
-            $stateProvider.state("app.budget-account", {
+            $stateProvider.state("logged-in.budget-account", {
                 url: "/account/:accountId",
                 views: {
                     'main-content': {
@@ -86,7 +97,7 @@ module Budget {
                 },
             });
 
-            $stateProvider.state("app.new-account", {
+            $stateProvider.state("logged-in.new-account", {
                 url: "/new/:parentId",
                 views: {
                     'main-content': {
@@ -97,7 +108,7 @@ module Budget {
                 },
             });
 
-            $stateProvider.state("app.delete-account", {
+            $stateProvider.state("logged-in.delete-account", {
                 url: "/delete/:accountId",
                 views: {
                     'main-content': {
@@ -108,7 +119,7 @@ module Budget {
                 },
             });
 
-            $stateProvider.state("app.allocate", {
+            $stateProvider.state("logged-in.allocate", {
                 url: "/allocate/:accountId",
                 views: {
                     'main-content': {
@@ -119,7 +130,7 @@ module Budget {
                 },
             });
 
-            $stateProvider.state("app.expense", {
+            $stateProvider.state("logged-in.expense", {
                 url: "/expense/:accountId",
                 views: {
                     'main-content': {
