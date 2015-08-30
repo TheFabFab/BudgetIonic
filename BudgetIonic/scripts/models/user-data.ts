@@ -1,5 +1,8 @@
 ﻿module Budget {
     export class UserData {
+
+        public cachedProfileImage: string;
+
         constructor(
             public uid: string,
             public provider: string,
@@ -32,5 +35,6 @@
                 facebookData.profileImageURL
             );
         }
+
     }
 }

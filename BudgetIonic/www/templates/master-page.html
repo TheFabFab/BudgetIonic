@@ -16,10 +16,14 @@
                     <div class="row row-fill">
                         <!-- Put further content here -->
                         <ul class="list col">
-                            <li class="item">
-                                <a class="row" ng-click="vm.logOut()" href="">
-                                    <div>Log out</div>
-                                </a>
+                            <li class="item row">
+                                <div class="col clip-circle" ng-style="vm.imageStyle"></div>
+                                <div class="col col-fill">
+                                    <div class="row">{{vm.userData.displayName}}</div>
+                                    <a class="row" ng-click="vm.logOut()" href="">
+                                        <div>Log out</div>
+                                    </a>
+                                </div>
                             </li>
                             <li class="item">
                                 <a class="row" ui-sref="app.home">

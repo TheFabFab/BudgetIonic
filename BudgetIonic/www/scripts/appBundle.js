@@ -247,20 +247,19 @@ var Budget;
 var Budget;
 (function (Budget) {
     var AuthenticationService = (function () {
-        function AuthenticationService($q, $log, dataService) {
+        function AuthenticationService($q, $log, $http, dataService) {
+            var _this = this;
             this.$q = $q;
             this.$log = $log;
+            this.$http = $http;
             this.dataService = dataService;
             $log.debug("Creating authentication service");
             this.database = dataService.getDatabaseReference();
             this.usersReference = dataService.getUsersReference();
+            this.initializedDeferred = $q.defer();
+            this.initialized = this.initializedDeferred.promise;
+            this.database.onAuth(function (authData) { return _this.onAuthenticationChanged(authData); });
         }
-        AuthenticationService.prototype.onAuth = function (onComplete) {
-            this.database.onAuth(onComplete);
-        };
-        AuthenticationService.prototype.offAuth = function (onComplete) {
-            this.database.offAuth(onComplete);
-        };
         AuthenticationService.prototype.facebookLogin = function () {
             var _this = this;
             var deferred = this.$q.defer();
@@ -270,18 +269,10 @@ var Budget;
                     deferred.reject(error);
                 }
                 else {
-                    console.log("Authenticated successfully with payload:", authData);
-                    var userRef = _this.usersReference.child(authData.uid);
-                    userRef.once(Budget.FirebaseEvents.value, function (snapshot) {
-                        var userData = snapshot.exportVal();
-                        if (userData != null) {
-                            deferred.resolve(userData);
-                        }
-                        else {
-                            userData = Budget.UserData.fromFirebaseAuthData(authData);
-                            _this.$log.debug("Registering user:", userData);
-                            userRef.set(userData, function () { return deferred.resolve(userData); });
-                        }
+                    _this.getUserData(authData)
+                        .then(function (userData) {
+                        deferred.resolve(userData);
+                        _this.userData = userData;
                     });
                 }
             });
@@ -290,10 +281,55 @@ var Budget;
         AuthenticationService.prototype.logOut = function () {
             this.database.unauth();
         };
+        AuthenticationService.prototype.onAuthenticationChanged = function (authData) {
+            var _this = this;
+            if (authData != null) {
+                this.getUserData(authData)
+                    .then(function (userData) {
+                    _this.userData = userData;
+                    _this.initializedDeferred.resolve(true);
+                });
+            }
+            else {
+                this.userData = null;
+                this.initializedDeferred.resolve(true);
+            }
+        };
+        AuthenticationService.prototype.getUserData = function (authData) {
+            var _this = this;
+            var deferred = this.$q.defer();
+            console.log("Authenticated successfully with payload:", authData);
+            var userRef = this.usersReference.child(authData.uid);
+            userRef.once(Budget.FirebaseEvents.value, function (snapshot) {
+                var userData = snapshot.exportVal();
+                if (userData != null) {
+                    deferred.resolve(userData);
+                }
+                else {
+                    userData = Budget.UserData.fromFirebaseAuthData(authData);
+                    _this.$http.get(userData.profileImageUrl, { responseType: "blob" })
+                        .then(function (response) {
+                        var blob = response.data;
+                        _this.$log.debug("Downloaded profile image", response.data);
+                        var reader = new FileReader();
+                        reader.readAsDataURL(blob);
+                        reader.onloadend = function () {
+                            var base64 = reader.result;
+                            _this.$log.debug("Base64", base64);
+                            userData.cachedProfileImage = base64;
+                            _this.$log.debug("Registering user:", userData);
+                            userRef.set(userData, function () { return deferred.resolve(userData); });
+                        };
+                    });
+                }
+            });
+            return deferred.promise;
+        };
         AuthenticationService.IID = "authenticationService";
         AuthenticationService.$inject = [
             "$q",
             "$log",
+            "$http",
             Budget.DataService.IID
         ];
         return AuthenticationService;
@@ -546,7 +582,7 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $state, $firebaseObject, $log, dataService, authenticationService, commandService, authData, rootAccountSnapshot) {
+        function MainCtrl($scope, $state, $firebaseObject, $log, dataService, authenticationService, commandService, userData, rootAccountSnapshot) {
             this.$scope = $scope;
             this.$state = $state;
             this.$firebaseObject = $firebaseObject;
@@ -554,32 +590,35 @@ var Budget;
             this.dataService = dataService;
             this.authenticationService = authenticationService;
             this.commandService = commandService;
-            this.authData = authData;
+            this.userData = userData;
             console.log("Initializing main controller");
             this.rootAccount = Budget.AccountData.fromSnapshot(rootAccountSnapshot);
             this.contextCommands = commandService.contextCommands;
+            this.imageStyle = {
+                "background-image": "url('" + userData.cachedProfileImage + "')"
+            };
+            $log.debug("imageStyle", this.imageStyle);
         }
         MainCtrl.resolve = function () {
             return {
-                authData: ["$q", "$state", Budget.AuthenticationService.IID, MainCtrl.authenticate],
+                userData: ["$q", "$log", Budget.AuthenticationService.IID, MainCtrl.authenticate],
                 rootAccountSnapshot: [Budget.DataService.IID, MainCtrl.getAccount],
             };
         };
-        MainCtrl.authenticate = function ($q, $state, authenticationService) {
+        MainCtrl.authenticate = function ($q, $log, authenticationService) {
             var deferred = $q.defer();
-            var authCallback = function (authData) {
-                if (authData !== null) {
-                    deferred.resolve(authData);
+            authenticationService.initialized
+                .then(function (x) {
+                var userData = authenticationService.userData;
+                $log.debug("User data", userData);
+                if (userData) {
+                    deferred.resolve(userData);
                 }
                 else {
                     deferred.reject("authentication");
                 }
-            };
-            authenticationService.onAuth(authCallback);
-            return deferred.promise.then(function (x) {
-                authenticationService.offAuth(authCallback);
-                return x;
             });
+            return deferred.promise;
         };
         MainCtrl.getAccount = function (dataService) {
             return dataService.getRootAccountSnapshot();
@@ -587,13 +626,6 @@ var Budget;
         MainCtrl.prototype.logOut = function () {
             this.authenticationService.logOut();
             this.$state.go("app.home", {}, { reload: true });
-        };
-        MainCtrl.prototype.onAuthenticationChanged = function (authData) {
-            if (authData == null) {
-                this.$state.go("login");
-            }
-            else {
-            }
         };
         MainCtrl.IID = "mainCtrl";
         MainCtrl.controllerAs = MainCtrl.IID + " as vm";
@@ -605,7 +637,7 @@ var Budget;
             Budget.DataService.IID,
             Budget.AuthenticationService.IID,
             Budget.CommandService.IID,
-            "authData",
+            "userData",
             "rootAccountSnapshot",
         ];
         return MainCtrl;

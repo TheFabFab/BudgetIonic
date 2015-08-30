@@ -309,3 +309,16 @@ ion-side-menus .menu {
     text-align: right;
     color: lightgray;
 }
+
+.clip-circle {
+  background-size:100px 133px;
+  background-position:0px -10px;
+  background-repeat: no-repeat;
+  height:100px;
+  width:100px;
+  flex-basis: 100px;
+  flex-grow: 0;
+  border-radius:50%;
+  overflow:hidden;
+  margin:auto;
+}

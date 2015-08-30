@@ -9,27 +9,26 @@ module Budget {
 
         public static resolve() {
             return {
-                authData: ["$q", "$state", AuthenticationService.IID, MainCtrl.authenticate],
+                userData: ["$q", "$log", AuthenticationService.IID, MainCtrl.authenticate],
                 rootAccountSnapshot: [DataService.IID, MainCtrl.getAccount],
             };
         }
 
-        private static authenticate($q: ng.IQService, $state: ng.ui.IStateService, authenticationService: IAuthenticationService): ng.IPromise<FirebaseAuthData> {
-            var deferred = $q.defer<FirebaseAuthData>();
+        private static authenticate($q: ng.IQService, $log: ng.ILogService, authenticationService: IAuthenticationService): ng.IPromise<UserData> {
+            var deferred = $q.defer<UserData>();
 
-            var authCallback = authData => {
-                if (authData !== null) {
-                    deferred.resolve(authData);
-                } else {
-                    deferred.reject("authentication");
-                }
-            };
+            authenticationService.initialized
+                .then(x => {
+                    let userData = authenticationService.userData;
+                    $log.debug("User data", userData);
+                    if (userData) {
+                        deferred.resolve(userData);
+                    } else {
+                        deferred.reject("authentication");
+                    }
+                })
 
-            authenticationService.onAuth(authCallback);
-            return deferred.promise.then(x => {
-                authenticationService.offAuth(authCallback);
-                return x;
-            });
+            return deferred.promise;
         }
 
         private static getAccount(dataService: IDataService): ng.IPromise<FirebaseDataSnapshot> {
@@ -38,6 +37,7 @@ module Budget {
 
         public contextCommands: Command[];
         public rootAccount: AccountData;
+        public imageStyle;
 
         public static $inject = [
             '$scope',
@@ -47,7 +47,7 @@ module Budget {
             DataService.IID,
             AuthenticationService.IID,
             CommandService.IID,
-            "authData",
+            "userData",
             "rootAccountSnapshot",
         ];
 
@@ -59,25 +59,23 @@ module Budget {
             private dataService: IDataService,
             private authenticationService: IAuthenticationService,
             private commandService: CommandService,
-            private authData: FirebaseAuthData,
+            public userData: UserData,
             rootAccountSnapshot: FirebaseDataSnapshot) {
 
             console.log("Initializing main controller");
 
             this.rootAccount = AccountData.fromSnapshot(rootAccountSnapshot);
             this.contextCommands = commandService.contextCommands;
+            this.imageStyle = {
+                "background-image": "url('" + userData.cachedProfileImage + "')"
+            };
+
+            $log.debug("imageStyle", this.imageStyle);
         }
 
         public logOut(): void {
             this.authenticationService.logOut();
             this.$state.go("app.home", {}, { reload: true });
-        }
-
-        private onAuthenticationChanged(authData: FirebaseAuthData) {
-            if (authData == null) {
-                this.$state.go("login");
-            } else {
-            }
         }
     }
 }
