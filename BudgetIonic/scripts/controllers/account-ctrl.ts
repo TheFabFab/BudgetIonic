@@ -72,10 +72,10 @@ module Budget {
                     this.accountData = accountSnapshot.exportVal<IAccountData>();
                 });
 
-            this.addSubaccountCommand = new Command("Add subaccount", "/#/budget/project/" + this.projectData.key + "/new/" + this.accountSnapshot.key());
-            this.deleteCommand = new Command("Delete account", "/#/budget/project/" + this.projectData.key + "/delete/" + this.accountSnapshot.key(), false);
-            this.allocateBudgetCommand = new Command("Allocate budget", "/#/budget/project/" + this.projectData.key + "/allocate/" + this.accountSnapshot.key());
-            this.addExpenseCommand = new Command("Register expense", "/#/budget/project/" + this.projectData.key + "/expense/" + this.accountSnapshot.key());
+            this.addSubaccountCommand = new Command("Add subaccount", `/#/budget/project/${this.projectData.key}/new/${this.accountSnapshot.key()}`);
+            this.deleteCommand = new Command("Delete account", `/#/budget/project/${this.projectData.key}/delete/${this.accountSnapshot.key()}`, false);
+            this.allocateBudgetCommand = new Command("Allocate budget", `/#/budget/project/${this.projectData.key}/allocate/${this.accountSnapshot.key()}`);
+            this.addExpenseCommand = new Command("Register expense", `/#/budget/project/${this.projectData.key}/expense/${this.accountSnapshot.key()}`);
 
             var projects = dataService.getProjectsReference();
 
@@ -109,14 +109,14 @@ module Budget {
 
             creditTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
                 var transaction = snapShot.exportVal<ITransactionData>();
-                var label = "Credited " + transaction.amount + " from '" + transaction.debitAccountName + "'.";
+                var label = `Credited ${transaction.amount} from '${transaction.debitAccountName}'.`;
                 var vm = new TransactionViewModel(label, transaction.timestamp);
                 this.insertTransaction(vm);
             });
 
             debitTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
                 var transaction = snapShot.exportVal<ITransactionData>();
-                var label = "Debited " + transaction.amount + " to '" + transaction.creditAccountName + "'.";
+                var label = `Debited ${transaction.amount} to '${transaction.creditAccountName}'.`;
                 var vm = new TransactionViewModel(label, transaction.timestamp);
                 this.insertTransaction(vm);
             });
@@ -127,7 +127,7 @@ module Budget {
                 this.setContextCommands();
             });
 
-            this.subAccounts.$watch((event, key, prevChild) => this.updateContextCommands());
+            this.subAccounts.$watch(() => this.updateContextCommands());
             $scope.$watch(x => this.transactions, () => this.updateContextCommands());
         }
 

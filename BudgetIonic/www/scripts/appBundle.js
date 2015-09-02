@@ -573,7 +573,7 @@ var Budget;
                 _this.updateContextCommands();
                 _this.setContextCommands();
             });
-            this.subAccounts.$watch(function (event, key, prevChild) { return _this.updateContextCommands(); });
+            this.subAccounts.$watch(function () { return _this.updateContextCommands(); });
             $scope.$watch(function (x) { return _this.transactions; }, function () { return _this.updateContextCommands(); });
         }
         AccountCtrl.resolve = function () {
