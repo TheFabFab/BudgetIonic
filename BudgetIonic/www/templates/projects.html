@@ -1,16 +1,22 @@
 ﻿<ion-view>
     <ion-content class="has-header" padding="false">
         <ul class="list">
-            <li class="item" ng-repeat="project in vm.projects" ui-sref="logged-in.project.home({projectId: project.key})">
+            <li class="item project" ng-repeat="project in vm.projects" ui-sref="logged-in.project.home({projectId: project.key})">
                 <div>{{project.title}}</div>
+                <div class="time-ago">
+                    <span am-time-ago="project.lastAccessTime"></span>
+                </div>
             </li>
             <li ng-if="vm.projects.length == 0">Your project list is empty</li>
             <li>
                 <div class="row">
-                    <div class="col col-fill">
-                        <input class="item-input" type="text" ng-model="vm.newProjectTitle" />
+                    <div class="col col-80">
+                        <label class="item item-input">
+                            <span class="input-label">Project title</span>
+                            <input type="text" ng-model="vm.newProjectTitle">
+                        </label>
                     </div>
-                    <button class="col button button-calm button-small" ng-disabled="vm.newProjectTitle.length == 0" ng-click="vm.onAddNew()">Add new project</button>
+                    <button class="col button" ng-disabled="vm.newProjectTitle.length == 0" ng-click="vm.onAddNew()">Add new project</button>
                 </div>
             </li>
         </ul>

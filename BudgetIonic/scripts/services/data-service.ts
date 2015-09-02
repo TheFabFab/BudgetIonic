@@ -16,7 +16,7 @@ module Budget {
         getDatabaseReference(): Firebase;
         getProjectsForUser(userId: string): ng.IPromise<ProjectOfUser[]>;
         addNewProject(userId: string, projectTitle: string);
-        getProjectData(projectId: string): ng.IPromise<DataWithKey<ProjectHeader>>;
+        getProjectHeader(projectId: string): ng.IPromise<DataWithKey<ProjectHeader>>;
     }
 
     export class DataService implements IDataService {
@@ -160,8 +160,8 @@ module Budget {
             return deferred.promise;
         }
 
-        public addNewProject(userId: string, projectTitle: string): ng.IPromise<ProjectHeader> {
-            var deferred = this.$q.defer<ProjectHeader>();
+        public addNewProject(userId: string, projectTitle: string): ng.IPromise<ProjectOfUser> {
+            var deferred = this.$q.defer<ProjectOfUser>();
 
             let projectNode: ProjectNode = {
                 accounts: {},
@@ -197,9 +197,10 @@ module Budget {
                                         .child(userId)
                                         .child("projects")
                                         .update(userProjectUpdate, error => {
-                                            deferred.resolve(<ProjectHeader>{
-                                                title: projectTitle,
-                                                rootAccount: rootAccount.key()
+                                            deferred.resolve(<ProjectOfUser>{
+                                                lastAccessTime: 0,
+                                                key: projectReference.key(),
+                                                title: projectTitle
                                             });
                                         });
                                 });
@@ -209,7 +210,7 @@ module Budget {
             return deferred.promise;
         }
 
-        public getProjectData(projectId: string): ng.IPromise<DataWithKey<ProjectHeader>> {
+        public getProjectHeader(projectId: string): ng.IPromise<DataWithKey<ProjectHeader>> {
             var deferred = this.$q.defer<DataWithKey<ProjectHeader>>();
 
             this.projectHeadersReference

@@ -310,6 +310,11 @@ ion-side-menus .menu {
     color: lightgray;
 }
 
+.project .time-ago {
+    text-align: right;
+    color: lightgray;
+}
+
 .clip-circle {
   background-size:100px 133px;
   background-position:0px -10px;

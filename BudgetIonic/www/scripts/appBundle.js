@@ -228,8 +228,9 @@ var Budget;
                             .child("projects")
                             .update(userProjectUpdate, function (error) {
                             deferred.resolve({
-                                title: projectTitle,
-                                rootAccount: rootAccount.key()
+                                lastAccessTime: 0,
+                                key: projectReference.key(),
+                                title: projectTitle
                             });
                         });
                     });
@@ -237,7 +238,7 @@ var Budget;
             });
             return deferred.promise;
         };
-        DataService.prototype.getProjectData = function (projectId) {
+        DataService.prototype.getProjectHeader = function (projectId) {
             var _this = this;
             var deferred = this.$q.defer();
             this.projectHeadersReference
@@ -1249,7 +1250,7 @@ var Budget;
                 projectData: [
                     "$stateParams", "$log", Budget.DataService.IID, function ($stateParams, $log, dataService) {
                         $log.debug("ProjectCtrl resolving project", $stateParams);
-                        return dataService.getProjectData($stateParams.projectId);
+                        dataService.getProjectHeader($stateParams.projectId);
                     }
                 ] };
         };

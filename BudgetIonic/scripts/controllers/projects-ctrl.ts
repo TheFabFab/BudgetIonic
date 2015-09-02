@@ -4,7 +4,7 @@
         public static controllerAs = ProjectsCtrl.IID + " as vm";
 
         public projects: ProjectOfUser[] = [];
-        public newProjectTitle: string = "";
+        public newProjectTitle = "";
 
         public static $inject = [
             "$log",
