@@ -1,8 +1,7 @@
 var Budget;
 (function (Budget) {
     var ProjectNode = (function () {
-        function ProjectNode(projectData, transactions, accounts, users) {
-            this.projectData = projectData;
+        function ProjectNode(transactions, accounts, users) {
             this.transactions = transactions;
             this.accounts = accounts;
             this.users = users;
@@ -10,14 +9,14 @@ var Budget;
         return ProjectNode;
     })();
     Budget.ProjectNode = ProjectNode;
-    var ProjectData = (function () {
-        function ProjectData(title, rootAccount) {
+    var ProjectHeader = (function () {
+        function ProjectHeader(title, rootAccount) {
             this.title = title;
             this.rootAccount = rootAccount;
         }
-        return ProjectData;
+        return ProjectHeader;
     })();
-    Budget.ProjectData = ProjectData;
+    Budget.ProjectHeader = ProjectHeader;
     var ProjectUserData = (function () {
         function ProjectUserData(lastAccessTime) {
             this.lastAccessTime = lastAccessTime;
@@ -96,6 +95,7 @@ var Budget;
             this.database = new Firebase("https://budgetionic.firebaseio.com/");
             this.usersReference = this.database.child("users");
             this.projectsReference = this.database.child("projects");
+            this.projectHeadersReference = this.database.child("project-headers");
         }
         DataService.prototype.getDatabaseReference = function () {
             return this.database;
@@ -183,8 +183,8 @@ var Budget;
                 projectIds.sort(function (a, b) { return a.lastAccessTime - b.lastAccessTime; });
                 var projectsPromise = projectIds.map(function (x) {
                     var projectDeferred = _this.$q.defer();
-                    var projectTitleReference = _this.projectsReference.child(x.projectId).child("projectData");
-                    projectTitleReference.once(Budget.FirebaseEvents.value, function (projectSnapshot) {
+                    var projectDataReference = _this.projectHeadersReference.child(x.projectId);
+                    projectDataReference.once(Budget.FirebaseEvents.value, function (projectSnapshot) {
                         var projectData = projectSnapshot.exportVal();
                         projectDeferred.resolve(new Budget.ProjectOfUser(projectData.title, x.lastAccessTime, x.projectId));
                     });
@@ -198,10 +198,6 @@ var Budget;
             var _this = this;
             var deferred = this.$q.defer();
             var projectNode = {
-                projectData: {
-                    title: projectTitle,
-                    rootAccount: ""
-                },
                 accounts: {},
                 transactions: {},
                 users: {}
@@ -217,14 +213,18 @@ var Budget;
                     description: "",
                     lastAggregationTime: 0
                 }, function (error) {
-                    projectReference.child("projectData").update({
+                    _this.projectHeadersReference
+                        .child(projectReference.key())
+                        .set({
+                        title: projectTitle,
                         rootAccount: rootAccount.key()
                     }, function (error) {
                         var userProjectUpdate = {};
                         userProjectUpdate[projectReference.key()] = {
                             lastAccessTime: Firebase.ServerValue.TIMESTAMP
                         };
-                        _this.usersReference.child(userId)
+                        _this.usersReference
+                            .child(userId)
                             .child("projects")
                             .update(userProjectUpdate, function (error) {
                             deferred.resolve({
@@ -240,12 +240,11 @@ var Budget;
         DataService.prototype.getProjectData = function (projectId) {
             var _this = this;
             var deferred = this.$q.defer();
-            this.projectsReference
+            this.projectHeadersReference
                 .child(projectId)
-                .child("projectData")
                 .once(Budget.FirebaseEvents.value, function (snapShot) {
                 _this.$log.debug("Found project data", snapShot.exportVal());
-                deferred.resolve(new Budget.DataWithKey(projectId, snapShot.exportVal()));
+                deferred.resolve(Budget.DataWithKey.fromSnapshot(snapShot));
             });
             return deferred.promise;
         };
@@ -458,7 +457,7 @@ var Budget;
             var x = 40 + 35 * Math.sin(alpha);
             var y = 40 - 35 * Math.cos(alpha);
             var largeArcFlag = progress > 50 ? 1 : 0;
-            this.progressPath = 'M40,5 A35,35 0 ' + largeArcFlag + ',1 ' + x + ',' + y;
+            this.progressPath = "M40,5 A35,35 0 " + largeArcFlag + ",1 " + x + "," + y;
             this.xArcEnd = x;
             this.yArcEnd = y;
         };
@@ -467,16 +466,16 @@ var Budget;
     var AccountOverview = (function () {
         function AccountOverview($log) {
             this.$log = $log;
-            this.restrict = 'E';
+            this.restrict = "E";
             this.replace = false;
-            this.templateUrl = '/templates/account-overview.html';
+            this.templateUrl = "/templates/account-overview.html";
             this.scope = {
-                account: '=',
-                showLabels: '=',
+                account: "=",
+                showLabels: "="
             };
             this.link = function (scope, elements) {
                 scope.accountEx = new AccountEx();
-                scope.$watch('account', function () {
+                scope.$watch("account", function () {
                     if (scope.account) {
                         scope.accountEx.balance = scope.account.credited - scope.account.debited;
                         scope.accountEx.progress =
@@ -494,7 +493,7 @@ var Budget;
         }
         AccountOverview.factory = function () {
             var directive = function ($log) { return new AccountOverview($log); };
-            directive.$inject = ['$log'];
+            directive.$inject = ["$log"];
             return directive;
         };
         AccountOverview.IID = "accountOverview";
@@ -507,7 +506,7 @@ var Budget;
 /// <reference path="../services/data-service.ts" />
 var Budget;
 (function (Budget) {
-    'use strict';
+    "use strict";
     var TransactionViewModel = (function () {
         function TransactionViewModel(label, timestamp) {
             this.label = label;
@@ -530,11 +529,14 @@ var Budget;
             this.transactions = [];
             $log.debug("Initializing account controller", arguments);
             this.accountData = accountSnapshot.exportVal();
+            accountSnapshot.ref()
+                .on(Budget.FirebaseEvents.value, function (accountSnapshot) {
+                _this.accountData = accountSnapshot.exportVal();
+            });
             this.addSubaccountCommand = new Budget.Command("Add subaccount", "/#/budget/project/" + this.projectData.key + "/new/" + this.accountSnapshot.key());
             this.deleteCommand = new Budget.Command("Delete account", "/#/budget/project/" + this.projectData.key + "/delete/" + this.accountSnapshot.key(), false);
             this.allocateBudgetCommand = new Budget.Command("Allocate budget", "/#/budget/project/" + this.projectData.key + "/allocate/" + this.accountSnapshot.key());
             this.addExpenseCommand = new Budget.Command("Register expense", "/#/budget/project/" + this.projectData.key + "/expense/" + this.accountSnapshot.key());
-            $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
             var projects = dataService.getProjectsReference();
             var childrenQuery = projects
                 .child(projectData.key)
@@ -545,7 +547,7 @@ var Budget;
             this.subAccounts.$watch(function (event) { return $log.debug("subAccounts.watch", event, _this.subAccounts); });
             var transactions = projects
                 .child(projectData.key)
-                .child("accounts");
+                .child("transactions");
             var creditTransactionQuery = transactions
                 .orderByChild("credit")
                 .equalTo(accountSnapshot.key())
@@ -566,7 +568,7 @@ var Budget;
                 var vm = new TransactionViewModel(label, transaction.timestamp);
                 _this.insertTransaction(vm);
             });
-            $scope.$on('$ionicView.enter', function () {
+            $scope.$on("$ionicView.enter", function () {
                 $log.debug("Entering account controller", _this.$scope);
                 _this.updateContextCommands();
                 _this.setContextCommands();

@@ -2,7 +2,7 @@
  /// <reference path="../typings/extensions.d.ts" />
 /// <reference path="../services/data-service.ts" />
 module Budget {
-    'use strict';
+    "use strict";
 
     export interface IAccountStateParams {
         accountId: string;
@@ -25,7 +25,7 @@ module Budget {
 
         public static getAccount(
             $stateParams: IAccountStateParams,
-            projectData: DataWithKey<ProjectData>,
+            projectData: DataWithKey<ProjectHeader>,
             dataService: IDataService): ng.IPromise<FirebaseDataSnapshot> {
 
             console.log("Getting account from state parameters", $stateParams, projectData);
@@ -61,19 +61,21 @@ module Budget {
             private $log: ng.ILogService,
             private dataService: IDataService,
             private commandService: CommandService,
-            private projectData: DataWithKey<ProjectData>,
+            private projectData: DataWithKey<ProjectHeader>,
             private accountSnapshot: FirebaseDataSnapshot) {
 
             $log.debug("Initializing account controller", arguments);
 
             this.accountData = accountSnapshot.exportVal<IAccountData>();
+            accountSnapshot.ref()
+                .on(FirebaseEvents.value, accountSnapshot => {
+                    this.accountData = accountSnapshot.exportVal<IAccountData>();
+                });
 
             this.addSubaccountCommand = new Command("Add subaccount", "/#/budget/project/" + this.projectData.key + "/new/" + this.accountSnapshot.key());
             this.deleteCommand = new Command("Delete account", "/#/budget/project/" + this.projectData.key + "/delete/" + this.accountSnapshot.key(), false);
             this.allocateBudgetCommand = new Command("Allocate budget", "/#/budget/project/" + this.projectData.key + "/allocate/" + this.accountSnapshot.key());
             this.addExpenseCommand = new Command("Register expense", "/#/budget/project/" + this.projectData.key + "/expense/" + this.accountSnapshot.key());
-
-            $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
 
             var projects = dataService.getProjectsReference();
 
@@ -91,7 +93,7 @@ module Budget {
             var transactions =
                 projects
                 .child(projectData.key)
-                .child("accounts");
+                .child("transactions");
 
             var creditTransactionQuery =
                 transactions
@@ -119,7 +121,7 @@ module Budget {
                 this.insertTransaction(vm);
             });
 
-            $scope.$on('$ionicView.enter', () => {
+            $scope.$on("$ionicView.enter", () => {
                 $log.debug("Entering account controller", this.$scope);
                 this.updateContextCommands();
                 this.setContextCommands();

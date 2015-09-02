@@ -18,7 +18,7 @@
             "projectData"
         ];
 
-        constructor($log: ng.ILogService, private projectData: DataWithKey<ProjectData>) {
+        constructor($log: ng.ILogService, private projectData: DataWithKey<ProjectHeader>) {
             $log.debug("Initializing project controller", projectData);
         }
     }

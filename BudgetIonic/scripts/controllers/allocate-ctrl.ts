@@ -45,7 +45,7 @@
             private $ionicHistory,
             private $q: ng.IQService,
             private dataService: IDataService,
-            private projectData: DataWithKey<ProjectData>) {
+            private projectData: DataWithKey<ProjectHeader>) {
 
             $log.debug("Initializing allocate controller", arguments);
 

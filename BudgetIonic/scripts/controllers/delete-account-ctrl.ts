@@ -23,7 +23,7 @@
             private $ionicHistory,
             $log: ng.ILogService,
             private dataService: IDataService,
-            private projectData: DataWithKey<ProjectData>) {
+            private projectData: DataWithKey<ProjectHeader>) {
 
             $log.debug("Initializing delete account controller", $stateParams);
             this.accountId = $stateParams.accountId || "root";

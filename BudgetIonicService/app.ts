@@ -4,70 +4,86 @@
 var Firebase: FirebaseStatic = require("firebase");
 
 var database = new Firebase("https://budgetionic.firebaseio.com/");
-var transactionsReference = database.child("transactions");
-var accountsReference = database.child("accounts");
 
-accountsReference.once("value", accountsSnapshot => {
-    accountsSnapshot.forEach(accountSnapshot => {
-        var accountReference = accountsReference.child(accountSnapshot.key());
-        console.log(accountReference.key(), accountSnapshot.exportVal());
-        accountReference.transaction<Budget.IAccountData>(account => {
-            console.log(account);
-            if (account) {
-                return <Budget.IAccountData>{
-                    subject: account.subject,
-                    description: account.description,
-                    parent: account.parent || '',
-                    credited: 0,
-                    debited: 0,
-                    lastAggregationTime: account.lastAggregationTime,
-                };
-            }
+var projectsReference = database.child("projects");
+var projectHeadersReference = database.child("project-headers");
 
-            return account;
-        });
-    });
+projectHeadersReference.on("child_added", projectHeaderSnapshot => {
+    var projectHeader = <any>projectHeaderSnapshot.exportVal();
+    console.log("Project found", projectHeader);
 
-    transactionsReference.on("child_added", transactionSnapshot => {
+    var projectReference =
+        projectsReference
+            .child(projectHeaderSnapshot.key());
 
-        var transaction = transactionSnapshot.exportVal<Budget.ITransactionData>();
-        console.log("Received transaction", transaction);
+    var accountsReference =
+        projectReference
+            .child("accounts");
 
-        if (transaction.credit && transaction.credit !== "") {
-            accountsReference.child(transaction.credit)
-                .transaction<Budget.IAccountData>(oldValue => {
-                    if (oldValue) {
-                        return {
-                            subject: oldValue.subject,
-                            description: oldValue.description,
-                            credited: oldValue.credited + transaction.amount,
-                            debited: oldValue.debited,
-                            parent: oldValue.parent,
-                            lastAggregationTime: oldValue.lastAggregationTime,
-                        };
-                }
+    accountsReference
+        .on("child_added", accountSnapshot => {
+            var account = <any>accountSnapshot.exportVal();
+            console.log("Account found", projectHeader);
 
-                return oldValue;
-            });
-        }
-
-        if (transaction.debit && transaction.debit !== "") {
-            accountsReference.child(transaction.debit)
-                .transaction<Budget.IAccountData>(oldValue => {
-                    if (oldValue) {
-                        return {
-                            subject: oldValue.subject,
-                            description: oldValue.description,
-                            credited: oldValue.credited,
-                            debited: oldValue.debited + transaction.amount,
-                            parent: oldValue.parent,
-                            lastAggregationTime: oldValue.lastAggregationTime,
+            accountSnapshot.ref()
+                .transaction<Budget.IAccountData>(account => {
+                    console.log(account);
+                    if (account) {
+                        return <Budget.IAccountData>{
+                            subject: account.subject,
+                            description: account.description,
+                            parent: account.parent || "",
+                            credited: 0,
+                            debited: 0,
+                            lastAggregationTime: account.lastAggregationTime
                         };
                     }
 
-                    return oldValue;
+                    return account;
                 });
-        }
-    });
-});
+        });
 
+    projectReference
+        .child("transactions")
+        .on("child_added", transactionSnapshot => {
+
+            var transaction = transactionSnapshot.exportVal<Budget.ITransactionData>();
+            console.log("Received transaction", transaction);
+
+            if (transaction.credit && transaction.credit !== "") {
+                accountsReference.child(transaction.credit)
+                    .transaction<Budget.IAccountData>(oldValue => {
+                        if (oldValue) {
+                            return {
+                                subject: oldValue.subject,
+                                description: oldValue.description,
+                                credited: oldValue.credited + transaction.amount,
+                                debited: oldValue.debited,
+                                parent: oldValue.parent,
+                                lastAggregationTime: oldValue.lastAggregationTime
+                            };
+                        }
+
+                        return oldValue;
+                    });
+            }
+
+            if (transaction.debit && transaction.debit !== "") {
+                accountsReference.child(transaction.debit)
+                    .transaction<Budget.IAccountData>(oldValue => {
+                        if (oldValue) {
+                            return {
+                                subject: oldValue.subject,
+                                description: oldValue.description,
+                                credited: oldValue.credited,
+                                debited: oldValue.debited + transaction.amount,
+                                parent: oldValue.parent,
+                                lastAggregationTime: oldValue.lastAggregationTime
+                            };
+                        }
+
+                        return oldValue;
+                    });
+            }
+        });
+});

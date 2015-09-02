@@ -24,7 +24,7 @@
             $scope: ng.IScope,
             private $log: ng.ILogService,
             private dataService: IDataService,
-            private projectData: DataWithKey<ProjectData>) {
+            private projectData: DataWithKey<ProjectHeader>) {
 
             $log.debug("Initializing new account controller", $stateParams);
             this.parentId = $stateParams.parentId || "root";

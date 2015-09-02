@@ -16,7 +16,7 @@ module Budget {
         getDatabaseReference(): Firebase;
         getProjectsForUser(userId: string): ng.IPromise<ProjectOfUser[]>;
         addNewProject(userId: string, projectTitle: string);
-        getProjectData(projectId: string): ng.IPromise<DataWithKey<ProjectData>>;
+        getProjectData(projectId: string): ng.IPromise<DataWithKey<ProjectHeader>>;
     }
 
     export class DataService implements IDataService {
@@ -31,6 +31,7 @@ module Budget {
 
         private usersReference: Firebase;
         private projectsReference: Firebase;
+        private projectHeadersReference: Firebase;
 
         constructor(private $q: ng.IQService, private $log: ng.ILogService) {
             $log.debug("Creating data service");
@@ -39,6 +40,7 @@ module Budget {
 
             this.usersReference = this.database.child("users");
             this.projectsReference = this.database.child("projects");
+            this.projectHeadersReference = this.database.child("project-headers");
         }
 
         public getDatabaseReference(): Firebase {
@@ -142,29 +144,26 @@ module Budget {
                     projectIds.sort((a, b) => a.lastAccessTime - b.lastAccessTime);
                     var projectsPromise = projectIds.map(x => {
                         var projectDeferred = this.$q.defer<ProjectOfUser>();
-                        var projectTitleReference = this.projectsReference.child(x.projectId).child("projectData");
+                        var projectDataReference = this.projectHeadersReference.child(x.projectId);
 
-                        projectTitleReference.once(FirebaseEvents.value, projectSnapshot => {
-                            var projectData = projectSnapshot.exportVal<ProjectData>();
+                        projectDataReference.once(FirebaseEvents.value, projectSnapshot => {
+                            var projectData = projectSnapshot.exportVal<ProjectHeader>();
                             projectDeferred.resolve(new ProjectOfUser(projectData.title, x.lastAccessTime, x.projectId));
                         });
 
                         return projectDeferred.promise;
                     });
 
-                    this.$q.all(projectsPromise).then(x => deferred.resolve(x));
+                    this.$q.all<ProjectOfUser>(projectsPromise).then(x => deferred.resolve(x));
                 });
 
             return deferred.promise;
         }
 
-        public addNewProject(userId: string, projectTitle: string): ng.IPromise<ProjectData> {
-            var deferred = this.$q.defer<ProjectData>();
+        public addNewProject(userId: string, projectTitle: string): ng.IPromise<ProjectHeader> {
+            var deferred = this.$q.defer<ProjectHeader>();
+
             let projectNode: ProjectNode = {
-                projectData: {
-                    title: projectTitle,
-                    rootAccount: ""
-                },
                 accounts: {},
                 transactions: {},
                 users: {}
@@ -182,38 +181,42 @@ module Budget {
                             parent: "",
                             description: "",
                             lastAggregationTime: 0
-                }, error => {
-                    projectReference.child("projectData").update({
-                        rootAccount: rootAccount.key()
-                    }, error => {
-                        var userProjectUpdate = {};
-                        userProjectUpdate[projectReference.key()] = <ProjectUserData>{
-                            lastAccessTime: Firebase.ServerValue.TIMESTAMP
-                        };
-
-                        this.usersReference.child(userId)
-                            .child("projects")
-                            .update(userProjectUpdate, error => {
-                                deferred.resolve(<ProjectData>{
+                        }, error => {
+                            this.projectHeadersReference
+                                .child(projectReference.key())
+                                .set(<ProjectHeader>{
                                     title: projectTitle,
                                     rootAccount: rootAccount.key()
+                                }, error => {
+                                    var userProjectUpdate = {};
+                                    userProjectUpdate[projectReference.key()] = <ProjectUserData>{
+                                        lastAccessTime: Firebase.ServerValue.TIMESTAMP
+                                    };
+
+                                    this.usersReference
+                                        .child(userId)
+                                        .child("projects")
+                                        .update(userProjectUpdate, error => {
+                                            deferred.resolve(<ProjectHeader>{
+                                                title: projectTitle,
+                                                rootAccount: rootAccount.key()
+                                            });
+                                        });
                                 });
-                            });
-                    });
-                });
+                        });
             });
+
             return deferred.promise;
         }
 
-        public getProjectData(projectId: string): ng.IPromise<DataWithKey<ProjectData>> {
-            var deferred = this.$q.defer<DataWithKey<ProjectData>>();
+        public getProjectData(projectId: string): ng.IPromise<DataWithKey<ProjectHeader>> {
+            var deferred = this.$q.defer<DataWithKey<ProjectHeader>>();
 
-            this.projectsReference
+            this.projectHeadersReference
                 .child(projectId)
-                .child("projectData")
                 .once(FirebaseEvents.value, snapShot => {
                     this.$log.debug("Found project data", snapShot.exportVal());
-                    deferred.resolve(new DataWithKey(projectId, snapShot.exportVal<ProjectData>()));
+                    deferred.resolve(DataWithKey.fromSnapshot<ProjectHeader>(snapShot));
                 });
 
             return deferred.promise;

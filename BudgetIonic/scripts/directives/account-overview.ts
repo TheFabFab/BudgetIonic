@@ -27,24 +27,24 @@ module Budget {
             var x = 40 + 35 * Math.sin(alpha);
             var y = 40 - 35 * Math.cos(alpha);
             var largeArcFlag = progress > 50 ? 1 : 0;
-            this.progressPath = 'M40,5 A35,35 0 ' + largeArcFlag + ',1 ' + x + ',' + y;
+            this.progressPath = "M40,5 A35,35 0 " + largeArcFlag + ",1 " + x + "," + y;
             this.xArcEnd = x;
             this.yArcEnd = y;
         }
     }
 
     export class AccountOverview implements ng.IDirective {
-        restrict = 'E';
+        restrict = "E";
         replace = false;
-        templateUrl = '/templates/account-overview.html';
+        templateUrl = "/templates/account-overview.html";
         scope = {
-            account: '=',
-            showLabels: '=',
+            account: "=",
+            showLabels: "="
         };
         link = function (scope: IAccountOverviewScope, elements: HTMLElement[]) {
             scope.accountEx = new AccountEx();
 
-            scope.$watch('account', () => {
+            scope.$watch("account", () => {
                 if (scope.account) {
                     scope.accountEx.balance = scope.account.credited - scope.account.debited;
                     scope.accountEx.progress =
@@ -69,7 +69,7 @@ module Budget {
 
         static factory(): ng.IDirectiveFactory {
             const directive = ($log: ng.ILogService) => new AccountOverview($log);
-            directive.$inject = ['$log'];
+            directive.$inject = ["$log"];
             return directive;
         }
 

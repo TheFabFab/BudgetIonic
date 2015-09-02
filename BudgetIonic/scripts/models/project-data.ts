@@ -1,14 +1,13 @@
 ﻿module Budget {
     export class ProjectNode {
         constructor(
-            public projectData: ProjectData,
             public transactions: Object,
             public accounts: Object,
             public users: Object) {
         }
     }
 
-    export class ProjectData {
+    export class ProjectHeader {
         constructor(
             public title: string,
             public rootAccount: string) {
