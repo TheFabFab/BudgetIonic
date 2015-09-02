@@ -1,7 +1,7 @@
 ﻿module Budget {
     // http://stackoverflow.com/questions/12881212/does-typescript-support-events-on-classes
 
-    interface ILiteEvent<T> {
+    export interface ILiteEvent<T> {
         on(handler: { (data?: T): void });
         off(handler: { (data?: T): void });
     }

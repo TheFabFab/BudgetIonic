@@ -1,40 +1,49 @@
 ﻿module Budget {
-    'use strict';
+    "use strict";
 
     export class NewAccountCtrl {
         public static IID = "newAccountCtrl";
         public static controllerAs = NewAccountCtrl.IID + " as vm";
 
         public static $inject = [
-            '$stateParams',
-            '$ionicHistory',
+            "$stateParams",
+            "$state",
             "$scope",
             "$log",
             DataService.IID,
+            "projectData"
         ];
 
-        public subject: string = '';
-        public description: string = '';
+        public subject = "";
+        public description = "";
         public parentId: string;
 
         constructor(
             $stateParams,
-            private $ionicHistory,
+            private $state: ng.ui.IStateService,
             $scope: ng.IScope,
-            $log: ng.ILogService,
-            private dataService: IDataService) {
+            private $log: ng.ILogService,
+            private dataService: IDataService,
+            private projectData: DataWithKey<ProjectData>) {
 
             $log.debug("Initializing new account controller", $stateParams);
-            this.parentId = $stateParams.parentId || 'root';
+            this.parentId = $stateParams.parentId || "root";
         }
 
         public ok(): void {
-            this.dataService.addChildAccount(this.parentId, this.subject, this.description)
-                .then(x => this.$ionicHistory.goBack());
+            this.dataService.addChildAccount(this.projectData.key, this.parentId, this.subject, this.description)
+                .then(x => this.close());
         }
 
         public cancel(): void {
-            this.$ionicHistory.goBack();
+            this.close();
+        }
+
+        private close(): void {
+            this.$log.debug("Closing");
+            this.$state.go(
+                "logged-in.project.budget-account",
+                <IAccountStateParams>{ projectId: this.projectData.key, accountId: this.parentId });
         }
     }
 }

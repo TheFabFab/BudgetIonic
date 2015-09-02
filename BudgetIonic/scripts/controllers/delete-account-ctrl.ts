@@ -1,16 +1,17 @@
 ﻿module Budget {
-    'use strict';
+    "use strict";
 
     export class DeleteAccountCtrl {
         public static IID = "deleteAccountCtrl";
         public static controllerAs = DeleteAccountCtrl.IID + " as vm";
 
         public static $inject = [
-            '$stateParams',
-            '$state',
-            '$ionicHistory',
-            '$log',
-            DataService.IID
+            "$stateParams",
+            "$state",
+            "$ionicHistory",
+            "$log",
+            DataService.IID,
+            "projectData"
         ];
 
         private accountId: string;
@@ -21,24 +22,25 @@
             private $state: ng.ui.IStateService,
             private $ionicHistory,
             $log: ng.ILogService,
-            private dataService: IDataService) {
+            private dataService: IDataService,
+            private projectData: DataWithKey<ProjectData>) {
 
             $log.debug("Initializing delete account controller", $stateParams);
-            this.accountId = $stateParams.accountId || 'root';
+            this.accountId = $stateParams.accountId || "root";
 
-            this.dataService.getAccountSnapshot(this.accountId)
+            this.dataService.getAccountSnapshot(this.projectData.key, this.accountId)
                 .then(snapshot => {
                     this.account = <IAccountData>snapshot.exportVal();
                 });
         }
 
         public ok(): void {
-            this.dataService.deleteAccount(this.accountId)
-                .then(x => this.$state.go("logged-in.budget-account", <IAccountStateParams>{ accountId: this.account.parent }));
+            this.dataService.deleteAccount(this.projectData.key, this.accountId)
+                .then(x => this.$state.go("logged-in.project.budget-account", <IAccountStateParams>{ accountId: this.account.parent }));
         }
 
         public cancel(): void {
-            this.$state.go("logged-in.budget-account", <IAccountStateParams>{ accountId: this.accountId });
+            this.$state.go("logged-in.project.budget-account", <IAccountStateParams>{ accountId: this.accountId });
         }
     }
 }

@@ -10,7 +10,7 @@ module Budget {
         public static resolve() {
             return {
                 userData: ["$q", "$log", AuthenticationService.IID, MainCtrl.authenticate],
-                rootAccountSnapshot: [DataService.IID, MainCtrl.getAccount],
+                rootAccountSnapshot: [DataService.IID, MainCtrl.getAccount]
             };
         }
 
@@ -26,13 +26,13 @@ module Budget {
                     } else {
                         deferred.reject("authentication");
                     }
-                })
+                });
 
             return deferred.promise;
         }
 
         private static getAccount(dataService: IDataService): ng.IPromise<FirebaseDataSnapshot> {
-            return dataService.getRootAccountSnapshot();
+            return null;//dataService.getRootAccountSnapshot();
         }
 
         public contextCommands: Command[];
@@ -46,7 +46,7 @@ module Budget {
             AuthenticationService.IID,
             CommandService.IID,
             "userData",
-            "rootAccountSnapshot",
+            "rootAccountSnapshot"
         ];
 
         constructor(
@@ -60,7 +60,10 @@ module Budget {
 
             console.log("Initializing main controller");
 
-            this.rootAccount = AccountData.fromSnapshot(rootAccountSnapshot);
+            if (rootAccountSnapshot !== null) {
+                this.rootAccount = AccountData.fromSnapshot(rootAccountSnapshot);
+            }
+
             this.contextCommands = commandService.contextCommands;
             this.imageStyle = {
                 "background-image": "url('" + userData.cachedProfileImage + "')"

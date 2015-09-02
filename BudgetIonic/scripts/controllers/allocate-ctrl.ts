@@ -1,7 +1,7 @@
 ﻿module Budget {
-    'use strict';
+    "use strict";
 
-    class HelperCommand {
+    export class HelperCommand {
         constructor(
             public label: string,
             public action: () => void) {
@@ -23,15 +23,16 @@
         public helperCommands: HelperCommand[] = [];
 
         public static $inject = [
-            '$stateParams',
-            '$scope',
-            '$state',
+            "$stateParams",
+            "$scope",
+            "$state",
             "$firebaseObject",
             "$firebaseArray",
             "$log",
             "$ionicHistory",
             "$q",
             DataService.IID,
+            "projectData"
         ];
 
         constructor(
@@ -43,23 +44,26 @@
             private $log: ng.ILogService,
             private $ionicHistory,
             private $q: ng.IQService,
-            private dataService: IDataService) {
+            private dataService: IDataService,
+            private projectData: DataWithKey<ProjectData>) {
 
             $log.debug("Initializing allocate controller", arguments);
 
-            this.creditAccountId = $stateParams.accountId || 'root';
+            this.creditAccountId = $stateParams.accountId || "root";
 
-            this.dataService.getAccountSnapshot(this.creditAccountId)
+            this.dataService.getAccountSnapshot(this.projectData.key, this.creditAccountId)
                 .then(snapshot => {
                     this.creditAccount = snapshot.exportVal<IAccountData>();
                 })
                 .then(x => {
-                this.getAncestors()
-                    .then(ancestors => {
-                        console.assert(ancestors.length > 0);
-                        this.ancestors = ancestors;
-                        this.debitAccount = ancestors[0];
-                    });
+                    if (this.creditAccount.parent !== "") {
+                        this.getAncestors()
+                            .then(ancestors => {
+                                console.assert(ancestors.length > 0);
+                                this.ancestors = ancestors;
+                                this.debitAccount = ancestors[0];
+                            });
+                    }
                 })
                 .then(_ => this.validate());
 
@@ -68,37 +72,45 @@
         }
 
         public ok(): void {
-            if (this.debitAccount) {
+            if (this.creditAccount != null && this.creditAccount.parent === "") {
+                this.dataService.addTransaction(
+                    this.projectData.key,
+                    {
+                        amount: this.amount,
+                        debit: "",
+                        debitAccountName: "",
+                        credit: this.creditAccountId,
+                        creditAccountName: this.creditAccount.subject,
+                        timestamp: Firebase.ServerValue.TIMESTAMP
+                    }).then(x => {
+                    this.close();
+                });
+            } else {
                 var promises: ng.IPromise<any>[] = [];
 
-                var balance = this.debitAccount.credited - this.debitAccount.debited;
-                if (this.amount < this.amount) {
-                    /// TODO: Error handling
-                    if (this.debitAccount.parent == null) {
-                    } else {
-                    }
-                } else {
-                    // Bubble up the amount to the requested account
-                    var previousAccount = null;
+                // Bubble up the amount to the requested account
+                var previousAccount = null;
 
-                    // make a copy
-                    var accounts = this.ancestors.slice(0);
+                // make a copy
+                var accounts = this.ancestors.slice(0);
 
-                    // add the credit account itself
-                    accounts.push(AccountData.fromIAccountData(this.creditAccount, this.creditAccountId));
+                // add the credit account itself
+                accounts.push(AccountData.fromIAccountData(this.creditAccount, this.creditAccountId));
 
-                    // remove up to (including) the debit account
-                    while (previousAccount == null || previousAccount.key != this.debitAccount.key) {
-                        previousAccount = accounts.shift();
-                    }
+                // remove up to (including) the debit account
+                while (previousAccount == null || previousAccount.key != this.debitAccount.key) {
+                    previousAccount = accounts.shift();
+                }
 
-                    // do the credit bubbling
-                    accounts.forEach(account => {
-                        var debitAccount = previousAccount;
-                        var creditAccount = account;
+                // do the credit bubbling
+                accounts.forEach(account => {
+                    var debitAccount = previousAccount;
+                    var creditAccount = account;
 
-                        var promise =
-                            this.dataService.addTransaction({
+                    var promise =
+                        this.dataService.addTransaction(
+                            this.projectData.key,
+                            {
                                 amount: this.amount,
                                 debit: debitAccount.key,
                                 debitAccountName: debitAccount.subject,
@@ -107,15 +119,14 @@
                                 timestamp: Firebase.ServerValue.TIMESTAMP
                             });
 
-                        promises.push(promise);
+                    promises.push(promise);
 
-                        previousAccount = account;
-                    });
+                    previousAccount = account;
+                });
 
-                    // wait for all to get saved, then return
-                    this.$q.all(promises)
-                        .then(x => this.close());
-                }
+                // wait for all to get saved, then return
+                this.$q.all(promises)
+                    .then(x => this.close());
             }
         }
 
@@ -125,15 +136,17 @@
 
         private close(): void {
             this.$state.go(
-                "logged-in.budget-account",
+                "logged-in.project.budget-account",
                 <IAccountStateParams>{ accountId: this.creditAccountId });
         }
 
         private validate(): void {
-            var result = false;
+            let result = false;
             this.helperCommands = [];
 
-            if (this.creditAccount != null &&
+            if (this.creditAccount != null && this.creditAccount.parent === "") {
+                if (this.amount > 0) result = true;
+            } else if (this.creditAccount != null &&
                 this.debitAccount != null &&
                 this.amount > 0) {
 
@@ -161,7 +174,7 @@
             var deferred = this.$q.defer<AccountData[]>();
 
             if (account.parent) {
-                this.dataService.getAccountSnapshot(account.parent)
+                this.dataService.getAccountSnapshot(this.projectData.key, account.parent)
                     .then(parentSnapshot => {
                         if (parentSnapshot) {
                             var parent = AccountData.fromSnapshot(parentSnapshot);

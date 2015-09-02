@@ -27,11 +27,15 @@ module Budget {
             $log.debug("Initializing login controller", $stateParams.toState, $stateParams.toParams);
         }
 
+        private once = false;
         public facebook() {
-            this.authenticationService.facebookLogin()
-                .then(authData => {
-                    this.$state.go(this.$stateParams.toState, angular.fromJson(this.$stateParams.toParams));
-                });
+            if (!this.once) {
+                this.once = true;
+                this.authenticationService.facebookLogin()
+                    .then(authData => {
+                        this.$state.go(this.$stateParams.toState, angular.fromJson(this.$stateParams.toParams));
+                    });
+            }
         }
     }
 }

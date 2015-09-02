@@ -10,7 +10,6 @@ describe("account-ctrl", () => {
     beforeEach(() => angular.mock.module('budget-app'));
 
     var $controller: Budget.AccountCtrl;
-    var $scope: Budget.IAccountScope;
     var $log: ng.ILogService;
     var $q: ng.IQService;
     var $rootScope: ng.IRootScopeService;

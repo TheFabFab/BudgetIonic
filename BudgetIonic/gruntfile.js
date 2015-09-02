@@ -31,7 +31,7 @@ module.exports = function (grunt) {
             },
             www: {
                 options: {
-                    livereload: 35730,
+                    livereload: 35729,
                 },
                 files: ['www/**/*.*'],
             },
@@ -59,7 +59,8 @@ module.exports = function (grunt) {
     });
 
     grunt.registerTask("default", ["bower:install"]);
-    grunt.registerTask("serve", ["connect:server", "watch:www"])
+    grunt.registerTask("serve", ["connect:server", "watch:www"]);
+    grunt.registerTask("compile", ["watch:scripts", "watch:tests"]);
 
     grunt.loadNpmTasks("grunt-bower-task");
     grunt.loadNpmTasks("grunt-commands");

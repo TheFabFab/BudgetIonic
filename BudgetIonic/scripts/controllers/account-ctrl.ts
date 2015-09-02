@@ -8,7 +8,7 @@ module Budget {
         accountId: string;
     }
 
-    class TransactionViewModel {
+    export class TransactionViewModel {
         constructor(public label: string, public timestamp: number) {
         }
     }
@@ -19,18 +19,19 @@ module Budget {
 
         public static resolve() {
             return {
-                accountSnapshot: ['$stateParams', DataService.IID, AccountCtrl.getAccount],
+                accountSnapshot: ["$stateParams", "projectData", DataService.IID, AccountCtrl.getAccount]
             };
         }
 
         public static getAccount(
             $stateParams: IAccountStateParams,
+            projectData: DataWithKey<ProjectData>,
             dataService: IDataService): ng.IPromise<FirebaseDataSnapshot> {
-            console.log("Getting account: ");
-            console.log($stateParams);
-            var accountId = $stateParams.accountId || '';
 
-            return dataService.getAccountSnapshot(accountId);
+            console.log("Getting account from state parameters", $stateParams, projectData);
+
+            const accountId = $stateParams.accountId || projectData.data.rootAccount;
+            return dataService.getAccountSnapshot(projectData.key, accountId);
         }
 
         private addSubaccountCommand: Command;
@@ -43,13 +44,14 @@ module Budget {
         public transactions: TransactionViewModel[] = [];
 
         public static $inject = [
-            '$scope',
+            "$scope",
             "$firebaseObject",
             "$firebaseArray",
             "$log",
             DataService.IID,
             CommandService.IID,
-            "accountSnapshot",
+            "projectData",
+            "accountSnapshot"
         ];
 
         constructor(
@@ -59,31 +61,37 @@ module Budget {
             private $log: ng.ILogService,
             private dataService: IDataService,
             private commandService: CommandService,
+            private projectData: DataWithKey<ProjectData>,
             private accountSnapshot: FirebaseDataSnapshot) {
 
             $log.debug("Initializing account controller", arguments);
 
             this.accountData = accountSnapshot.exportVal<IAccountData>();
 
-            this.addSubaccountCommand = new Command("Add subaccount to " + this.accountData.subject, "/#/budget/new/" + this.accountSnapshot.key());
-            this.deleteCommand = new Command("Delete account", "/#/budget/delete/" + this.accountSnapshot.key(), false);
-            this.allocateBudgetCommand = new Command("Allocate budget", "/#/budget/allocate/" + this.accountSnapshot.key());
-            this.addExpenseCommand = new Command("Register expense", "/#/budget/expense/" + this.accountSnapshot.key());
+            this.addSubaccountCommand = new Command("Add subaccount", "/#/budget/project/" + this.projectData.key + "/new/" + this.accountSnapshot.key());
+            this.deleteCommand = new Command("Delete account", "/#/budget/project/" + this.projectData.key + "/delete/" + this.accountSnapshot.key(), false);
+            this.allocateBudgetCommand = new Command("Allocate budget", "/#/budget/project/" + this.projectData.key + "/allocate/" + this.accountSnapshot.key());
+            this.addExpenseCommand = new Command("Register expense", "/#/budget/project/" + this.projectData.key + "/expense/" + this.accountSnapshot.key());
 
             $firebaseObject(accountSnapshot.ref()).$bindTo($scope, "accountData");
 
-            var accounts = dataService.getAccountsReference();
+            var projects = dataService.getProjectsReference();
 
             var childrenQuery =
-                accounts
-                .orderByChild("parent")
-                .equalTo(accountSnapshot.key());
+                projects
+                    .child(projectData.key)
+                    .child("accounts")
+                    .orderByChild("parent")
+                    .equalTo(accountSnapshot.key());
 
             this.subAccounts = $firebaseArray(childrenQuery);
 
             this.subAccounts.$watch(event => $log.debug("subAccounts.watch", event, this.subAccounts));
 
-            var transactions = dataService.getTransactionsReference();
+            var transactions =
+                projects
+                .child(projectData.key)
+                .child("accounts");
 
             var creditTransactionQuery =
                 transactions
@@ -130,10 +138,8 @@ module Budget {
         }
 
         private updateContextCommands(): void {
-            var hasData =
-                this.subAccounts.length == 0 &&
-                this.transactions.length == 0;
-
+            const hasData = this.subAccounts.length === 0 &&
+                this.transactions.length === 0;
             if (this.deleteCommand != null) {
                 this.deleteCommand.isEnabled = hasData;
             }
@@ -144,7 +150,7 @@ module Budget {
                 this.allocateBudgetCommand,
                 this.addExpenseCommand,
                 this.addSubaccountCommand,
-                this.deleteCommand,
+                this.deleteCommand
             ]);
         }
     }

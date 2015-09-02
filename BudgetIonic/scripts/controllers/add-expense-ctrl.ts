@@ -20,6 +20,7 @@
             "$ionicHistory",
             "$q",
             DataService.IID,
+            "projectData"
         ];
 
         constructor(
@@ -31,12 +32,13 @@
             private $log: ng.ILogService,
             private $ionicHistory,
             private $q: ng.IQService,
-            private dataService: IDataService) {
+            private dataService: IDataService,
+            private projectData: DataWithKey<ProjectData>) {
 
             $log.debug("Initializing add expense controller", arguments);
 
             const debitAccountId = $stateParams.accountId || "root";
-            this.dataService.getAccountSnapshot(debitAccountId)
+            this.dataService.getAccountSnapshot(projectData.key, debitAccountId)
                 .then(snapshot => {
                     this.debitAccount = AccountData.fromSnapshot(snapshot);
                     this.validate();
@@ -46,7 +48,9 @@
 
         public ok(): void {
 
-            this.dataService.addTransaction({
+            this.dataService.addTransaction(
+            this.projectData.key,
+            {
                 amount: this.amount,
                 credit: "",
                 creditAccountName: "Expenses",
@@ -62,7 +66,7 @@
 
         private close(): void {
             this.$state.go(
-                "logged-in.budget-account",
+                "logged-in.project.budget-account",
                 <IAccountStateParams>{ accountId: this.debitAccount.key });
         }
 

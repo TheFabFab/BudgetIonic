@@ -8,7 +8,7 @@
 	 * Generates a new child location using a unique name and returns a Firebase reference to it.
 	 * @returns {Firebase} A Firebase reference for the generated location.
 	 */
-    push<T>(T?: any, onComplete?: (error: any) => void): Firebase;
+    push<T>(value?: T, onComplete?: (error: any) => void): Firebase;
 }
 
 interface Firebase {

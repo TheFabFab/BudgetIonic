@@ -6,60 +6,43 @@
 module Budget {
 
     export interface IDataService {
-        getAccountSnapshot(key: string): ng.IPromise<FirebaseDataSnapshot>;
-        getRootAccountSnapshot(): ng.IPromise<FirebaseDataSnapshot>;
-        addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any>;
-        deleteAccount(accountId: string): ng.IPromise<any>;
-        addTransaction(transaction: ITransactionData): ng.IPromise<any>;
-        getAccountsReference(): Firebase;
-        getTransactionsReference(): Firebase;
+        getAccountSnapshot(projectKey:string, accountKey: string): ng.IPromise<FirebaseDataSnapshot>;
+        getRootAccountSnapshot(projectKey: string): ng.IPromise<FirebaseDataSnapshot>;
+        addChildAccount(projectKey: string, parentKey: string, subject: string, description: string): ng.IPromise<any>;
+        deleteAccount(projectKey: string, accountId: string): ng.IPromise<any>;
+        addTransaction(projectKey: string, transaction: ITransactionData): ng.IPromise<any>;
         getUsersReference(): Firebase;
         getProjectsReference(): Firebase;
         getDatabaseReference(): Firebase;
         getProjectsForUser(userId: string): ng.IPromise<ProjectOfUser[]>;
         addNewProject(userId: string, projectTitle: string);
+        getProjectData(projectId: string): ng.IPromise<DataWithKey<ProjectData>>;
     }
 
     export class DataService implements IDataService {
         public static IID = "dataService";
 
         public static $inject = [
-            '$q',
-            "$log",
-            '$firebaseArray',
+            "$q",
+            "$log"
         ];
 
         private database: Firebase;
 
-        private accountsReference: Firebase;
-        private transactionsReference: Firebase;
         private usersReference: Firebase;
         private projectsReference: Firebase;
-        private projectUserReference: Firebase;
 
-        constructor(private $q: ng.IQService, private $log: ng.ILogService, $firebaseArray: AngularFireArrayService) {
+        constructor(private $q: ng.IQService, private $log: ng.ILogService) {
             $log.debug("Creating data service");
 
             this.database = new Firebase("https://budgetionic.firebaseio.com/");
 
-            this.transactionsReference = this.database.child("transactions");
-            this.accountsReference = this.database.child("accounts");
             this.usersReference = this.database.child("users");
             this.projectsReference = this.database.child("projects");
-            this.projectUserReference = this.database.child("project-users");
-            this.ensureData();
         }
 
         public getDatabaseReference(): Firebase {
             return this.database;
-        }
-
-        public getAccountsReference(): Firebase {
-            return this.accountsReference;
-        }
-
-        public getTransactionsReference(): Firebase {
-            return this.transactionsReference;
         }
 
         public getUsersReference(): Firebase {
@@ -70,74 +53,55 @@ module Budget {
             return this.projectsReference;
         }
 
-        public getRootAccountSnapshot(): ng.IPromise<FirebaseDataSnapshot> {
-            return this.getAccountSnapshot('');
+        public getRootAccountSnapshot(projectKey: string): ng.IPromise<FirebaseDataSnapshot> {
+            return this.getAccountSnapshot(projectKey, "");
         }
 
-        public getAccountSnapshot(key: string): ng.IPromise<FirebaseDataSnapshot> {
-            console.log("Resolving account for key: " + key);
-
-            if (key == 'root') {
-                key = '';
-            }
+        public getAccountSnapshot(projectKey: string, accountKey: string): ng.IPromise<FirebaseDataSnapshot> {
+            this.$log.debug("Resolving account", projectKey, accountKey);
 
             var deferred = this.$q.defer<FirebaseDataSnapshot>();
 
-            if (key === '') {
-                var query =
-                    this.accountsReference
-                        .orderByChild("parent")
-                        .equalTo('');
-
-                query.once(FirebaseEvents.value, snapshot => {
-                    var child: FirebaseDataSnapshot;
-                    snapshot.forEach(x => child = x);
-                    if (child) {
-                        deferred.resolve(child);
-                    } else {
-                        deferred.reject();
-                    }
-                });
-            } else {
-                console.log("Resolving account by key " + key);
-                this.accountsReference.child(key).once(
+            this.projectsReference
+                .child(projectKey)
+                .child("accounts")
+                .child(accountKey)
+                .once(
                     FirebaseEvents.value,
                     snapshot => {
-                        console.log("Resolved account by id:");
-                        console.log(snapshot);
+                        this.$log.debug("Resolved account by project and id", snapshot.exportVal());
                         deferred.resolve(snapshot);
-                    });
-            }
-
-            return deferred.promise;
-        }
-
-        public addChildAccount(parentKey: string, subject: string, description: string): ng.IPromise<any> {
-            var deferred = this.$q.defer();
-
-            this.normalizeAccountKey(parentKey)
-                .then(key => {
-                    this.accountsReference.push(<IAccountData>{
-                        subject: subject,
-                        description: description,
-                        parent: key,
-                        debited: 0,
-                        credited: 0,
-                        lastAggregationTime: 0,
-                    },
-                    error => {
-                        if (error == null) deferred.resolve();
-                        else deferred.reject(error);
-                    });
                 });
 
             return deferred.promise;
         }
 
-        public deleteAccount(accountId: string): ng.IPromise<any> {
+        public addChildAccount(projectKey: string, parentKey: string, subject: string, description: string): ng.IPromise<any> {
             var deferred = this.$q.defer();
 
-            this.getAccountSnapshot(accountId)
+            this.projectsReference
+                .child(projectKey)
+                .child("accounts")
+                .push(<IAccountData>{
+                    subject: subject,
+                    description: description,
+                    parent: parentKey,
+                    debited: 0,
+                    credited: 0,
+                    lastAggregationTime: 0
+                    },
+                error => {
+                    if (error == null) deferred.resolve();
+                    else deferred.reject(error);
+                });
+
+            return deferred.promise;
+        }
+
+        public deleteAccount(projectKey: string, accountId: string): ng.IPromise<any> {
+            var deferred = this.$q.defer();
+
+            this.getAccountSnapshot(projectKey, accountId)
                 .then(accountReference => {
                     accountReference.ref().remove(error => {
                         if (error) deferred.reject(error);
@@ -148,10 +112,14 @@ module Budget {
             return deferred.promise;
         }
 
-        public addTransaction(transaction: ITransactionData): ng.IPromise<Firebase> {
+        public addTransaction(projectKey: string, transaction: ITransactionData): ng.IPromise<Firebase> {
             var deferred = this.$q.defer<Firebase>();
-            var reference = this.transactionsReference.push(transaction, x => {
-                deferred.resolve(reference);
+            var reference =
+                this.projectsReference
+                    .child(projectKey)
+                    .child("transactions")
+                    .push(transaction, x => {
+                    deferred.resolve(reference);
             });
             return deferred.promise;
         }
@@ -159,24 +127,26 @@ module Budget {
         public getProjectsForUser(userId: string): ng.IPromise<ProjectOfUser[]> {
             var deferred = this.$q.defer<ProjectOfUser[]>();
 
-            this.projectUserReference
-                .orderByChild("user")
-                .equalTo(userId)
+            this.usersReference
+                .child(userId) 
+                .child("projects")
                 .once(FirebaseEvents.value, userProjectIds => {
-                    var projectUsers: ProjectUserData[] = [];
+                    var projectIds = [];
                     userProjectIds.forEach(snapshot => {
-                        var projectUserData = snapshot.exportVal<ProjectUserData>();
-                        projectUsers.push(projectUserData);
+                        projectIds.push({
+                            projectId: snapshot.key(),
+                            lastAccessTime: snapshot.exportVal<ProjectUserData>().lastAccessTime
+                        });
                     });
 
-                    projectUsers.sort((a, b) => a.lastAccessTime - b.lastAccessTime);
-                    var projectsPromise = projectUsers.map(x => {
+                    projectIds.sort((a, b) => a.lastAccessTime - b.lastAccessTime);
+                    var projectsPromise = projectIds.map(x => {
                         var projectDeferred = this.$q.defer<ProjectOfUser>();
-                        var projectTitleReference = this.projectsReference.child(x.projectId).child("title");
+                        var projectTitleReference = this.projectsReference.child(x.projectId).child("projectData");
 
                         projectTitleReference.once(FirebaseEvents.value, projectSnapshot => {
-                            var projectTitle = projectSnapshot.exportVal<string>();
-                            projectDeferred.resolve(new ProjectOfUser(projectTitle, x.lastAccessTime, x.projectId));
+                            var projectData = projectSnapshot.exportVal<ProjectData>();
+                            projectDeferred.resolve(new ProjectOfUser(projectData.title, x.lastAccessTime, x.projectId));
                         });
 
                         return projectDeferred.promise;
@@ -190,143 +160,81 @@ module Budget {
 
         public addNewProject(userId: string, projectTitle: string): ng.IPromise<ProjectData> {
             var deferred = this.$q.defer<ProjectData>();
-
-            let projectReference =
-                this.projectsReference.push(<ProjectData>{
+            let projectNode: ProjectNode = {
+                projectData: {
                     title: projectTitle,
-                    rootAccount: '',
-                    accounts: {},
-                    transactions: {}
-                }, error => {
-                    let rootAccount =
-                        projectReference.child("accounts").push(<IAccountData>{
+                    rootAccount: ""
+                },
+                accounts: {},
+                transactions: {},
+                users: {}
+            };
+
+            projectNode.users[userId] = true;
+
+            const projectReference = this.projectsReference.push(projectNode, error => {
+                const rootAccount =
+                    projectReference
+                        .child("accounts").push(<IAccountData>{
                             subject: projectTitle,
                             debited: 0,
                             credited: 0,
                             parent: "",
                             description: "",
                             lastAggregationTime: 0
-                        }, error => {
-                            projectReference.update({
-                                rootAccount: rootAccount.key()
-                            }, error => {
-                                this.projectUserReference.push(
-                                    new ProjectUserData(userId, projectReference.key(), Firebase.ServerValue.TIMESTAMP),
-                                    error => {
-                                        deferred.resolve(<ProjectData>{
-                                            title: projectTitle,
-                                            rootAccount: rootAccount.key()
-                                        });
-                                    });
+                }, error => {
+                    projectReference.child("projectData").update({
+                        rootAccount: rootAccount.key()
+                    }, error => {
+                        var userProjectUpdate = {};
+                        userProjectUpdate[projectReference.key()] = <ProjectUserData>{
+                            lastAccessTime: Firebase.ServerValue.TIMESTAMP
+                        };
+
+                        this.usersReference.child(userId)
+                            .child("projects")
+                            .update(userProjectUpdate, error => {
+                                deferred.resolve(<ProjectData>{
+                                    title: projectTitle,
+                                    rootAccount: rootAccount.key()
+                                });
                             });
-                        });
+                    });
+                });
+            });
+            return deferred.promise;
+        }
+
+        public getProjectData(projectId: string): ng.IPromise<DataWithKey<ProjectData>> {
+            var deferred = this.$q.defer<DataWithKey<ProjectData>>();
+
+            this.projectsReference
+                .child(projectId)
+                .child("projectData")
+                .once(FirebaseEvents.value, snapShot => {
+                    this.$log.debug("Found project data", snapShot.exportVal());
+                    deferred.resolve(new DataWithKey(projectId, snapShot.exportVal<ProjectData>()));
                 });
 
             return deferred.promise;
         }
 
-        private ensureData() {
-            this.accountsReference
-                .orderByChild("parent")
-                .limitToFirst(1)
-                .once(
-                    FirebaseEvents.value,
-                    snapshot => {
-                        if (!snapshot.val()) {
-                            this.createDemoData();
-                        }
-                    });
-        }
-
-        private normalizeAccountKey(accountKey: string): ng.IPromise<string> {
-            var accountKeyDeferred = this.$q.defer();
-
-            if (accountKey == 'root') {
-                accountKey = '';
-            }
-
-            if (accountKey == '') {
-                this.getRootAccountSnapshot().then(x => accountKeyDeferred.resolve(x.key()));
-            }
-            else {
-                accountKeyDeferred.resolve(accountKey);
-            }
-
-            return accountKeyDeferred.promise;
-        }
-
-        private addAccount(subject: string, parent: string = null, description: string = ''): ng.IPromise<Firebase> {
+        private addAccount(projectKey: string, subject: string, parent: string = null, description: string = ""): ng.IPromise<Firebase> {
             var deferred = this.$q.defer<Firebase>();
-            var reference = this.accountsReference.push(<IAccountData>{
-                subject: subject,
-                description: description,
-                parent: parent,
-                credited: 0,
-                debited: 0,
-                lastAggregationTime: 0,
-            }, x => {
-                deferred.resolve(reference);
-            });
-            return deferred.promise;
-        }
-
-        private createDemoData(): ng.IPromise<{}> {
-            var deferred = this.$q.defer();
-
-            console.log("Creating demo data...");
-
-            this.addAccount('My budget', '', 'This is the root node')
-                .then(rootNode => this.$q.all<Firebase>([
-                    this.addAccount('Item1', rootNode.key()),
-                    this.addAccount('Item2', rootNode.key()),
-                    this.addAccount('Item3', rootNode.key())
-                        .then(item3 => {
-                            this.$q.all<Firebase>([
-                                this.addAccount('Item3.1', item3.key()),
-                                this.addAccount('Item3.2', item3.key()),
-                                this.addAccount('Item3.3', item3.key()),
-                            ]);
-
-                            return item3;
-                        })
-                ])
-                .then(subitems => {
-                this.$q.all<Firebase>([
-                    this.addTransaction({
-                        debit: null,
-                        debitAccountName: '',
-                        credit: rootNode.key(),
-                        creditAccountName: 'My budget',
-                        amount: 65000,
-                        timestamp: Firebase.ServerValue.TIMESTAMP
-                    }),
-                    this.addTransaction({
-                        debit: rootNode.key(),
-                        debitAccountName: 'My budget',
-                        credit: subitems[0].key(),
-                        creditAccountName: 'Item1',
-                        amount: 25000,
-                        timestamp: Firebase.ServerValue.TIMESTAMP
-                    }),
-                    this.addTransaction({
-                        debit: rootNode.key(),
-                        debitAccountName: 'My budget',
-                        credit: subitems[1].key(),
-                        creditAccountName: 'Item2',
-                        amount: 20000,
-                        timestamp: Firebase.ServerValue.TIMESTAMP
-                    }),
-                    this.addTransaction({
-                        debit: rootNode.key(),
-                        debitAccountName: 'My budget',
-                        credit: subitems[2].key(),
-                        creditAccountName: 'Item3',
-                        amount: 10000,
-                        timestamp: Firebase.ServerValue.TIMESTAMP
-                    })
-                ]).then(x => deferred.resolve());
-            }));
-
+            var reference =
+                this.projectsReference
+                    .child(projectKey)
+                    .child("accounts")
+                    .push(<IAccountData>{
+                        subject: subject,
+                        description: description,
+                        parent: parent,
+                        credited: 0,
+                        debited: 0,
+                        lastAggregationTime: 0,
+                    }, x => {
+                        deferred.resolve(reference);
+                    });
             return deferred.promise;
         }
     }

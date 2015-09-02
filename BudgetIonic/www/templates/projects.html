@@ -1,7 +1,7 @@
 ﻿<ion-view>
     <ion-content class="has-header" padding="false">
         <ul class="list">
-            <li class="item" ng-repeat="project in vm.projects">
+            <li class="item" ng-repeat="project in vm.projects" ui-sref="logged-in.project.home({projectId: project.key})">
                 <div>{{project.title}}</div>
             </li>
             <li ng-if="vm.projects.length == 0">Your project list is empty</li>
