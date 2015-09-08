@@ -1249,8 +1249,9 @@ var Budget;
             return {
                 projectData: [
                     "$stateParams", "$log", Budget.DataService.IID, function ($stateParams, $log, dataService) {
-                        $log.debug("ProjectCtrl resolving project", $stateParams);
-                        dataService.getProjectHeader($stateParams.projectId);
+                        var projectHeader = dataService.getProjectHeader($stateParams.projectId);
+                        $log.debug("ProjectCtrl resolving project from stateParams", $stateParams);
+                        return projectHeader;
                     }
                 ] };
         };

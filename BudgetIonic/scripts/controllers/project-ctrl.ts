@@ -7,8 +7,9 @@
             return {
                 projectData: [
                     "$stateParams", "$log", DataService.IID, ($stateParams, $log: ng.ILogService, dataService: IDataService) => {
-                        $log.debug("ProjectCtrl resolving project", $stateParams);
-                        dataService.getProjectHeader($stateParams.projectId);
+                        var projectHeader = dataService.getProjectHeader($stateParams.projectId);
+                        $log.debug("ProjectCtrl resolving project from stateParams", $stateParams);
+                        return projectHeader;
                     }
                 ]};
         }
