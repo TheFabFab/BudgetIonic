@@ -8,19 +8,31 @@
                 projectData: [
                     "$stateParams", "$log", DataService.IID, ($stateParams, $log: ng.ILogService, dataService: IDataService) => {
                         var projectHeader = dataService.getProjectHeader($stateParams.projectId);
-                        $log.debug("ProjectCtrl resolving project from stateParams", $stateParams);
+                        projectHeader.then(ph => $log.debug("ProjectCtrl resolved project from stateParams", $stateParams, ph));
                         return projectHeader;
                     }
                 ]};
         }
 
         public static $inject = [
+            "$scope",
             "$log",
+            ContextService.IID,
             "projectData"
         ];
 
-        constructor($log: ng.ILogService, private projectData: DataWithKey<ProjectHeader>) {
+        constructor($scope: ng.IScope, $log: ng.ILogService, private contextService: ContextService, private projectData: DataWithKey<ProjectHeader>) {
             $log.debug("Initializing project controller", projectData);
+
+            $scope.$on("$ionicView.beforeLeave", () => {
+                $log.debug("Leaving project controller");
+                contextService.setCurrentProject(null);
+            });
+
+            $scope.$on("$ionicView.afterEnter", () => {
+                $log.debug("Entering project controller");
+                contextService.setCurrentProject(projectData);
+            });
         }
     }
 }

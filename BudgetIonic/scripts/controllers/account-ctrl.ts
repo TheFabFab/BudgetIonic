@@ -76,37 +76,26 @@ module Budget {
             this.deleteCommand = new Command("Delete account", `/#/budget/project/${this.projectData.key}/delete/${this.accountSnapshot.key()}`, false);
             this.allocateBudgetCommand = new Command("Allocate budget", `/#/budget/project/${this.projectData.key}/allocate/${this.accountSnapshot.key()}`);
             this.addExpenseCommand = new Command("Register expense", `/#/budget/project/${this.projectData.key}/expense/${this.accountSnapshot.key()}`);
-
-            var projects = dataService.getProjectsReference();
-
-            var childrenQuery =
-                projects
-                    .child(projectData.key)
-                    .child("accounts")
-                    .orderByChild("parent")
-                    .equalTo(accountSnapshot.key());
-
+            const projects = dataService.getProjectsReference();
+            const childrenQuery = projects
+                .child(projectData.key)
+                .child("accounts")
+                .orderByChild("parent")
+                .equalTo(accountSnapshot.key());
             this.subAccounts = $firebaseArray(childrenQuery);
 
             this.subAccounts.$watch(event => $log.debug("subAccounts.watch", event, this.subAccounts));
-
-            var transactions =
-                projects
+            const transactions = projects
                 .child(projectData.key)
                 .child("transactions");
-
-            var creditTransactionQuery =
-                transactions
-                    .orderByChild("credit")
-                    .equalTo(accountSnapshot.key())
-                    .limitToFirst(10);
-
-            var debitTransactionQuery =
-                transactions
-                    .orderByChild("debit")
-                    .equalTo(accountSnapshot.key())
-                    .limitToFirst(10);
-
+            const creditTransactionQuery = transactions
+                .orderByChild("credit")
+                .equalTo(accountSnapshot.key())
+                .limitToFirst(10);
+            const debitTransactionQuery = transactions
+                .orderByChild("debit")
+                .equalTo(accountSnapshot.key())
+                .limitToFirst(10);
             creditTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
                 var transaction = snapShot.exportVal<ITransactionData>();
                 var label = `Credited ${transaction.amount} from '${transaction.debitAccountName}'.`;
@@ -121,7 +110,12 @@ module Budget {
                 this.insertTransaction(vm);
             });
 
-            $scope.$on("$ionicView.enter", () => {
+            $scope.$on("$ionicView.beforeLeave", () => {
+                $log.debug("Leaving account controller", this.$scope);
+                this.commandService.registerContextCommands([]);
+            });
+
+            $scope.$on("$ionicView.afterEnter", () => {
                 $log.debug("Entering account controller", this.$scope);
                 this.updateContextCommands();
                 this.setContextCommands();

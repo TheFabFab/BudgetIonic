@@ -1,3 +1,4 @@
+/// <reference path="services/context-service.ts" />
 /// <reference path="services/authentication-service.ts" />
 /// <reference path="services/command-service.ts" />
 /// <reference path="services/data-service.ts" />
@@ -23,10 +24,14 @@ module Budget {
 
     var budgetModule =
         angular.module("budget-app", ["ionic", "firebase", "angularMoment"])
+
             .service(DataService.IID, DataService)
             .service(AuthenticationService.IID, AuthenticationService)
             .service(CommandService.IID, CommandService)
+            .service(ContextService.IID, ContextService)
+
             .directive(AccountOverview.IID, AccountOverview.factory())
+
             .controller(MainCtrl.IID, MainCtrl)
             .controller(AccountCtrl.IID, AccountCtrl)
             .controller(NewAccountCtrl.IID, NewAccountCtrl)

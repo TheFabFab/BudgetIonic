@@ -1,5 +1,25 @@
 var Budget;
 (function (Budget) {
+    var ContextService = (function () {
+        function ContextService($log) {
+            $log.debug("Initializing context service");
+        }
+        ContextService.prototype.setCurrentProject = function (projectHeader) {
+            this.projectHeader = projectHeader;
+        };
+        ContextService.prototype.getProjectHeader = function () {
+            return this.projectHeader;
+        };
+        ContextService.IID = "contextService";
+        ContextService.$inject = [
+            "$log"
+        ];
+        return ContextService;
+    })();
+    Budget.ContextService = ContextService;
+})(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
     var ProjectNode = (function () {
         function ProjectNode(transactions, accounts, users) {
             this.transactions = transactions;
@@ -569,7 +589,11 @@ var Budget;
                 var vm = new TransactionViewModel(label, transaction.timestamp);
                 _this.insertTransaction(vm);
             });
-            $scope.$on("$ionicView.enter", function () {
+            $scope.$on("$ionicView.beforeLeave", function () {
+                $log.debug("Leaving account controller", _this.$scope);
+                _this.commandService.registerContextCommands([]);
+            });
+            $scope.$on("$ionicView.afterEnter", function () {
                 $log.debug("Entering account controller", _this.$scope);
                 _this.updateContextCommands();
                 _this.setContextCommands();
@@ -632,17 +656,31 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($state, $log, dataService, authenticationService, commandService, userData, rootAccountSnapshot) {
+        function MainCtrl($scope, $state, $log, dataService, authenticationService, commandService, contextService, userData) {
+            var _this = this;
+            this.$scope = $scope;
             this.$state = $state;
             this.$log = $log;
             this.dataService = dataService;
             this.authenticationService = authenticationService;
             this.commandService = commandService;
+            this.contextService = contextService;
             this.userData = userData;
             console.log("Initializing main controller");
-            if (rootAccountSnapshot !== null) {
-                this.rootAccount = Budget.AccountData.fromSnapshot(rootAccountSnapshot);
-            }
+            $scope.$watch(function (scope) { return _this.contextService.getProjectHeader(); }, function (projectHeader) {
+                if (projectHeader != null) {
+                    var rootAccountKey = projectHeader.data.rootAccount;
+                    _this.dataService.getAccountSnapshot(projectHeader.key, rootAccountKey)
+                        .then(function (rootAccountSnapshot) {
+                        if (rootAccountSnapshot !== null) {
+                            _this.rootAccount = Budget.AccountData.fromSnapshot(rootAccountSnapshot);
+                        }
+                    });
+                }
+                else {
+                    _this.rootAccount = null;
+                }
+            });
             this.contextCommands = commandService.contextCommands;
             this.imageStyle = {
                 "background-image": "url('" + userData.cachedProfileImage + "')"
@@ -651,12 +689,12 @@ var Budget;
         }
         MainCtrl.resolve = function () {
             return {
-                userData: ["$q", "$log", Budget.AuthenticationService.IID, MainCtrl.authenticate],
-                rootAccountSnapshot: [Budget.DataService.IID, MainCtrl.getAccount]
+                userData: ["$q", "$log", Budget.AuthenticationService.IID, MainCtrl.authenticate]
             };
         };
         MainCtrl.authenticate = function ($q, $log, authenticationService) {
             var deferred = $q.defer();
+            // TODO: sign up for de-authentication
             authenticationService.initialized
                 .then(function (x) {
                 var userData = authenticationService.userData;
@@ -670,9 +708,6 @@ var Budget;
             });
             return deferred.promise;
         };
-        MainCtrl.getAccount = function (dataService) {
-            return null; //dataService.getRootAccountSnapshot();
-        };
         MainCtrl.prototype.logOut = function () {
             this.authenticationService.logOut();
             this.$state.go("logged-in.home", {}, { reload: true });
@@ -680,13 +715,14 @@ var Budget;
         MainCtrl.IID = "mainCtrl";
         MainCtrl.controllerAs = MainCtrl.IID + " as vm";
         MainCtrl.$inject = [
+            "$scope",
             "$state",
             "$log",
             Budget.DataService.IID,
             Budget.AuthenticationService.IID,
             Budget.CommandService.IID,
-            "userData",
-            "rootAccountSnapshot"
+            Budget.ContextService.IID,
+            "userData"
         ];
         return MainCtrl;
     })();
@@ -1032,6 +1068,7 @@ var Budget;
     })();
     Budget.ProjectsCtrl = ProjectsCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="services/context-service.ts" />
 /// <reference path="services/authentication-service.ts" />
 /// <reference path="services/command-service.ts" />
 /// <reference path="services/data-service.ts" />
@@ -1058,6 +1095,7 @@ var Budget;
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.AuthenticationService.IID, Budget.AuthenticationService)
         .service(Budget.CommandService.IID, Budget.CommandService)
+        .service(Budget.ContextService.IID, Budget.ContextService)
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
         .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
@@ -1241,16 +1279,25 @@ var Budget;
 var Budget;
 (function (Budget) {
     var ProjectCtrl = (function () {
-        function ProjectCtrl($log, projectData) {
+        function ProjectCtrl($scope, $log, contextService, projectData) {
+            this.contextService = contextService;
             this.projectData = projectData;
             $log.debug("Initializing project controller", projectData);
+            $scope.$on("$ionicView.beforeLeave", function () {
+                $log.debug("Leaving project controller");
+                contextService.setCurrentProject(null);
+            });
+            $scope.$on("$ionicView.afterEnter", function () {
+                $log.debug("Entering project controller");
+                contextService.setCurrentProject(projectData);
+            });
         }
         ProjectCtrl.resolve = function () {
             return {
                 projectData: [
                     "$stateParams", "$log", Budget.DataService.IID, function ($stateParams, $log, dataService) {
                         var projectHeader = dataService.getProjectHeader($stateParams.projectId);
-                        $log.debug("ProjectCtrl resolving project from stateParams", $stateParams);
+                        projectHeader.then(function (ph) { return $log.debug("ProjectCtrl resolved project from stateParams", $stateParams, ph); });
                         return projectHeader;
                     }
                 ] };
@@ -1258,7 +1305,9 @@ var Budget;
         ProjectCtrl.IID = "projectCtrl";
         ProjectCtrl.controllerAs = ProjectCtrl.IID + " as projectVm";
         ProjectCtrl.$inject = [
+            "$scope",
             "$log",
+            Budget.ContextService.IID,
             "projectData"
         ];
         return ProjectCtrl;
