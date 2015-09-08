@@ -39,7 +39,7 @@ module Budget {
         private allocateBudgetCommand: Command;
         private addExpenseCommand: Command;
 
-        public accountData: IAccountData;
+        public accountData: AccountData;
         public subAccounts: AngularFireArray;
         public transactions: TransactionViewModel[] = [];
 
@@ -66,10 +66,10 @@ module Budget {
 
             $log.debug("Initializing account controller", arguments);
 
-            this.accountData = accountSnapshot.exportVal<IAccountData>();
+            this.accountData = AccountData.fromSnapshot(accountSnapshot);
             accountSnapshot.ref()
                 .on(FirebaseEvents.value, accountSnapshot => {
-                    this.accountData = accountSnapshot.exportVal<IAccountData>();
+                    this.accountData = AccountData.fromSnapshot(accountSnapshot);
                 });
 
             this.addSubaccountCommand = new Command("Add subaccount", `/#/budget/project/${this.projectData.key}/new/${this.accountSnapshot.key()}`);
