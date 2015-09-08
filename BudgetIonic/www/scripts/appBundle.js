@@ -549,10 +549,10 @@ var Budget;
             this.accountSnapshot = accountSnapshot;
             this.transactions = [];
             $log.debug("Initializing account controller", arguments);
-            this.accountData = accountSnapshot.exportVal();
+            this.accountData = Budget.AccountData.fromSnapshot(accountSnapshot);
             accountSnapshot.ref()
                 .on(Budget.FirebaseEvents.value, function (accountSnapshot) {
-                _this.accountData = accountSnapshot.exportVal();
+                _this.accountData = Budget.AccountData.fromSnapshot(accountSnapshot);
             });
             this.addSubaccountCommand = new Budget.Command("Add subaccount", "/#/budget/project/" + this.projectData.key + "/new/" + this.accountSnapshot.key());
             this.deleteCommand = new Budget.Command("Delete account", "/#/budget/project/" + this.projectData.key + "/delete/" + this.accountSnapshot.key(), false);
@@ -1091,7 +1091,7 @@ var Budget;
 var Budget;
 (function (Budget) {
     "use strict";
-    var budgetModule = angular.module("budget-app", ["ionic", "firebase", "angularMoment"])
+    var budgetModule = angular.module("budget-app", ["ionic", "firebase", "angularMoment", "ionic-material"])
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.AuthenticationService.IID, Budget.AuthenticationService)
         .service(Budget.CommandService.IID, Budget.CommandService)
