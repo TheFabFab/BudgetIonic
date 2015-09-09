@@ -32,7 +32,8 @@
             "$ionicHistory",
             "$q",
             DataService.IID,
-            "projectData"
+            "projectData",
+            "userData"
         ];
 
         constructor(
@@ -45,7 +46,8 @@
             private $ionicHistory,
             private $q: ng.IQService,
             private dataService: IDataService,
-            private projectData: DataWithKey<ProjectHeader>) {
+            private projectData: DataWithKey<ProjectHeader>,
+            private userData: UserData) {
 
             $log.debug("Initializing allocate controller", arguments);
 
@@ -81,7 +83,8 @@
                         debitAccountName: "",
                         credit: this.creditAccountId,
                         creditAccountName: this.creditAccount.subject,
-                        timestamp: Firebase.ServerValue.TIMESTAMP
+                        timestamp: Firebase.ServerValue.TIMESTAMP,
+                        userId: this.userData.uid
                     }).then(x => {
                     this.close();
                 });
@@ -116,7 +119,8 @@
                                 debitAccountName: debitAccount.subject,
                                 credit: creditAccount.key,
                                 creditAccountName: creditAccount.subject,
-                                timestamp: Firebase.ServerValue.TIMESTAMP
+                                timestamp: Firebase.ServerValue.TIMESTAMP,
+                                userId: this.userData.uid
                             });
 
                     promises.push(promise);

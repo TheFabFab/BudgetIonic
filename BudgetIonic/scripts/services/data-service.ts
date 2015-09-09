@@ -17,6 +17,7 @@ module Budget {
         getProjectsForUser(userId: string): ng.IPromise<ProjectOfUser[]>;
         addNewProject(userId: string, projectTitle: string);
         getProjectHeader(projectId: string): ng.IPromise<DataWithKey<ProjectHeader>>;
+        getUserPicture(userId: string): ng.IPromise<string>;
     }
 
     export class DataService implements IDataService {
@@ -32,6 +33,7 @@ module Budget {
         private usersReference: Firebase;
         private projectsReference: Firebase;
         private projectHeadersReference: Firebase;
+        private profilePictureCache = {};
 
         constructor(private $q: ng.IQService, private $log: ng.ILogService) {
             $log.debug("Creating data service");
@@ -121,7 +123,7 @@ module Budget {
                     .child(projectKey)
                     .child("transactions")
                     .push(transaction, x => {
-                    deferred.resolve(reference);
+                        deferred.resolve(reference);
             });
             return deferred.promise;
         }
@@ -219,6 +221,24 @@ module Budget {
                     this.$log.debug("Found project data", snapShot.exportVal());
                     deferred.resolve(DataWithKey.fromSnapshot<ProjectHeader>(snapShot));
                 });
+
+            return deferred.promise;
+        }
+
+        public getUserPicture(userId: string): ng.IPromise<string> {
+            const deferred = this.$q.defer<string>();
+
+            if (this.profilePictureCache.hasOwnProperty(userId)) {
+                deferred.resolve(this.profilePictureCache[userId]);
+            } else {
+                this.usersReference.child(userId).once(FirebaseEvents.value, snapshot => {
+                    var userData = snapshot.exportVal<UserData>();
+                    if (userData != null) {
+                        this.profilePictureCache[userId] = userData.cachedProfileImage;
+                    }
+                    deferred.resolve(userData.cachedProfileImage);
+                });
+            }
 
             return deferred.promise;
         }

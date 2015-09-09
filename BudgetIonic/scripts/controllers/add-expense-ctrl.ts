@@ -20,7 +20,8 @@
             "$ionicHistory",
             "$q",
             DataService.IID,
-            "projectData"
+            "projectData",
+            "userData"
         ];
 
         constructor(
@@ -33,7 +34,8 @@
             private $ionicHistory,
             private $q: ng.IQService,
             private dataService: IDataService,
-            private projectData: DataWithKey<ProjectHeader>) {
+            private projectData: DataWithKey<ProjectHeader>,
+            private userData: UserData) {
 
             $log.debug("Initializing add expense controller", arguments);
 
@@ -56,7 +58,8 @@
                 creditAccountName: "Expenses",
                 debit: this.debitAccount.key,
                 debitAccountName: this.debitAccount.subject,
-                timestamp: Firebase.ServerValue.TIMESTAMP
+                timestamp: Firebase.ServerValue.TIMESTAMP,
+                userId: this.userData.uid
             }).then(x => this.close());
         }
 

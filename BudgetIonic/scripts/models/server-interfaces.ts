@@ -6,6 +6,7 @@
         creditAccountName: string;
         amount: number;
         timestamp: number;
+        userId: string;
     }
 
     export interface IAccountData {

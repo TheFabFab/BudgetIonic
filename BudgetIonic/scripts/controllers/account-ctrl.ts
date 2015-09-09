@@ -9,7 +9,8 @@ module Budget {
     }
 
     export class TransactionViewModel {
-        constructor(public label: string, public timestamp: number) {
+        public profilePicture: Object;
+        constructor(public userId: string, public label: string, public timestamp: number) {
         }
     }
 
@@ -88,6 +89,7 @@ module Budget {
             const transactions = projects
                 .child(projectData.key)
                 .child("transactions");
+
             const creditTransactionQuery = transactions
                 .orderByChild("credit")
                 .equalTo(accountSnapshot.key())
@@ -96,17 +98,18 @@ module Budget {
                 .orderByChild("debit")
                 .equalTo(accountSnapshot.key())
                 .limitToFirst(10);
+
             creditTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
                 var transaction = snapShot.exportVal<ITransactionData>();
                 var label = `Credited ${transaction.amount} from '${transaction.debitAccountName}'.`;
-                var vm = new TransactionViewModel(label, transaction.timestamp);
+                var vm = new TransactionViewModel(transaction.userId, label, transaction.timestamp);
                 this.insertTransaction(vm);
             });
 
             debitTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
                 var transaction = snapShot.exportVal<ITransactionData>();
                 var label = `Debited ${transaction.amount} to '${transaction.creditAccountName}'.`;
-                var vm = new TransactionViewModel(label, transaction.timestamp);
+                var vm = new TransactionViewModel(transaction.userId, label, transaction.timestamp);
                 this.insertTransaction(vm);
             });
 
@@ -126,6 +129,16 @@ module Budget {
         }
 
         private insertTransaction(transactionVm: TransactionViewModel): void {
+            if (transactionVm.userId) {
+                this.dataService
+                    .getUserPicture(transactionVm.userId)
+                    .then(picture => {
+                        transactionVm.profilePicture = {
+                            "background-image": `url('${picture}')`
+                        };
+                    });
+            }
+
             var index = 0;
             this.transactions.forEach(x => {
                 if (x.timestamp > transactionVm.timestamp) index++;

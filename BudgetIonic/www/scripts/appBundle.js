@@ -111,6 +111,7 @@ var Budget;
         function DataService($q, $log) {
             this.$q = $q;
             this.$log = $log;
+            this.profilePictureCache = {};
             $log.debug("Creating data service");
             this.database = new Firebase("https://budgetionic.firebaseio.com/");
             this.usersReference = this.database.child("users");
@@ -267,6 +268,23 @@ var Budget;
                 _this.$log.debug("Found project data", snapShot.exportVal());
                 deferred.resolve(Budget.DataWithKey.fromSnapshot(snapShot));
             });
+            return deferred.promise;
+        };
+        DataService.prototype.getUserPicture = function (userId) {
+            var _this = this;
+            var deferred = this.$q.defer();
+            if (this.profilePictureCache.hasOwnProperty(userId)) {
+                deferred.resolve(this.profilePictureCache[userId]);
+            }
+            else {
+                this.usersReference.child(userId).once(Budget.FirebaseEvents.value, function (snapshot) {
+                    var userData = snapshot.exportVal();
+                    if (userData != null) {
+                        _this.profilePictureCache[userId] = userData.cachedProfileImage;
+                    }
+                    deferred.resolve(userData.cachedProfileImage);
+                });
+            }
             return deferred.promise;
         };
         DataService.prototype.addAccount = function (projectKey, subject, parent, description) {
@@ -529,7 +547,8 @@ var Budget;
 (function (Budget) {
     "use strict";
     var TransactionViewModel = (function () {
-        function TransactionViewModel(label, timestamp) {
+        function TransactionViewModel(userId, label, timestamp) {
+            this.userId = userId;
             this.label = label;
             this.timestamp = timestamp;
         }
@@ -580,13 +599,13 @@ var Budget;
             creditTransactionQuery.on(Budget.FirebaseEvents.child_added, function (snapShot) {
                 var transaction = snapShot.exportVal();
                 var label = "Credited " + transaction.amount + " from '" + transaction.debitAccountName + "'.";
-                var vm = new TransactionViewModel(label, transaction.timestamp);
+                var vm = new TransactionViewModel(transaction.userId, label, transaction.timestamp);
                 _this.insertTransaction(vm);
             });
             debitTransactionQuery.on(Budget.FirebaseEvents.child_added, function (snapShot) {
                 var transaction = snapShot.exportVal();
                 var label = "Debited " + transaction.amount + " to '" + transaction.creditAccountName + "'.";
-                var vm = new TransactionViewModel(label, transaction.timestamp);
+                var vm = new TransactionViewModel(transaction.userId, label, transaction.timestamp);
                 _this.insertTransaction(vm);
             });
             $scope.$on("$ionicView.beforeLeave", function () {
@@ -612,6 +631,15 @@ var Budget;
             return dataService.getAccountSnapshot(projectData.key, accountId);
         };
         AccountCtrl.prototype.insertTransaction = function (transactionVm) {
+            if (transactionVm.userId) {
+                this.dataService
+                    .getUserPicture(transactionVm.userId)
+                    .then(function (picture) {
+                    transactionVm.profilePicture = {
+                        "background-image": "url('" + picture + "')"
+                    };
+                });
+            }
             var index = 0;
             this.transactions.forEach(function (x) {
                 if (x.timestamp > transactionVm.timestamp)
@@ -782,7 +810,7 @@ var Budget;
     })();
     Budget.HelperCommand = HelperCommand;
     var AllocateBudgetCtrl = (function () {
-        function AllocateBudgetCtrl($stateParams, $scope, $state, $firebaseObject, $firebaseArray, $log, $ionicHistory, $q, dataService, projectData) {
+        function AllocateBudgetCtrl($stateParams, $scope, $state, $firebaseObject, $firebaseArray, $log, $ionicHistory, $q, dataService, projectData, userData) {
             var _this = this;
             this.$scope = $scope;
             this.$state = $state;
@@ -793,6 +821,7 @@ var Budget;
             this.$q = $q;
             this.dataService = dataService;
             this.projectData = projectData;
+            this.userData = userData;
             this.amount = 0;
             this.isEnabled = false;
             this.helperCommands = [];
@@ -825,7 +854,8 @@ var Budget;
                     debitAccountName: "",
                     credit: this.creditAccountId,
                     creditAccountName: this.creditAccount.subject,
-                    timestamp: Firebase.ServerValue.TIMESTAMP
+                    timestamp: Firebase.ServerValue.TIMESTAMP,
+                    userId: this.userData.uid
                 }).then(function (x) {
                     _this.close();
                 });
@@ -852,7 +882,8 @@ var Budget;
                         debitAccountName: debitAccount.subject,
                         credit: creditAccount.key,
                         creditAccountName: creditAccount.subject,
-                        timestamp: Firebase.ServerValue.TIMESTAMP
+                        timestamp: Firebase.ServerValue.TIMESTAMP,
+                        userId: _this.userData.uid
                     });
                     promises.push(promise);
                     previousAccount = account;
@@ -930,7 +961,8 @@ var Budget;
             "$ionicHistory",
             "$q",
             Budget.DataService.IID,
-            "projectData"
+            "projectData",
+            "userData"
         ];
         return AllocateBudgetCtrl;
     })();
@@ -940,7 +972,7 @@ var Budget;
 (function (Budget) {
     "use strict";
     var AddExpenseCtrl = (function () {
-        function AddExpenseCtrl($stateParams, $scope, $state, $firebaseObject, $firebaseArray, $log, $ionicHistory, $q, dataService, projectData) {
+        function AddExpenseCtrl($stateParams, $scope, $state, $firebaseObject, $firebaseArray, $log, $ionicHistory, $q, dataService, projectData, userData) {
             var _this = this;
             this.$scope = $scope;
             this.$state = $state;
@@ -951,6 +983,7 @@ var Budget;
             this.$q = $q;
             this.dataService = dataService;
             this.projectData = projectData;
+            this.userData = userData;
             this.amount = 0;
             this.isEnabled = false;
             $log.debug("Initializing add expense controller", arguments);
@@ -970,7 +1003,8 @@ var Budget;
                 creditAccountName: "Expenses",
                 debit: this.debitAccount.key,
                 debitAccountName: this.debitAccount.subject,
-                timestamp: Firebase.ServerValue.TIMESTAMP
+                timestamp: Firebase.ServerValue.TIMESTAMP,
+                userId: this.userData.uid
             }).then(function (x) { return _this.close(); });
         };
         AddExpenseCtrl.prototype.cancel = function () {
@@ -998,7 +1032,8 @@ var Budget;
             "$ionicHistory",
             "$q",
             Budget.DataService.IID,
-            "projectData"
+            "projectData",
+            "userData"
         ];
         return AddExpenseCtrl;
     })();

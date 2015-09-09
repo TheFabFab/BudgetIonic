@@ -318,12 +318,27 @@ ion-side-menus .menu {
 .clip-circle {
   background-size:100px 133px;
   background-position:0px -10px;
-  background-repeat: no-repeat;
   height:100px;
   width:100px;
   flex-basis: 100px;
+  background-repeat: no-repeat;
   flex-grow: 0;
   border-radius:50%;
   overflow:hidden;
   margin:auto;
+}
+
+.small-user-picture {
+    flex-basis: 80px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.small-user-picture .clip-circle {
+    -ms-background-size:60px 80px;
+    background-size:60px 80px;
+  background-position:0px -7px;
+  height:60px;
+  width:60px;
+  flex-basis: 60px;
 }
