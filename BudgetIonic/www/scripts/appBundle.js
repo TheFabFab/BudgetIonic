@@ -667,7 +667,7 @@ var Budget;
             this.contextService = contextService;
             this.userData = userData;
             console.log("Initializing main controller");
-            $scope.$watch(function (scope) { return _this.contextService.getProjectHeader(); }, function (projectHeader) {
+            $scope.$watch(function (_) { return _this.contextService.getProjectHeader(); }, function (projectHeader) {
                 if (projectHeader != null) {
                     var rootAccountKey = projectHeader.data.rootAccount;
                     _this.dataService.getAccountSnapshot(projectHeader.key, rootAccountKey)
@@ -680,6 +680,9 @@ var Budget;
                 else {
                     _this.rootAccount = null;
                 }
+            });
+            $scope.$watch(function (_) { return _this.authenticationService.userData; }, function (_) {
+                $state.reload();
             });
             this.contextCommands = commandService.contextCommands;
             this.imageStyle = {
