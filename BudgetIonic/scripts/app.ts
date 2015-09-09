@@ -1,3 +1,4 @@
+/// <reference path="controllers/news-feed-ctrl.ts" />
 /// <reference path="services/context-service.ts" />
 /// <reference path="services/authentication-service.ts" />
 /// <reference path="services/command-service.ts" />
@@ -39,7 +40,8 @@ module Budget {
             .controller(AllocateBudgetCtrl.IID, AllocateBudgetCtrl)
             .controller(AddExpenseCtrl.IID, AddExpenseCtrl)
             .controller(LoginCtrl.IID, LoginCtrl)
-            .controller(ProjectsCtrl.IID, ProjectsCtrl);
+            .controller(ProjectsCtrl.IID, ProjectsCtrl)
+            .controller(NewsFeedCtrl.IID, NewsFeedCtrl);
 
     budgetModule
         .config(($stateProvider: ng.ui.IStateProvider, $urlRouterProvider: ng.ui.IUrlRouterProvider, $locationProvider: ng.ILocationProvider) => {

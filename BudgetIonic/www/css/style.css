@@ -191,19 +191,6 @@
     flex-flow: column;
 }
 
-.budget-right-menu {
-    /*position: relative;*/
-    height: 100%;
-    width: 320px;
-    display: flex;
-    -ms-flex-direction: column;
-    -webkit-flex-direction: column;
-    flex-direction: column;
-    -ms-flex-flow: column;
-    -webkit-flex-flow: column;
-    flex-flow: column;
-}
-
 ion-side-menus .menu {
     width: 320px;
 }
@@ -328,17 +315,43 @@ ion-side-menus .menu {
   margin:auto;
 }
 
-.small-user-picture {
+.user-picture-small {
     flex-basis: 80px;
     flex-grow: 0;
     flex-shrink: 0;
 }
 
-.small-user-picture .clip-circle {
+.user-picture-small .clip-circle {
     -ms-background-size:60px 80px;
     background-size:60px 80px;
   background-position:0px -7px;
   height:60px;
   width:60px;
   flex-basis: 60px;
+}
+
+.messages-view {
+    flex-basis: 320px;
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+.news-message p {
+    -ms-word-wrap: break-word;
+    word-wrap: break-word;
+    display: inline-block;
+    white-space: normal;
+}
+
+.news-message .col {
+    flex-shrink: 1;
+}
+
+.news-message .row {
+    width: 100%;
+}
+
+.news-message .time-ago {
+    text-align: right;
+    color: lightgray;
 }

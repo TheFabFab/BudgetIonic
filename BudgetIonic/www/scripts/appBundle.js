@@ -1,25 +1,5 @@
 var Budget;
 (function (Budget) {
-    var ContextService = (function () {
-        function ContextService($log) {
-            $log.debug("Initializing context service");
-        }
-        ContextService.prototype.setCurrentProject = function (projectHeader) {
-            this.projectHeader = projectHeader;
-        };
-        ContextService.prototype.getProjectHeader = function () {
-            return this.projectHeader;
-        };
-        ContextService.IID = "contextService";
-        ContextService.$inject = [
-            "$log"
-        ];
-        return ContextService;
-    })();
-    Budget.ContextService = ContextService;
-})(Budget || (Budget = {}));
-var Budget;
-(function (Budget) {
     var ProjectNode = (function () {
         function ProjectNode(transactions, accounts, users) {
             this.transactions = transactions;
@@ -407,6 +387,93 @@ var Budget;
         return AuthenticationService;
     })();
     Budget.AuthenticationService = AuthenticationService;
+})(Budget || (Budget = {}));
+/// <reference path="../services/data-service.ts" />
+/// <reference path="../services/authentication-service.ts" />
+var Budget;
+(function (Budget) {
+    var MessageViewModel = (function () {
+        function MessageViewModel(userId, label, timestamp) {
+            this.userId = userId;
+            this.label = label;
+            this.timestamp = timestamp;
+            this.profilePicture = {};
+        }
+        return MessageViewModel;
+    })();
+    Budget.MessageViewModel = MessageViewModel;
+    var NewsFeedCtrl = (function () {
+        function NewsFeedCtrl($log, dataService, authenticationService) {
+            var _this = this;
+            this.dataService = dataService;
+            this.messages = [];
+            $log.debug("Initializing news feed control");
+            var userData = authenticationService.userData;
+            if (userData) {
+                dataService.getProjectsForUser(userData.uid)
+                    .then(function (projects) {
+                    projects.forEach(function (project) {
+                        var projectId = project.key;
+                        dataService.getProjectsReference()
+                            .child(projectId)
+                            .child("transactions")
+                            .orderByChild("timestamp")
+                            .on(Budget.FirebaseEvents.child_added, function (snapshot) {
+                            var transaction = snapshot.exportVal();
+                            var messageText = "Transferred " + transaction.amount + " from " + transaction.debitAccountName + " to " + transaction.creditAccountName;
+                            var messageVm = new MessageViewModel(userData.uid, messageText, transaction.timestamp);
+                            _this.insertMessage(messageVm);
+                        });
+                    });
+                });
+            }
+        }
+        NewsFeedCtrl.prototype.insertMessage = function (messageViewModel) {
+            if (messageViewModel.userId) {
+                this.dataService
+                    .getUserPicture(messageViewModel.userId)
+                    .then(function (picture) {
+                    messageViewModel.profilePicture = {
+                        "background-image": "url('" + picture + "')"
+                    };
+                });
+            }
+            var index = 0;
+            this.messages.forEach(function (x) {
+                if (x.timestamp > messageViewModel.timestamp)
+                    index++;
+            });
+            this.messages.splice(index, 0, messageViewModel);
+        };
+        NewsFeedCtrl.IID = "newsFeedCtrl";
+        NewsFeedCtrl.$inject = [
+            "$log",
+            Budget.DataService.IID,
+            Budget.AuthenticationService.IID
+        ];
+        return NewsFeedCtrl;
+    })();
+    Budget.NewsFeedCtrl = NewsFeedCtrl;
+})(Budget || (Budget = {}));
+var Budget;
+(function (Budget) {
+    var ContextService = (function () {
+        function ContextService($log) {
+            $log.debug("Initializing context service");
+        }
+        ContextService.prototype.setCurrentProject = function (projectHeader) {
+            this.projectHeader = projectHeader;
+        };
+        ContextService.prototype.getProjectHeader = function () {
+            return this.projectHeader;
+        };
+        ContextService.IID = "contextService";
+        ContextService.$inject = [
+            "$log"
+        ];
+        return ContextService;
+    })();
+    Budget.ContextService = ContextService;
 })(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
@@ -1106,6 +1173,7 @@ var Budget;
     })();
     Budget.ProjectsCtrl = ProjectsCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="controllers/news-feed-ctrl.ts" />
 /// <reference path="services/context-service.ts" />
 /// <reference path="services/authentication-service.ts" />
 /// <reference path="services/command-service.ts" />
@@ -1142,7 +1210,8 @@ var Budget;
         .controller(Budget.AllocateBudgetCtrl.IID, Budget.AllocateBudgetCtrl)
         .controller(Budget.AddExpenseCtrl.IID, Budget.AddExpenseCtrl)
         .controller(Budget.LoginCtrl.IID, Budget.LoginCtrl)
-        .controller(Budget.ProjectsCtrl.IID, Budget.ProjectsCtrl);
+        .controller(Budget.ProjectsCtrl.IID, Budget.ProjectsCtrl)
+        .controller(Budget.NewsFeedCtrl.IID, Budget.NewsFeedCtrl);
     budgetModule
         .config(function ($stateProvider, $urlRouterProvider, $locationProvider) {
         console.debug("Configuring routes...");
