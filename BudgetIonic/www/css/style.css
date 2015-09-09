@@ -180,19 +180,11 @@
 }
 
 .budget-left-menu {
-    /*position: relative;*/
     height: 100%;
     display: flex;
     -ms-flex-direction: column;
     -webkit-flex-direction: column;
     flex-direction: column;
-    -ms-flex-flow: column;
-    -webkit-flex-flow: column;
-    flex-flow: column;
-}
-
-ion-side-menus .menu {
-    width: 320px;
 }
 
 .budget-overview {

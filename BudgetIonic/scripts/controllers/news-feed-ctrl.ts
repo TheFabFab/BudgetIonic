@@ -4,7 +4,7 @@ module Budget {
     export class MessageViewModel {
         public profilePicture = {};
 
-        constructor(public userId: string, public label: string, public timestamp: number) {
+        constructor(public userId: string, public label: string, public timestamp: number, public action: () => void) {
             
         }
     }
@@ -15,12 +15,15 @@ module Budget {
         public messages: MessageViewModel[] = [];
 
         public static $inject = [
+            "$state",
+            "$timeout",
             "$log",
+            "$ionicSideMenuDelegate",
             DataService.IID,
             AuthenticationService.IID
         ];
 
-        constructor($log: ng.ILogService, private dataService: IDataService, authenticationService: IAuthenticationService) {
+        constructor($state: ng.ui.IStateService, $timeout: ng.ITimeoutService, $log: ng.ILogService, $ionicSideMenuDelegate, private dataService: IDataService, authenticationService: IAuthenticationService) {
             $log.debug("Initializing news feed control");
             var userData = authenticationService.userData;
 
@@ -37,7 +40,13 @@ module Budget {
                                 .on(FirebaseEvents.child_added, snapshot => {
                                 var transaction = snapshot.exportVal<ITransactionData>();
                                     var messageText = `Transferred ${transaction.amount} from ${transaction.debitAccountName} to ${transaction.creditAccountName}`;
-                                    var messageVm = new MessageViewModel(userData.uid, messageText, transaction.timestamp);
+                                    var action = () => {
+                                        $ionicSideMenuDelegate.toggleRight(false);
+                                        $timeout(() => {
+                                            $state.go("logged-in.project.budget-account", { projectId: projectId, accountId: transaction.credit });
+                                        }, 150);
+                                    };
+                                    var messageVm = new MessageViewModel(userData.uid, messageText, transaction.timestamp, action);
                                     this.insertMessage(messageVm);
                                 });
                         });

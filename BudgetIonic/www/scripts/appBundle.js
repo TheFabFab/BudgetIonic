@@ -393,17 +393,18 @@ var Budget;
 var Budget;
 (function (Budget) {
     var MessageViewModel = (function () {
-        function MessageViewModel(userId, label, timestamp) {
+        function MessageViewModel(userId, label, timestamp, action) {
             this.userId = userId;
             this.label = label;
             this.timestamp = timestamp;
+            this.action = action;
             this.profilePicture = {};
         }
         return MessageViewModel;
     })();
     Budget.MessageViewModel = MessageViewModel;
     var NewsFeedCtrl = (function () {
-        function NewsFeedCtrl($log, dataService, authenticationService) {
+        function NewsFeedCtrl($state, $timeout, $log, $ionicSideMenuDelegate, dataService, authenticationService) {
             var _this = this;
             this.dataService = dataService;
             this.messages = [];
@@ -421,7 +422,13 @@ var Budget;
                             .on(Budget.FirebaseEvents.child_added, function (snapshot) {
                             var transaction = snapshot.exportVal();
                             var messageText = "Transferred " + transaction.amount + " from " + transaction.debitAccountName + " to " + transaction.creditAccountName;
-                            var messageVm = new MessageViewModel(userData.uid, messageText, transaction.timestamp);
+                            var action = function () {
+                                $ionicSideMenuDelegate.toggleRight(false);
+                                $timeout(function () {
+                                    $state.go("logged-in.project.budget-account", { projectId: projectId, accountId: transaction.credit });
+                                }, 150);
+                            };
+                            var messageVm = new MessageViewModel(userData.uid, messageText, transaction.timestamp, action);
                             _this.insertMessage(messageVm);
                         });
                     });
@@ -447,7 +454,10 @@ var Budget;
         };
         NewsFeedCtrl.IID = "newsFeedCtrl";
         NewsFeedCtrl.$inject = [
+            "$state",
+            "$timeout",
             "$log",
+            "$ionicSideMenuDelegate",
             Budget.DataService.IID,
             Budget.AuthenticationService.IID
         ];
