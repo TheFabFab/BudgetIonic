@@ -1,8 +1,5 @@
 /// <reference path="controllers/news-feed-ctrl.ts" />
-/// <reference path="services/context-service.ts" />
-/// <reference path="services/authentication-service.ts" />
 /// <reference path="services/command-service.ts" />
-/// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
 /// <reference path="directives/account-overview.ts" />
 /// <reference path="typings/cordova/cordova.d.ts" />
@@ -13,6 +10,7 @@
 /// <reference path="controllers/delete-account-ctrl.ts" />
 /// <reference path="controllers/allocate-ctrl.ts" />
 /// <reference path="controllers/add-expense-ctrl.ts" />
+/// <reference path="controllers/project-ctrl.ts" />
 /// <reference path="controllers/login-ctrl.ts" />
 /// <reference path="controllers/projects-ctrl.ts" />
 
@@ -29,7 +27,6 @@ module Budget {
             .service(DataService.IID, DataService)
             .service(AuthenticationService.IID, AuthenticationService)
             .service(CommandService.IID, CommandService)
-            .service(ContextService.IID, ContextService)
 
             .directive(AccountOverview.IID, AccountOverview.factory())
 
@@ -40,6 +37,7 @@ module Budget {
             .controller(AllocateBudgetCtrl.IID, AllocateBudgetCtrl)
             .controller(AddExpenseCtrl.IID, AddExpenseCtrl)
             .controller(LoginCtrl.IID, LoginCtrl)
+            .controller(ProjectCtrl.IID, ProjectCtrl)
             .controller(ProjectsCtrl.IID, ProjectsCtrl)
             .controller(NewsFeedCtrl.IID, NewsFeedCtrl);
 
@@ -85,9 +83,9 @@ module Budget {
                 url: "/project/:projectId",
                 resolve: ProjectCtrl.resolve(),
                 views: {
-                    "main-content": {
-                        template: "<ion-nav-view name='main-content'></ion-nav-view>",
-                        controller: ProjectCtrl
+                    "left-side-content@logged-in": {
+                        templateUrl: "templates/project-left-side.html",
+                        controller: ProjectCtrl.controllerAs
                     }
                 }
             });
@@ -95,7 +93,7 @@ module Budget {
             $stateProvider.state("logged-in.project.home", {
                 url: "/home",
                 views: {
-                    "main-content": {
+                    "main-content@logged-in": {
                         templateUrl: "templates/account.html",
                         resolve: AccountCtrl.resolve(),
                         controller: AccountCtrl.controllerAs
@@ -106,7 +104,7 @@ module Budget {
             $stateProvider.state("logged-in.project.budget-account", {
                 url: "/account/:accountId",
                 views: {
-                    "main-content": {
+                    "main-content@logged-in": {
                         templateUrl: "templates/account.html",
                         resolve: AccountCtrl.resolve(),
                         controller: AccountCtrl.controllerAs
@@ -117,9 +115,8 @@ module Budget {
             $stateProvider.state("logged-in.project.new-account", {
                 url: "/new/:parentId",
                 views: {
-                    "main-content": {
+                    "main-content@logged-in": {
                         templateUrl: "templates/new-account.html",
-                        //resolve: AccountCtrl.resolve(),   
                         controller: NewAccountCtrl.controllerAs
                     }
                 }
@@ -128,9 +125,8 @@ module Budget {
             $stateProvider.state("logged-in.project.delete-account", {
                 url: "/delete/:accountId",
                 views: {
-                    "main-content": {
+                    "main-content@logged-in": {
                         templateUrl: "templates/delete-account.html",
-                        //resolve: AccountCtrl.resolve(),   
                         controller: DeleteAccountCtrl.controllerAs
                     }
                 }
@@ -139,9 +135,8 @@ module Budget {
             $stateProvider.state("logged-in.project.allocate", {
                 url: "/allocate/:accountId",
                 views: {
-                    "main-content": {
+                    "main-content@logged-in": {
                         templateUrl: "templates/allocate.html",
-                        //resolve: AllocateBudgetCtrl.resolve(),   
                         controller: AllocateBudgetCtrl.controllerAs
                     }
                 }
@@ -150,9 +145,8 @@ module Budget {
             $stateProvider.state("logged-in.project.expense", {
                 url: "/expense/:accountId",
                 views: {
-                    "main-content": {
+                    "main-content@logged-in": {
                         templateUrl: "templates/expense.html",
-                        //resolve: AllocateBudgetCtrl.resolve(),   
                         controller: AddExpenseCtrl.controllerAs
                     }
                 }

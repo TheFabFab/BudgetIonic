@@ -1,7 +1,8 @@
-﻿module Budget {
+﻿/// <reference path="../services/data-service.ts" />
+module Budget {
     export class ProjectCtrl {
         public static IID = "projectCtrl";
-        public static controllerAs = ProjectCtrl.IID + " as projectVm";
+        public static controllerAs = ProjectCtrl.IID + " as vm";
 
         public static resolve() {
             return {
@@ -17,22 +18,22 @@
         public static $inject = [
             "$scope",
             "$log",
-            ContextService.IID,
+            DataService.IID,
             "projectData"
         ];
 
-        constructor($scope: ng.IScope, $log: ng.ILogService, private contextService: ContextService, private projectData: DataWithKey<ProjectHeader>) {
+        public rootAccount: AccountData;
+
+        constructor($scope: ng.IScope, $log: ng.ILogService, private dataService: DataService, public projectData: DataWithKey<ProjectHeader>) {
             $log.debug("Initializing project controller", projectData);
 
-            $scope.$on("$ionicView.beforeLeave", () => {
-                $log.debug("Leaving project controller");
-                contextService.setCurrentProject(null);
-            });
-
-            $scope.$on("$ionicView.afterEnter", () => {
-                $log.debug("Entering project controller");
-                contextService.setCurrentProject(projectData);
-            });
+            var rootAccountKey = projectData.data.rootAccount;
+            this.dataService.getAccountSnapshot(projectData.key, rootAccountKey)
+                .then(rootAccountSnapshot => {
+                    if (rootAccountSnapshot !== null) {
+                        this.rootAccount = AccountData.fromSnapshot(rootAccountSnapshot);
+                    }
+                });
         }
     }
 }

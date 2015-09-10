@@ -32,7 +32,6 @@ module Budget {
         }
 
         public contextCommands: Command[];
-        public rootAccount: AccountData;
         public imageStyle;
 
         public static $inject = [
@@ -42,7 +41,6 @@ module Budget {
             DataService.IID,
             AuthenticationService.IID,
             CommandService.IID,
-            ContextService.IID,
             "userData"
         ];
 
@@ -53,24 +51,9 @@ module Budget {
             private dataService: IDataService,
             private authenticationService: IAuthenticationService,
             private commandService: CommandService,
-            private contextService: ContextService,
             public userData: UserData) {
 
             console.log("Initializing main controller");
-
-            $scope.$watch(_ => this.contextService.getProjectHeader(), projectHeader => {
-                if (projectHeader != null) {
-                    var rootAccountKey = projectHeader.data.rootAccount;
-                    this.dataService.getAccountSnapshot(projectHeader.key, rootAccountKey)
-                        .then(rootAccountSnapshot => {
-                            if (rootAccountSnapshot !== null) {
-                                this.rootAccount = AccountData.fromSnapshot(rootAccountSnapshot);
-                            }
-                        });
-                } else {
-                    this.rootAccount = null;
-                }
-            });
 
             $scope.$watch(_ => this.authenticationService.userData, _ => {
                 $state.reload();

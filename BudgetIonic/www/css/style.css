@@ -347,3 +347,7 @@
     text-align: right;
     color: lightgray;
 }
+
+ui-view {
+    width: 100%;
+}

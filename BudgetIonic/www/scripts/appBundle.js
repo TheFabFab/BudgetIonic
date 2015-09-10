@@ -467,26 +467,6 @@ var Budget;
 })(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
-    var ContextService = (function () {
-        function ContextService($log) {
-            $log.debug("Initializing context service");
-        }
-        ContextService.prototype.setCurrentProject = function (projectHeader) {
-            this.projectHeader = projectHeader;
-        };
-        ContextService.prototype.getProjectHeader = function () {
-            return this.projectHeader;
-        };
-        ContextService.IID = "contextService";
-        ContextService.$inject = [
-            "$log"
-        ];
-        return ContextService;
-    })();
-    Budget.ContextService = ContextService;
-})(Budget || (Budget = {}));
-var Budget;
-(function (Budget) {
     var Command = (function () {
         function Command(label, link, isEnabled) {
             if (isEnabled === void 0) { isEnabled = true; }
@@ -761,7 +741,7 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $state, $log, dataService, authenticationService, commandService, contextService, userData) {
+        function MainCtrl($scope, $state, $log, dataService, authenticationService, commandService, userData) {
             var _this = this;
             this.$scope = $scope;
             this.$state = $state;
@@ -769,23 +749,8 @@ var Budget;
             this.dataService = dataService;
             this.authenticationService = authenticationService;
             this.commandService = commandService;
-            this.contextService = contextService;
             this.userData = userData;
             console.log("Initializing main controller");
-            $scope.$watch(function (_) { return _this.contextService.getProjectHeader(); }, function (projectHeader) {
-                if (projectHeader != null) {
-                    var rootAccountKey = projectHeader.data.rootAccount;
-                    _this.dataService.getAccountSnapshot(projectHeader.key, rootAccountKey)
-                        .then(function (rootAccountSnapshot) {
-                        if (rootAccountSnapshot !== null) {
-                            _this.rootAccount = Budget.AccountData.fromSnapshot(rootAccountSnapshot);
-                        }
-                    });
-                }
-                else {
-                    _this.rootAccount = null;
-                }
-            });
             $scope.$watch(function (_) { return _this.authenticationService.userData; }, function (_) {
                 $state.reload();
             });
@@ -829,7 +794,6 @@ var Budget;
             Budget.DataService.IID,
             Budget.AuthenticationService.IID,
             Budget.CommandService.IID,
-            Budget.ContextService.IID,
             "userData"
         ];
         return MainCtrl;
@@ -1116,6 +1080,45 @@ var Budget;
     })();
     Budget.AddExpenseCtrl = AddExpenseCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="../services/data-service.ts" />
+var Budget;
+(function (Budget) {
+    var ProjectCtrl = (function () {
+        function ProjectCtrl($scope, $log, dataService, projectData) {
+            var _this = this;
+            this.dataService = dataService;
+            this.projectData = projectData;
+            $log.debug("Initializing project controller", projectData);
+            var rootAccountKey = projectData.data.rootAccount;
+            this.dataService.getAccountSnapshot(projectData.key, rootAccountKey)
+                .then(function (rootAccountSnapshot) {
+                if (rootAccountSnapshot !== null) {
+                    _this.rootAccount = Budget.AccountData.fromSnapshot(rootAccountSnapshot);
+                }
+            });
+        }
+        ProjectCtrl.resolve = function () {
+            return {
+                projectData: [
+                    "$stateParams", "$log", Budget.DataService.IID, function ($stateParams, $log, dataService) {
+                        var projectHeader = dataService.getProjectHeader($stateParams.projectId);
+                        projectHeader.then(function (ph) { return $log.debug("ProjectCtrl resolved project from stateParams", $stateParams, ph); });
+                        return projectHeader;
+                    }
+                ] };
+        };
+        ProjectCtrl.IID = "projectCtrl";
+        ProjectCtrl.controllerAs = ProjectCtrl.IID + " as vm";
+        ProjectCtrl.$inject = [
+            "$scope",
+            "$log",
+            Budget.DataService.IID,
+            "projectData"
+        ];
+        return ProjectCtrl;
+    })();
+    Budget.ProjectCtrl = ProjectCtrl;
+})(Budget || (Budget = {}));
 /// <reference path="../services/authentication-service.ts" />
 var Budget;
 (function (Budget) {
@@ -1184,10 +1187,7 @@ var Budget;
     Budget.ProjectsCtrl = ProjectsCtrl;
 })(Budget || (Budget = {}));
 /// <reference path="controllers/news-feed-ctrl.ts" />
-/// <reference path="services/context-service.ts" />
-/// <reference path="services/authentication-service.ts" />
 /// <reference path="services/command-service.ts" />
-/// <reference path="services/data-service.ts" />
 /// <reference path="controllers/new-account-ctrl.ts" />
 /// <reference path="directives/account-overview.ts" />
 /// <reference path="typings/cordova/cordova.d.ts" />
@@ -1198,6 +1198,7 @@ var Budget;
 /// <reference path="controllers/delete-account-ctrl.ts" />
 /// <reference path="controllers/allocate-ctrl.ts" />
 /// <reference path="controllers/add-expense-ctrl.ts" />
+/// <reference path="controllers/project-ctrl.ts" />
 /// <reference path="controllers/login-ctrl.ts" />
 /// <reference path="controllers/projects-ctrl.ts" />
 // For an introduction to the Blank template, see the following documentation:
@@ -1211,7 +1212,6 @@ var Budget;
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.AuthenticationService.IID, Budget.AuthenticationService)
         .service(Budget.CommandService.IID, Budget.CommandService)
-        .service(Budget.ContextService.IID, Budget.ContextService)
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
         .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
@@ -1220,6 +1220,7 @@ var Budget;
         .controller(Budget.AllocateBudgetCtrl.IID, Budget.AllocateBudgetCtrl)
         .controller(Budget.AddExpenseCtrl.IID, Budget.AddExpenseCtrl)
         .controller(Budget.LoginCtrl.IID, Budget.LoginCtrl)
+        .controller(Budget.ProjectCtrl.IID, Budget.ProjectCtrl)
         .controller(Budget.ProjectsCtrl.IID, Budget.ProjectsCtrl)
         .controller(Budget.NewsFeedCtrl.IID, Budget.NewsFeedCtrl);
     budgetModule
@@ -1260,16 +1261,16 @@ var Budget;
             url: "/project/:projectId",
             resolve: Budget.ProjectCtrl.resolve(),
             views: {
-                "main-content": {
-                    template: "<ion-nav-view name='main-content'></ion-nav-view>",
-                    controller: Budget.ProjectCtrl
+                "left-side-content@logged-in": {
+                    templateUrl: "templates/project-left-side.html",
+                    controller: Budget.ProjectCtrl.controllerAs
                 }
             }
         });
         $stateProvider.state("logged-in.project.home", {
             url: "/home",
             views: {
-                "main-content": {
+                "main-content@logged-in": {
                     templateUrl: "templates/account.html",
                     resolve: Budget.AccountCtrl.resolve(),
                     controller: Budget.AccountCtrl.controllerAs
@@ -1279,7 +1280,7 @@ var Budget;
         $stateProvider.state("logged-in.project.budget-account", {
             url: "/account/:accountId",
             views: {
-                "main-content": {
+                "main-content@logged-in": {
                     templateUrl: "templates/account.html",
                     resolve: Budget.AccountCtrl.resolve(),
                     controller: Budget.AccountCtrl.controllerAs
@@ -1289,9 +1290,8 @@ var Budget;
         $stateProvider.state("logged-in.project.new-account", {
             url: "/new/:parentId",
             views: {
-                "main-content": {
+                "main-content@logged-in": {
                     templateUrl: "templates/new-account.html",
-                    //resolve: AccountCtrl.resolve(),   
                     controller: Budget.NewAccountCtrl.controllerAs
                 }
             }
@@ -1299,9 +1299,8 @@ var Budget;
         $stateProvider.state("logged-in.project.delete-account", {
             url: "/delete/:accountId",
             views: {
-                "main-content": {
+                "main-content@logged-in": {
                     templateUrl: "templates/delete-account.html",
-                    //resolve: AccountCtrl.resolve(),   
                     controller: Budget.DeleteAccountCtrl.controllerAs
                 }
             }
@@ -1309,9 +1308,8 @@ var Budget;
         $stateProvider.state("logged-in.project.allocate", {
             url: "/allocate/:accountId",
             views: {
-                "main-content": {
+                "main-content@logged-in": {
                     templateUrl: "templates/allocate.html",
-                    //resolve: AllocateBudgetCtrl.resolve(),   
                     controller: Budget.AllocateBudgetCtrl.controllerAs
                 }
             }
@@ -1319,9 +1317,8 @@ var Budget;
         $stateProvider.state("logged-in.project.expense", {
             url: "/expense/:accountId",
             views: {
-                "main-content": {
+                "main-content@logged-in": {
                     templateUrl: "templates/expense.html",
-                    //resolve: AllocateBudgetCtrl.resolve(),   
                     controller: Budget.AddExpenseCtrl.controllerAs
                 }
             }
@@ -1393,44 +1390,6 @@ var Budget;
     budgetModule.run(["$ionicPlatform", "$rootScope", "$state", "$log", run]);
 })(Budget || (Budget = {}));
 // Platform specific overrides will be placed in the merges folder versions of this file 
-var Budget;
-(function (Budget) {
-    var ProjectCtrl = (function () {
-        function ProjectCtrl($scope, $log, contextService, projectData) {
-            this.contextService = contextService;
-            this.projectData = projectData;
-            $log.debug("Initializing project controller", projectData);
-            $scope.$on("$ionicView.beforeLeave", function () {
-                $log.debug("Leaving project controller");
-                contextService.setCurrentProject(null);
-            });
-            $scope.$on("$ionicView.afterEnter", function () {
-                $log.debug("Entering project controller");
-                contextService.setCurrentProject(projectData);
-            });
-        }
-        ProjectCtrl.resolve = function () {
-            return {
-                projectData: [
-                    "$stateParams", "$log", Budget.DataService.IID, function ($stateParams, $log, dataService) {
-                        var projectHeader = dataService.getProjectHeader($stateParams.projectId);
-                        projectHeader.then(function (ph) { return $log.debug("ProjectCtrl resolved project from stateParams", $stateParams, ph); });
-                        return projectHeader;
-                    }
-                ] };
-        };
-        ProjectCtrl.IID = "projectCtrl";
-        ProjectCtrl.controllerAs = ProjectCtrl.IID + " as projectVm";
-        ProjectCtrl.$inject = [
-            "$scope",
-            "$log",
-            Budget.ContextService.IID,
-            "projectData"
-        ];
-        return ProjectCtrl;
-    })();
-    Budget.ProjectCtrl = ProjectCtrl;
-})(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
     var LiteEvent = (function () {

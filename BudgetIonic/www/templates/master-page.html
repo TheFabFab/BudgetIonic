@@ -43,7 +43,7 @@
                         </ul>
                     </div>
                     <div class="row budget-overview-row">
-                        <account-overview ng-if="vm.rootAccount" class="budget-overview" account="vm.rootAccount" show-labels="true"></account-overview>
+                        <ui-view name="left-side-content"></ui-view>
                     </div>
                 </div>
             </ion-content>
