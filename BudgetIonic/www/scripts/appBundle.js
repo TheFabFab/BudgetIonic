@@ -741,11 +741,12 @@ var Budget;
 (function (Budget) {
     'use strict';
     var MainCtrl = (function () {
-        function MainCtrl($scope, $state, $log, dataService, authenticationService, commandService, userData) {
+        function MainCtrl($scope, $state, $log, $ionicSideMenuDelegate, dataService, authenticationService, commandService, userData) {
             var _this = this;
             this.$scope = $scope;
             this.$state = $state;
             this.$log = $log;
+            this.$ionicSideMenuDelegate = $ionicSideMenuDelegate;
             this.dataService = dataService;
             this.authenticationService = authenticationService;
             this.commandService = commandService;
@@ -785,12 +786,19 @@ var Budget;
             this.authenticationService.logOut();
             this.$state.go("logged-in.home", {}, { reload: true });
         };
+        MainCtrl.prototype.toggleLeft = function () {
+            this.$ionicSideMenuDelegate.toggleLeft();
+        };
+        MainCtrl.prototype.toggleRight = function () {
+            this.$ionicSideMenuDelegate.toggleRight();
+        };
         MainCtrl.IID = "mainCtrl";
         MainCtrl.controllerAs = MainCtrl.IID + " as vm";
         MainCtrl.$inject = [
             "$scope",
             "$state",
             "$log",
+            "$ionicSideMenuDelegate",
             Budget.DataService.IID,
             Budget.AuthenticationService.IID,
             Budget.CommandService.IID,

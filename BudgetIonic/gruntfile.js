@@ -16,33 +16,40 @@ module.exports = function (grunt) {
         },
         watch: {
             tests: {
-                files: ['test/**/*.ts', 'test/tsconfig.json'],
-                tasks: ['commands:tsc-tests'],
+                files: ["test/**/*.ts", "test/tsconfig.json"],
+                tasks: ["commands:tsc-tests"],
                 options: {
                     spawn: false,
                 },
             },
             scripts: {
-                files: ['scripts/**/*.ts', 'scripts/tsconfig.json'],
-                tasks: ['commands:tsc-scripts'],
+                files: ["scripts/**/*.ts", "scripts/tsconfig.json"],
+                tasks: ["commands:tsc-scripts"],
                 options: {
                     spawn: false,
                 },
+            },
+            ionic: {
+                files: ["../../ionic/dist/js/ionic.bundle.js"],
+                tasks: ["copy:ionic"],
+                options: {
+                    spawn: false
+                }
             },
             www: {
                 options: {
                     livereload: 35729,
                 },
-                files: ['www/**/*.*'],
+                files: ["www/**/*.*"],
             },
         },
         commands: {
             "tsc-tests": {
-                cmd: 'tsc -p test',
+                cmd: "tsc -p test",
                 force: true
             },
             "tsc-scripts": {
-                cmd: 'tsc -p scripts',
+                cmd: "tsc -p scripts",
                 force: true
             }
         },
@@ -50,21 +57,28 @@ module.exports = function (grunt) {
             server: {
                 options: {
                     port: 8181,
-                    hostname: '0.0.0.0',
-                    base: ['www', './'],
+                    hostname: "0.0.0.0",
+                    base: ["www", "./"],
                     livereload: true,
                 }
+            }
+        },
+        copy: {
+            ionic: {
+                src: "../../ionic/dist/js/ionic.bundle.js",
+                dest: "www/lib/ionic/js/ionic.bundle.js"
             }
         }
     });
 
     grunt.registerTask("default", ["bower:install"]);
     grunt.registerTask("serve", ["connect:server", "watch:www"]);
-    grunt.registerTask("compile", ["watch:scripts", "watch:tests"]);
+    grunt.registerTask("compile", ["watch:scripts", "watch:tests", "watch:ionic"]);
 
     grunt.loadNpmTasks("grunt-bower-task");
     grunt.loadNpmTasks("grunt-commands");
-    grunt.loadNpmTasks('grunt-contrib-watch');
-    grunt.loadNpmTasks('grunt-http-server');
-    grunt.loadNpmTasks('grunt-contrib-connect');
+    grunt.loadNpmTasks("grunt-contrib-watch");
+    grunt.loadNpmTasks("grunt-http-server");
+    grunt.loadNpmTasks("grunt-contrib-connect");
+    grunt.loadNpmTasks("grunt-contrib-copy");
 };

@@ -723,7 +723,7 @@ window.ionic.version = '1.1.0';
     // whatever lookup was done to find this element failed to find it
     // so we can't listen for events on it.
     if(element === null) {
-      void 0;
+      console.error('Null element passed to gesture (element does not exist). Not listening for gesture');
       return this;
     }
 
@@ -2892,7 +2892,7 @@ function tapMouseDown(e) {
   if (e.isIonicTap || tapIgnoreEvent(e)) return null;
 
   if (tapEnabledTouchEvents) {
-    void 0;
+    console.log('mousedown', 'stop event');
     e.stopPropagation();
 
     if ((!ionic.tap.isTextInput(e.target) || tapLastTouchTarget !== e.target) && !(/^(select|option)$/i).test(e.target.tagName)) {
@@ -3056,7 +3056,7 @@ function tapHandleFocus(ele) {
 function tapFocusOutActive() {
   var ele = tapActiveElement();
   if (ele && ((/^(input|textarea|select)$/i).test(ele.tagName) || ele.isContentEditable)) {
-    void 0;
+    console.log('tapFocusOutActive', ele.tagName);
     ele.blur();
   }
   tapActiveElement(null);
@@ -3077,7 +3077,7 @@ function tapFocusIn(e) {
     // 2) There is an active element which is a text input
     // 3) A text input was just set to be focused on by a touch event
     // 4) A new focus has been set, however the target isn't the one the touch event wanted
-    void 0;
+    console.log('focusin', 'tapTouchFocusedInput');
     tapTouchFocusedInput.focus();
     tapTouchFocusedInput = null;
   }
@@ -6873,7 +6873,7 @@ ionic.scroll = {
 (function(ionic) {
   var NOOP = function() {};
   var depreciated = function(name) {
-    void 0;
+    console.error('Method not available in native scrolling: ' + name);
   };
   ionic.views.ScrollNative = ionic.views.View.inherit({
 
@@ -45871,7 +45871,7 @@ angular.module('ui.router.state')
 
 (function() {
 /* eslint no-unused-vars:0 */
-var IonicModule = angular.module('ionic', ['ngAnimate', 'ngSanitize', 'ui.router']),
+var IonicModule = angular.module('ionic', ['ngAnimate', 'ngSanitize', 'ui.router', 'ngIOS9UIWebViewPatch']),
   extend = angular.extend,
   forEach = angular.forEach,
   isDefined = angular.isDefined,
@@ -46745,7 +46745,7 @@ function($rootScope, $state, $location, $window, $timeout, $ionicViewSwitcher, $
         // create an element from the viewLocals template
         ele = $ionicViewSwitcher.createViewEle(viewLocals);
         if (this.isAbstractEle(ele, viewLocals)) {
-          void 0;
+          console.log('VIEW', 'abstractView', DIRECTION_NONE, viewHistory.currentView);
           return {
             action: 'abstractView',
             direction: DIRECTION_NONE,
@@ -46866,7 +46866,7 @@ function($rootScope, $state, $location, $window, $timeout, $ionicViewSwitcher, $
         }
       }
 
-      void 0;
+      console.log('VIEW', action, direction, viewHistory.currentView);
 
       hist.cursor = viewHistory.currentView.index;
 
@@ -47962,7 +47962,7 @@ IonicModule
 // http://blogs.msdn.com/b/msdn_answers/archive/2015/02/10/
 // running-cordova-apps-on-windows-and-windows-phone-8-1-using-ionic-angularjs-and-other-frameworks.aspx
 .config(['$compileProvider', function($compileProvider) {
-  $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|tel|ftp|mailto|file|ghttps?|ms-appx|x-wmapp0):/);
+  $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|sms|tel|geo|ftp|mailto|file|ghttps?|ms-appx|x-wmapp0):/);
   $compileProvider.imgSrcSanitizationWhitelist(/^\s*(https?|ftp|file|content|blob|ms-appx|x-wmapp0):|data:image\//);
 }]);
 
@@ -48387,6 +48387,7 @@ function($rootScope, $ionicBody, $compile, $timeout, $ionicPlatform, $ionicTempl
         self.scope.$parent && self.scope.$parent.$broadcast(self.viewType + '.shown', self);
         self.el.classList.add('active');
         self.scope.$broadcast('$ionicHeader.align');
+        self.scope.$broadcast('$ionicFooter.align');
       }, 20);
 
       return $timeout(function() {
@@ -49764,7 +49765,7 @@ IonicModule
    * @name $ionicScrollDelegate#freezeScroll
    * @description Does not allow this scroll view to scroll either x or y.
    * @param {boolean=} shouldFreeze Should this scroll view be prevented from scrolling or not.
-   * @returns {object} If the scroll view is being prevented from scrolling or not.
+   * @returns {boolean} If the scroll view is being prevented from scrolling or not.
    */
   'freezeScroll',
   /**
@@ -50807,6 +50808,80 @@ function($timeout, $document, $q, $ionicClickBlock, $ionicConfig, $ionicNavBarDe
   }
 
 }]);
+
+/**
+ * ==================  angular-ios9-uiwebview.patch.js v1.1.0 ==================
+ *
+ * This patch works around iOS9 UIWebView regression that causes infinite digest
+ * errors in Angular.
+ *
+ * The patch can be applied to Angular 1.2.0 – 1.4.5. Newer versions of Angular
+ * have the workaround baked in.
+ *
+ * To apply this patch load/bundle this file with your application and add a
+ * dependency on the "ngIOS9Patch" module to your main app module.
+ *
+ * For example:
+ *
+ * ```
+ * angular.module('myApp', ['ngRoute'])`
+ * ```
+ *
+ * becomes
+ *
+ * ```
+ * angular.module('myApp', ['ngRoute', 'ngIOS9UIWebViewPatch'])
+ * ```
+ *
+ *
+ * More info:
+ * - https://openradar.appspot.com/22186109
+ * - https://github.com/angular/angular.js/issues/12241
+ * - https://github.com/driftyco/ionic/issues/4082
+ *
+ *
+ * @license AngularJS
+ * (c) 2010-2015 Google, Inc. http://angularjs.org
+ * License: MIT
+ */
+
+angular.module('ngIOS9UIWebViewPatch', ['ng']).config(function($provide) {
+  $provide.decorator('$browser', ['$delegate', '$window', function($delegate, $window) {
+
+    if (isIOS9UIWebView($window.navigator.userAgent)) {
+      return applyIOS9Shim($delegate);
+    }
+
+    return $delegate;
+
+    function isIOS9UIWebView(userAgent) {
+      return /(iPhone|iPad|iPod).* OS 9_\d/.test(userAgent) && !/Version\/9\./.test(userAgent);
+    }
+
+    function applyIOS9Shim(browser) {
+      var pendingLocationUrl = null;
+      var originalUrlFn = browser.url;
+
+      browser.url = function() {
+        if (arguments.length) {
+          pendingLocationUrl = arguments[0];
+          return originalUrlFn.apply(browser, arguments);
+        }
+
+        return pendingLocationUrl || originalUrlFn.apply(browser, arguments);
+      };
+
+      window.addEventListener('popstate', clearPendingLocationUrl, false);
+      window.addEventListener('hashchange', clearPendingLocationUrl, false);
+
+      function clearPendingLocationUrl() {
+        pendingLocationUrl = null;
+      }
+
+      return browser;
+    }
+  }]);
+});
 
 /**
  * @private
@@ -52253,6 +52328,9 @@ function($scope, $element, $attrs, $compile, $controller, $ionicNavBarDelegate, 
     if (viewLocals && viewLocals.$$controller) {
       viewLocals.$scope = viewScope;
       var controller = $controller(viewLocals.$$controller, viewLocals);
+      if (viewLocals.$$controllerAs) {
+        viewScope[viewLocals.$$controllerAs] = controller;
+      }
       $element.children().data('$ngControllerController', controller);
     }
 
@@ -53011,7 +53089,7 @@ IonicModule
 function($scope, $attrs, $ionicSideMenuDelegate, $ionicPlatform, $ionicBody, $ionicHistory, $ionicScrollDelegate, IONIC_BACK_PRIORITY, $rootScope) {
   var self = this;
   var rightShowing, leftShowing, isDragging;
-  var startX, lastX, offsetX, isAsideExposed;
+  var startX, lastX, offsetX, isAllExposed, isLeftSideExposed, isRightSideExposed;
   var enableMenuWithBackViews = true;
 
   self.$scope = $scope;
@@ -53055,7 +53133,7 @@ function($scope, $attrs, $ionicSideMenuDelegate, $ionicPlatform, $ionicBody, $io
    * Toggle the left menu to open 100%
    */
   self.toggleLeft = function(shouldOpen) {
-    if (isAsideExposed || !self.left.isEnabled) return;
+    if (isLeftSideExposed || !self.left.isEnabled) return;
     var openAmount = self.getOpenAmount();
     if (arguments.length === 0) {
       shouldOpen = openAmount <= 0;
@@ -53074,7 +53152,7 @@ function($scope, $attrs, $ionicSideMenuDelegate, $ionicPlatform, $ionicBody, $io
    * Toggle the right menu to open 100%
    */
   self.toggleRight = function(shouldOpen) {
-    if (isAsideExposed || !self.right.isEnabled) return;
+    if (isRightSideExposed || !self.right.isEnabled) return;
     var openAmount = self.getOpenAmount();
     if (arguments.length === 0) {
       shouldOpen = openAmount >= 0;
@@ -53291,24 +53369,31 @@ function($scope, $attrs, $ionicSideMenuDelegate, $ionicPlatform, $ionicBody, $io
     return enableMenuWithBackViews;
   };
 
-  self.isAsideExposed = function() {
-    return !!isAsideExposed;
-  };
-
-  self.exposeAside = function(shouldExposeAside) {
+  self.exposeAside = function(side, shouldExposeAside) {
     if (!(self.left && self.left.isEnabled) && !(self.right && self.right.isEnabled)) return;
     self.close();
 
-    isAsideExposed = shouldExposeAside;
-    if (self.left && self.left.isEnabled) {
-      // set the left marget width if it should be exposed
-      // otherwise set false so there's no left margin
-      self.content.setMarginLeft(isAsideExposed ? self.left.width : 0);
-    } else if (self.right && self.right.isEnabled) {
-      self.content.setMarginRight(isAsideExposed ? self.right.width : 0);
+    if (side === 'left') {
+      isLeftSideExposed = shouldExposeAside;
+      if (self.left && self.left.isEnabled) {
+        // set the left margin width if it should be exposed
+        // otherwise set false so there's no left margin
+        self.content.setMarginLeft(isLeftSideExposed ? self.left.width : 0);
+      }       
+    } else {
+      isRightSideExposed = shouldExposeAside;
+      if (self.right && self.right.isEnabled) {
+        self.content.setMarginRight(isRightSideExposed ? self.right.width : 0);
+      }
     }
+    
+    // If we have an enabled left side menu and it's not exposed
+    var isLeftSideHidden = self.left && self.left.isEnabled && !isLeftSideExposed;
+    var isRightSideHidden = self.right && self.right.isEnabled && !isRightSideExposed;
+    
+    isAllExposed = !isLeftSideHidden && !isRightSideHidden;
 
-    self.$scope.$emit('$ionicExposeAside', isAsideExposed);
+    self.$scope.$emit('$ionicExposeAside', shouldExposeAside, side);
   };
 
   self.activeAsideResizing = function(isResizing) {
@@ -53319,7 +53404,7 @@ function($scope, $attrs, $ionicSideMenuDelegate, $ionicPlatform, $ionicBody, $io
   self._endDrag = function(e) {
     freezeAllScrolls(false);
 
-    if (isAsideExposed) return;
+    if (isAllExposed) return;
 
     if (isDragging) {
       self.snapToRest(e);
@@ -53331,7 +53416,7 @@ function($scope, $attrs, $ionicSideMenuDelegate, $ionicPlatform, $ionicBody, $io
 
   // Handle a drag event
   self._handleDrag = function(e) {
-    if (isAsideExposed || !$scope.dragContent) return;
+    if (isAllExposed || !$scope.dragContent) return;
 
     // If we don't have start coords, grab and store them
     if (!startX) {
@@ -54315,7 +54400,7 @@ IonicModule
  *   <ion-scroll direction="x" class="available-scroller">
  *     <div class="photo" collection-repeat="photo in main.photos"
  *        item-height="250" item-width="photo.width + 30">
- *        <img ng-src="{{photo.src}}">
+ *        <img ng-src="{% raw %}{{photo.src}}{% endraw %}">
  *     </div>
  *   </ion-scroll>
  * </ion-content>
@@ -55485,7 +55570,7 @@ IonicModule.directive('exposeAsideWhen', ['$window', function($window) {
 
       function checkAsideExpose() {
         var mq = $attr.exposeAsideWhen == 'large' ? '(min-width:768px)' : $attr.exposeAsideWhen;
-        sideMenuCtrl.exposeAside($window.matchMedia(mq).matches);
+        sideMenuCtrl.exposeAside($scope.side, $window.matchMedia(mq).matches);
         sideMenuCtrl.activeAsideResizing(false);
       }
 
@@ -55980,6 +56065,12 @@ function headerFooterBarDirective(isHeader) {
             });
             $scope.$watch('$hasTabs', function(val) {
               $element.toggleClass('has-tabs', !!val);
+            });
+            ctrl.align();
+            $scope.$on('$ionicFooter.align', function() {
+              ionic.requestAnimationFrame(function() {
+                ctrl.align();
+              });
             });
           }
         }
@@ -57623,13 +57714,16 @@ IonicModule
     template:
       '<label class="item item-radio">' +
         '<input type="radio" name="radio-group">' +
-        '<div class="item-content disable-pointer-events" ng-transclude></div>' +
-        '<i class="radio-icon disable-pointer-events icon ion-checkmark"></i>' +
+        '<div class="radio-content">' +
+          '<div class="item-content disable-pointer-events" ng-transclude></div>' +
+          '<i class="radio-icon disable-pointer-events icon ion-checkmark"></i>' +
+        '</div>' +
       '</label>',
 
     compile: function(element, attr) {
       if (attr.icon) {
-        element.children().eq(2).removeClass('ion-checkmark').addClass(attr.icon);
+        var iconElm = element.find('i');
+        iconElm.removeClass('ion-checkmark').addClass(attr.icon);
       }
 
       var input = element.find('input');
@@ -58092,28 +58186,12 @@ function($timeout, $ionicGesture, $window) {
             });
           }),
           setMarginLeft: ionic.animationFrameThrottle(function(amount) {
-            if (amount) {
-              amount = parseInt(amount, 10);
-              $element[0].style[ionic.CSS.TRANSFORM] = 'translate3d(' + amount + 'px,0,0)';
-              $element[0].style.width = ($window.innerWidth - amount) + 'px';
-              content.offsetX = amount;
-            } else {
-              $element[0].style[ionic.CSS.TRANSFORM] = 'translate3d(0,0,0)';
-              $element[0].style.width = '';
-              content.offsetX = 0;
-            }
+            content.marginLeft = parseInt(amount || '0');
+            updateMargins();
           }),
           setMarginRight: ionic.animationFrameThrottle(function(amount) {
-            if (amount) {
-              amount = parseInt(amount, 10);
-              $element[0].style.width = ($window.innerWidth - amount) + 'px';
-              content.offsetX = amount;
-            } else {
-              $element[0].style.width = '';
-              content.offsetX = 0;
-            }
-            // reset incase left gets grabby
-            $element[0].style[ionic.CSS.TRANSFORM] = 'translate3d(0,0,0)';
+            content.marginRight = parseInt(amount || '0');
+            updateMargins();
           }),
           enableAnimation: function() {
             $scope.animationEnabled = true;
@@ -58123,8 +58201,16 @@ function($timeout, $ionicGesture, $window) {
             $scope.animationEnabled = false;
             $element[0].classList.remove('menu-animated');
           },
+          marginLeft: 0,
+          marginRight: 0,
           offsetX: 0
         };
+        
+        var updateMargins = function() {
+            $element[0].style.width = ($window.innerWidth - content.marginLeft - content.marginRight) + 'px';
+            $element[0].style[ionic.CSS.TRANSFORM] = 'translate3d(' + content.marginLeft + 'px,0,0)';
+            content.offsetX = content.marginLeft;
+        }
 
         sideMenuCtrl.setContent(content);
 
@@ -58247,10 +58333,12 @@ IonicModule
 
         ctrl.enableMenuWithBackViews($scope.$eval($attrs.enableMenuWithBackViews));
 
-        $scope.$on('$ionicExposeAside', function(evt, isAsideExposed) {
+        $scope.$on('$ionicExposeAside', function(evt, isAsideExposed, side) {
           if (!$scope.$exposeAside) $scope.$exposeAside = {};
           $scope.$exposeAside.active = isAsideExposed;
+          $scope.$exposeAside[side] = isAsideExposed;
           $ionicBody.enableClass(isAsideExposed, 'aside-open');
+          $ionicBody.enableClass(isAsideExposed, 'aside-open-' + side);
         });
 
         $scope.$on('$ionicView.beforeEnter', function(ev, d) {
@@ -58260,7 +58348,7 @@ IonicModule
         });
 
         $scope.$on('$destroy', function() {
-          $ionicBody.removeClass('menu-open', 'aside-open');
+          $ionicBody.removeClass('menu-open', 'aside-open', 'aside-open-left', 'aside-open-right');
         });
 
       }
@@ -58409,7 +58497,7 @@ function($timeout, $compile, $ionicSlideBoxDelegate, $ionicHistory, $ionicScroll
       };
 
       this.onPagerClick = function(index) {
-        void 0;
+        console.log('pagerClick', index);
         $scope.pagerClick({index: index});
       };
 

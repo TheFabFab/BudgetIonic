@@ -351,3 +351,15 @@
 ui-view {
     width: 100%;
 }
+
+.aside-open-left .left-menu-button {
+    display: none;
+}
+
+.aside-open-right .right-menu-button {
+    display: none;
+}
+
+.menu .scroll-content.scroll-content-false {
+  z-index: 10!important; 
+}

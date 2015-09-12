@@ -38,6 +38,7 @@ module Budget {
             "$scope",
             "$state",
             "$log",
+            "$ionicSideMenuDelegate",
             DataService.IID,
             AuthenticationService.IID,
             CommandService.IID,
@@ -48,6 +49,7 @@ module Budget {
             private $scope: ng.IScope,
             private $state: ng.ui.IStateService,
             private $log: ng.ILogService,
+            private $ionicSideMenuDelegate,
             private dataService: IDataService,
             private authenticationService: IAuthenticationService,
             private commandService: CommandService,
@@ -70,6 +72,14 @@ module Budget {
         public logOut(): void {
             this.authenticationService.logOut();
             this.$state.go("logged-in.home", {}, { reload: true });
+        }
+
+        public toggleLeft(): void {
+            this.$ionicSideMenuDelegate.toggleLeft();
+        }
+
+        public toggleRight(): void {
+            this.$ionicSideMenuDelegate.toggleRight();
         }
     }
 }
