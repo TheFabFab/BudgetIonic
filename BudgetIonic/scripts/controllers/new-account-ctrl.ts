@@ -42,7 +42,7 @@
         private close(): void {
             this.$log.debug("Closing");
             this.$state.go(
-                "logged-in.project.budget-account",
+                "logged-in.project.account",
                 <IAccountStateParams>{ projectId: this.projectData.key, accountId: this.parentId });
         }
     }

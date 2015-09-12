@@ -95,7 +95,7 @@ module Budget {
                 resolve: AccountCtrl.resolveHome()
             });
 
-            $stateProvider.state("logged-in.project.budget-account", {
+            $stateProvider.state("logged-in.project.account", {
                 url: "/account/:accountId",
                 views: {
                     "main-content@logged-in": {

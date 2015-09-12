@@ -11,7 +11,7 @@
         </div>
         <div class="row responsive-sm">
             <ion-list class="col col-50" ng-if="vm.subAccounts.length > 0">
-                <ion-item ng-repeat="subAccount in vm.subAccounts" item="subAccount" class="budget-list-item" ui-sref="logged-in.project.budget-account({accountId: subAccount.$id})">
+                <ion-item ng-repeat="subAccount in vm.subAccounts" item="subAccount" class="budget-list-item" ui-sref="logged-in.project.account({accountId: subAccount.$id})">
                     <div class="row" style="height: 120px">
                         <account-overview class="col budget-prediction-col" account="subAccount"></account-overview>
                         <div class="col budget-item-separator" ng-style="{backgroundColor:subAccount.subAccounts.length == 0 ? '#3399ff' : '#ccc'}"></div>

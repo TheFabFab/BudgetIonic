@@ -425,7 +425,7 @@ var Budget;
                             var action = function () {
                                 $ionicSideMenuDelegate.toggleRight(false);
                                 $timeout(function () {
-                                    $state.go("logged-in.project.budget-account", { projectId: projectId, accountId: transaction.credit });
+                                    $state.go("logged-in.project.account", { projectId: projectId, accountId: transaction.credit });
                                 }, 150);
                             };
                             var messageVm = new MessageViewModel(userData.uid, messageText, transaction.timestamp, action);
@@ -521,7 +521,7 @@ var Budget;
         };
         NewAccountCtrl.prototype.close = function () {
             this.$log.debug("Closing");
-            this.$state.go("logged-in.project.budget-account", { projectId: this.projectData.key, accountId: this.parentId });
+            this.$state.go("logged-in.project.account", { projectId: this.projectData.key, accountId: this.parentId });
         };
         NewAccountCtrl.IID = "newAccountCtrl";
         NewAccountCtrl.controllerAs = NewAccountCtrl.IID + " as vm";
@@ -689,7 +689,7 @@ var Budget;
                         var deferred = $q.defer();
                         deferred.reject({
                             reason: "redirect",
-                            state: "logged-in.project.budget-account",
+                            state: "logged-in.project.account",
                             params: { projectId: projectData.key, accountId: rootAccountId }
                         });
                         return deferred.promise;
@@ -842,10 +842,10 @@ var Budget;
         DeleteAccountCtrl.prototype.ok = function () {
             var _this = this;
             this.dataService.deleteAccount(this.projectData.key, this.accountId)
-                .then(function (x) { return _this.$state.go("logged-in.project.budget-account", { accountId: _this.account.parent }); });
+                .then(function (x) { return _this.$state.go("logged-in.project.account", { accountId: _this.account.parent }); });
         };
         DeleteAccountCtrl.prototype.cancel = function () {
-            this.$state.go("logged-in.project.budget-account", { accountId: this.accountId });
+            this.$state.go("logged-in.project.account", { accountId: this.accountId });
         };
         DeleteAccountCtrl.IID = "deleteAccountCtrl";
         DeleteAccountCtrl.controllerAs = DeleteAccountCtrl.IID + " as vm";
@@ -960,7 +960,7 @@ var Budget;
             this.close();
         };
         AllocateBudgetCtrl.prototype.close = function () {
-            this.$state.go("logged-in.project.budget-account", { accountId: this.creditAccountId });
+            this.$state.go("logged-in.project.account", { accountId: this.creditAccountId });
         };
         AllocateBudgetCtrl.prototype.validate = function () {
             var _this = this;
@@ -1074,7 +1074,7 @@ var Budget;
             this.close();
         };
         AddExpenseCtrl.prototype.close = function () {
-            this.$state.go("logged-in.project.budget-account", { accountId: this.debitAccount.key });
+            this.$state.go("logged-in.project.account", { accountId: this.debitAccount.key });
         };
         AddExpenseCtrl.prototype.validate = function () {
             var result = false;
@@ -1293,7 +1293,7 @@ var Budget;
             url: "/home",
             resolve: Budget.AccountCtrl.resolveHome()
         });
-        $stateProvider.state("logged-in.project.budget-account", {
+        $stateProvider.state("logged-in.project.account", {
             url: "/account/:accountId",
             views: {
                 "main-content@logged-in": {

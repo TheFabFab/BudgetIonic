@@ -43,7 +43,7 @@ module Budget {
                                     var action = () => {
                                         $ionicSideMenuDelegate.toggleRight(false);
                                         $timeout(() => {
-                                            $state.go("logged-in.project.budget-account", { projectId: projectId, accountId: transaction.credit });
+                                            $state.go("logged-in.project.account", { projectId: projectId, accountId: transaction.credit });
                                         }, 150);
                                     };
                                     var messageVm = new MessageViewModel(userData.uid, messageText, transaction.timestamp, action);

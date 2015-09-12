@@ -31,7 +31,7 @@ module Budget {
                     var deferred = $q.defer();
                     deferred.reject({
                         reason: "redirect",
-                        state: "logged-in.project.budget-account",
+                        state: "logged-in.project.account",
                         params: { projectId: projectData.key, accountId: rootAccountId }
                     });
                     return deferred.promise;
