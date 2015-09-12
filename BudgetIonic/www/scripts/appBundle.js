@@ -682,6 +682,20 @@ var Budget;
                 accountSnapshot: ["$stateParams", "projectData", Budget.DataService.IID, AccountCtrl.getAccount]
             };
         };
+        AccountCtrl.resolveHome = function () {
+            return {
+                redirect: ["$q", Budget.DataService.IID, "projectData", function ($q, dataService, projectData) {
+                        var rootAccountId = projectData.data.rootAccount;
+                        var deferred = $q.defer();
+                        deferred.reject({
+                            reason: "redirect",
+                            state: "logged-in.project.budget-account",
+                            params: { projectId: projectData.key, accountId: rootAccountId }
+                        });
+                        return deferred.promise;
+                    }]
+            };
+        };
         AccountCtrl.getAccount = function ($stateParams, projectData, dataService) {
             console.log("Getting account from state parameters", $stateParams, projectData);
             var accountId = $stateParams.accountId || projectData.data.rootAccount;
@@ -777,7 +791,7 @@ var Budget;
                     deferred.resolve(userData);
                 }
                 else {
-                    deferred.reject("authentication");
+                    deferred.reject({ reason: "authentication" });
                 }
             });
             return deferred.promise;
@@ -1277,13 +1291,7 @@ var Budget;
         });
         $stateProvider.state("logged-in.project.home", {
             url: "/home",
-            views: {
-                "main-content@logged-in": {
-                    templateUrl: "templates/account.html",
-                    resolve: Budget.AccountCtrl.resolve(),
-                    controller: Budget.AccountCtrl.controllerAs
-                }
-            }
+            resolve: Budget.AccountCtrl.resolveHome()
         });
         $stateProvider.state("logged-in.project.budget-account", {
             url: "/account/:accountId",
@@ -1388,10 +1396,14 @@ var Budget;
             $log.debug(unfoundState, fromState, fromParams);
         });
         $log.debug("Setting up authentication...");
-        $rootScope.$on("$stateChangeError", function (event, toState, toParams, fromState, fromParams, reason) {
-            if (reason === "authentication") {
+        $rootScope.$on("$stateChangeError", function (event, toState, toParams, fromState, fromParams, reasonData) {
+            if (reasonData.reason === "authentication") {
                 event.preventDefault();
                 $state.go("login", { toState: toState.name, toParams: angular.toJson(toParams) });
+            }
+            else if (reasonData.reason === "redirect") {
+                event.preventDefault();
+                $state.go(reasonData.state, reasonData.params);
             }
         });
     }

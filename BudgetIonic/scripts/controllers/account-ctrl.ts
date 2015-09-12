@@ -24,6 +24,21 @@ module Budget {
             };
         }
 
+        public static resolveHome() {
+            return {
+                redirect: ["$q", DataService.IID, "projectData", ($q: ng.IQService, dataService: IDataService, projectData: DataWithKey<ProjectHeader>) => {
+                    var rootAccountId = projectData.data.rootAccount;
+                    var deferred = $q.defer();
+                    deferred.reject({
+                        reason: "redirect",
+                        state: "logged-in.project.budget-account",
+                        params: { projectId: projectData.key, accountId: rootAccountId }
+                    });
+                    return deferred.promise;
+                }]
+            };
+        }
+
         public static getAccount(
             $stateParams: IAccountStateParams,
             projectData: DataWithKey<ProjectHeader>,

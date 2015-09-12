@@ -24,7 +24,7 @@ module Budget {
                     if (userData) {
                         deferred.resolve(userData);
                     } else {
-                        deferred.reject("authentication");
+                        deferred.reject({ reason: "authentication" });
                     }
                 });
 

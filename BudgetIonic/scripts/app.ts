@@ -92,13 +92,7 @@ module Budget {
 
             $stateProvider.state("logged-in.project.home", {
                 url: "/home",
-                views: {
-                    "main-content@logged-in": {
-                        templateUrl: "templates/account.html",
-                        resolve: AccountCtrl.resolve(),
-                        controller: AccountCtrl.controllerAs
-                    }
-                }
+                resolve: AccountCtrl.resolveHome()
             });
 
             $stateProvider.state("logged-in.project.budget-account", {
@@ -223,10 +217,13 @@ module Budget {
         });
 
         $log.debug("Setting up authentication...");
-        $rootScope.$on("$stateChangeError", (event, toState: ng.ui.IState, toParams, fromState, fromParams, reason) => {
-            if (reason === "authentication") {
+        $rootScope.$on("$stateChangeError", (event, toState: ng.ui.IState, toParams, fromState, fromParams, reasonData) => {
+            if (reasonData.reason === "authentication") {
                 event.preventDefault();
                 $state.go("login", { toState: toState.name, toParams: angular.toJson(toParams) });
+            } else if (reasonData.reason === "redirect") {
+                event.preventDefault();
+                $state.go(reasonData.state, reasonData.params);
             }
         });
     }
