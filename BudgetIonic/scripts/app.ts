@@ -6,6 +6,7 @@
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
+/// <reference path="data/firebase-service.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="controllers/delete-account-ctrl.ts" />
 /// <reference path="controllers/allocate-ctrl.ts" />
@@ -13,6 +14,7 @@
 /// <reference path="controllers/project-ctrl.ts" />
 /// <reference path="controllers/login-ctrl.ts" />
 /// <reference path="controllers/projects-ctrl.ts" />
+/// <reference path="data/firebase-service.ts" />
 
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
@@ -27,6 +29,7 @@ module Budget {
             .service(DataService.IID, DataService)
             .service(AuthenticationService.IID, AuthenticationService)
             .service(CommandService.IID, CommandService)
+            .service(Data.FirebaseService.IID, Data.FirebaseService)
 
             .directive(AccountOverview.IID, AccountOverview.factory())
 

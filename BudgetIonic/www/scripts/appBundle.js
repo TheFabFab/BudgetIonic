@@ -1,3 +1,129 @@
+/// <reference path="../../typings/rx/rx.d.ts" />
+var Budget;
+(function (Budget) {
+    var Data;
+    (function (Data) {
+        var RefCountDisposable = Rx.RefCountDisposable;
+        var Disposable = Rx.Disposable;
+        var FirebaseEvents = (function () {
+            function FirebaseEvents() {
+            }
+            FirebaseEvents.value = "value";
+            // ReSharper disable InconsistentNaming
+            FirebaseEvents.child_added = "child_added";
+            FirebaseEvents.child_changed = "child_changed";
+            FirebaseEvents.child_removed = "child_removed";
+            FirebaseEvents.child_moved = "child_moved";
+            return FirebaseEvents;
+        })();
+        var FirebaseService = (function () {
+            function FirebaseService($log) {
+                this.$log = $log;
+                this.database = new Firebase("https://budgetionic.firebaseio.com/");
+                this.users = new Users(this.database.child("users"));
+                this.projects = new Projects(this.database.child("projects"));
+            }
+            FirebaseService.IID = "FirebaseService";
+            FirebaseService.$inject = [
+                "$log"
+            ];
+            return FirebaseService;
+        })();
+        Data.FirebaseService = FirebaseService;
+        var Projects = (function () {
+            function Projects(node) {
+                this.node = node;
+            }
+            Projects.prototype.project = function (projectId) {
+                return new Project(this.node.child(projectId));
+            };
+            return Projects;
+        })();
+        Data.Projects = Projects;
+        var Project = (function () {
+            function Project(node, transactions) {
+                if (transactions === void 0) { transactions = new Transactions(node.child("transactions")); }
+                this.node = node;
+                this.transactions = transactions;
+            }
+            return Project;
+        })();
+        Data.Project = Project;
+        var Transactions = (function () {
+            function Transactions(node) {
+                this.node = node;
+            }
+            Transactions.prototype.byTimestamp = function () {
+                var _this = this;
+                return Rx.Observable.create(function (observer) {
+                    var listener = _this.node
+                        .orderByChild("timestamp")
+                        .on(FirebaseEvents.child_added, function (snap) {
+                        var transaction = snap.exportVal();
+                        observer.onNext(transaction);
+                    });
+                    var disposable = new Disposable(function () { return _this.node.off(FirebaseEvents.child_added, listener); });
+                    return new RefCountDisposable(disposable);
+                });
+            };
+            return Transactions;
+        })();
+        Data.Transactions = Transactions;
+        var Users = (function () {
+            function Users(node) {
+                this.node = node;
+            }
+            Users.prototype.user = function (userId) {
+                return new User(this.node.child(userId));
+            };
+            return Users;
+        })();
+        Data.Users = Users;
+        var User = (function () {
+            function User(node) {
+                this.node = node;
+            }
+            User.prototype.projects = function () {
+                var projects = this.node.child("projects");
+                return Rx.Observable.create(function (observer) {
+                    var listener = projects.on(FirebaseEvents.child_added, function (snapShot) {
+                        var data = snapShot.exportVal();
+                        observer.onNext(new UserProject(snapShot.key(), data.lastAccessTime));
+                    });
+                    var disposable = new Disposable(function () { return projects.off(FirebaseEvents.child_added, listener); });
+                    return new RefCountDisposable(disposable);
+                });
+            };
+            return User;
+        })();
+        Data.User = User;
+        var UserProject = (function () {
+            function UserProject(projectId, lastAccessTime) {
+                this.projectId = projectId;
+                this.lastAccessTime = lastAccessTime;
+            }
+            return UserProject;
+        })();
+        Data.UserProject = UserProject;
+        var UserData = (function () {
+            function UserData(uid, provider, expires, firstName, lastName, name, displayName, timezone, gender, profileImageUrl, cachedProfileImage) {
+                this.uid = uid;
+                this.provider = provider;
+                this.expires = expires;
+                this.firstName = firstName;
+                this.lastName = lastName;
+                this.name = name;
+                this.displayName = displayName;
+                this.timezone = timezone;
+                this.gender = gender;
+                this.profileImageUrl = profileImageUrl;
+                this.cachedProfileImage = cachedProfileImage;
+            }
+            return UserData;
+        })();
+        Data.UserData = UserData;
+    })(Data = Budget.Data || (Budget.Data = {}));
+})(Budget || (Budget = {}));
 var Budget;
 (function (Budget) {
     var ProjectNode = (function () {
@@ -388,6 +514,8 @@ var Budget;
     })();
     Budget.AuthenticationService = AuthenticationService;
 })(Budget || (Budget = {}));
+/// <reference path="../../typings/rx/rx.d.ts" />
+/// <reference path="../data/firebase-service.ts" />
 /// <reference path="../services/data-service.ts" />
 /// <reference path="../services/authentication-service.ts" />
 var Budget;
@@ -404,34 +532,35 @@ var Budget;
     })();
     Budget.MessageViewModel = MessageViewModel;
     var NewsFeedCtrl = (function () {
-        function NewsFeedCtrl($state, $timeout, $log, $ionicSideMenuDelegate, dataService, authenticationService) {
+        function NewsFeedCtrl($state, $timeout, $log, $ionicSideMenuDelegate, dataService, firebaseService, authenticationService) {
             var _this = this;
             this.dataService = dataService;
+            this.firebaseService = firebaseService;
             this.messages = [];
             $log.debug("Initializing news feed control");
             var userData = authenticationService.userData;
             if (userData) {
-                dataService.getProjectsForUser(userData.uid)
-                    .then(function (projects) {
-                    projects.forEach(function (project) {
-                        var projectId = project.key;
-                        dataService.getProjectsReference()
-                            .child(projectId)
-                            .child("transactions")
-                            .orderByChild("timestamp")
-                            .on(Budget.FirebaseEvents.child_added, function (snapshot) {
-                            var transaction = snapshot.exportVal();
-                            var messageText = "Transferred " + transaction.amount + " from " + transaction.debitAccountName + " to " + transaction.creditAccountName;
-                            var action = function () {
-                                $ionicSideMenuDelegate.toggleRight(false);
-                                $timeout(function () {
-                                    $state.go("logged-in.project.account", { projectId: projectId, accountId: transaction.credit });
-                                }, 150);
-                            };
-                            var messageVm = new MessageViewModel(userData.uid, messageText, transaction.timestamp, action);
-                            _this.insertMessage(messageVm);
-                        });
-                    });
+                var subscription = firebaseService.users
+                    .user(userData.uid).projects()
+                    .flatMap(function (project) {
+                    return firebaseService.projects
+                        .project(project.projectId)
+                        .transactions.byTimestamp()
+                        .map(function (x) { return ({
+                        projectId: project.projectId,
+                        transaction: x
+                    }); });
+                })
+                    .subscribe(function (x) {
+                    var messageText = "Transferred " + x.transaction.amount + " from " + x.transaction.debitAccountName + " to " + x.transaction.creditAccountName;
+                    var action = function () {
+                        $ionicSideMenuDelegate.toggleRight(false);
+                        $timeout(function () {
+                            $state.go("logged-in.project.account", { projectId: x.projectId, accountId: x.transaction.credit });
+                        }, 150);
+                    };
+                    var messageVm = new MessageViewModel(userData.uid, messageText, x.transaction.timestamp, action);
+                    _this.insertMessage(messageVm);
                 });
             }
         }
@@ -459,6 +588,7 @@ var Budget;
             "$log",
             "$ionicSideMenuDelegate",
             Budget.DataService.IID,
+            Budget.Data.FirebaseService.IID,
             Budget.AuthenticationService.IID
         ];
         return NewsFeedCtrl;
@@ -1216,6 +1346,7 @@ var Budget;
 /// <reference path="typings/cordova-ionic/plugins/keyboard.d.ts" />
 /// <reference path="typings/cordova-ionic/cordova-ionic.d.ts" />
 /// <reference path="controllers/account-ctrl.ts" />
+/// <reference path="data/firebase-service.ts" />
 /// <reference path="controllers/main-ctrl.ts" />
 /// <reference path="controllers/delete-account-ctrl.ts" />
 /// <reference path="controllers/allocate-ctrl.ts" />
@@ -1223,6 +1354,7 @@ var Budget;
 /// <reference path="controllers/project-ctrl.ts" />
 /// <reference path="controllers/login-ctrl.ts" />
 /// <reference path="controllers/projects-ctrl.ts" />
+/// <reference path="data/firebase-service.ts" />
 // For an introduction to the Blank template, see the following documentation:
 // http://go.microsoft.com/fwlink/?LinkID=397705
 // To debug code on page load in Ripple or on Android devices/emulators: launch your app, set breakpoints, 
@@ -1234,6 +1366,7 @@ var Budget;
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.AuthenticationService.IID, Budget.AuthenticationService)
         .service(Budget.CommandService.IID, Budget.CommandService)
+        .service(Budget.Data.FirebaseService.IID, Budget.Data.FirebaseService)
         .directive(Budget.AccountOverview.IID, Budget.AccountOverview.factory())
         .controller(Budget.MainCtrl.IID, Budget.MainCtrl)
         .controller(Budget.AccountCtrl.IID, Budget.AccountCtrl)
