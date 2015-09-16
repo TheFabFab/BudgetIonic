@@ -1,0 +1,17 @@
+﻿<ion-list>
+    <ion-item class="news-message" ng-repeat="message in vm.messages" item="message" ng-click="message.action()">
+        <div class="row">
+            <div class="col user-picture-small">
+                <div class="clip-circle" ng-style="message.profilePicture"></div>
+            </div>
+            <div class="col col-fill">
+                <div class="row">
+                    <p>{{message.label}}</p>
+                </div>
+                <div class="time-ago">
+                    <span am-time-ago="message.timestamp"></span>
+                </div>
+            </div>
+        </div>
+    </ion-item>
+</ion-list>

@@ -421,6 +421,8 @@ var Budget;
     })();
     Budget.DataService = DataService;
 })(Budget || (Budget = {}));
+/// <reference path="../typings/extensions.d.ts" />
+/// <reference path="../../typings/rx/rx.d.ts" />
 /// <reference path="data-service.ts" />
 var Budget;
 (function (Budget) {
@@ -433,74 +435,68 @@ var Budget;
             this.dataService = dataService;
             $log.debug("Creating authentication service");
             this.database = dataService.getDatabaseReference();
-            this.usersReference = dataService.getUsersReference();
-            this.initializedDeferred = $q.defer();
-            this.initialized = this.initializedDeferred.promise;
-            this.database.onAuth(function (authData) { return _this.onAuthenticationChanged(authData); });
+            this.authentication = Rx.Observable.create(function (observer) {
+                var onComplete = function (authData) { return observer.onNext(authData); };
+                _this.database.onAuth(onComplete);
+                return Rx.Disposable.create(function () { return _this.database.offAuth(onComplete); });
+            }).flatMap(function (authData) { return Rx.Observable.fromPromise(_this.getUserData(authData)); });
         }
         AuthenticationService.prototype.facebookLogin = function () {
-            var _this = this;
-            var deferred = this.$q.defer();
-            this.database.authWithOAuthPopup("facebook", function (error, authData) {
+            //this.database.authWithOAuthPopup("facebook", (error, authData) => {
+            //    if (error) {
+            //        console.log("Login Failed!", error);
+            //        deferred.reject(error);
+            //    } else {
+            //        this.getUserData(authData)
+            //            .then(userData => {
+            //                deferred.resolve(userData);
+            //                this.userData = userData;
+            //            });
+            //    }
+            //});
+            this.$log.debug("Logging in with Facebook...");
+            this.database.authWithOAuthRedirect("facebook", function (error) {
                 if (error) {
                     console.log("Login Failed!", error);
-                    deferred.reject(error);
-                }
-                else {
-                    _this.getUserData(authData)
-                        .then(function (userData) {
-                        deferred.resolve(userData);
-                        _this.userData = userData;
-                    });
                 }
             });
-            return deferred.promise;
         };
         AuthenticationService.prototype.logOut = function () {
             this.database.unauth();
         };
-        AuthenticationService.prototype.onAuthenticationChanged = function (authData) {
-            var _this = this;
-            if (authData != null) {
-                this.getUserData(authData)
-                    .then(function (userData) {
-                    _this.userData = userData;
-                    _this.initializedDeferred.resolve(true);
-                });
-            }
-            else {
-                this.userData = null;
-                this.initializedDeferred.resolve(true);
-            }
-        };
         AuthenticationService.prototype.getUserData = function (authData) {
             var _this = this;
             var deferred = this.$q.defer();
-            console.log("Authenticated successfully with payload:", authData);
-            var userRef = this.usersReference.child(authData.uid);
-            userRef.once(Budget.FirebaseEvents.value, function (snapshot) {
-                var userData = snapshot.exportVal();
-                if (userData != null) {
-                    deferred.resolve(userData);
-                }
-                else {
-                    userData = Budget.UserData.fromFirebaseAuthData(authData);
-                    _this.$http.get(userData.profileImageUrl, { responseType: "blob" })
-                        .then(function (response) {
-                        var blob = response.data;
-                        _this.$log.debug("Downloaded profile image", response.data);
-                        var reader = new FileReader();
-                        reader.readAsDataURL(blob);
-                        reader.onloadend = function () {
-                            var base64 = reader.result;
-                            _this.$log.debug("Base64", base64);
-                            userData.cachedProfileImage = base64;
-                            _this.$log.debug("Registering user:", userData);
-                            userRef.set(userData, function () { return deferred.resolve(userData); });
-                        };
-                    });
-                }
-            });
+            if (!authData) {
+                deferred.resolve(null);
+            }
+            else {
+                console.log("Authenticated successfully with payload:", authData);
+                var userRef = this.database.child("users").child(authData.uid);
+                userRef.once(Budget.FirebaseEvents.value, function (snapshot) {
+                    var userData = snapshot.exportVal();
+                    if (userData != null) {
+                        deferred.resolve(userData);
+                    }
+                    else {
+                        userData = Budget.UserData.fromFirebaseAuthData(authData);
+                        _this.$http.get(userData.profileImageUrl, { responseType: "blob" })
+                            .then(function (response) {
+                            var blob = response.data;
+                            _this.$log.debug("Downloaded profile image", response.data);
+                            var reader = new FileReader();
+                            reader.readAsDataURL(blob);
+                            reader.onloadend = function () {
+                                var base64 = reader.result;
+                                _this.$log.debug("Base64", base64);
+                                userData.cachedProfileImage = base64;
+                                _this.$log.debug("Registering user:", userData);
+                                userRef.set(userData, function () { return deferred.resolve(userData); });
+                            };
+                        });
+                    }
+                });
+            }
             return deferred.promise;
         };
         AuthenticationService.IID = "authenticationService";
@@ -532,13 +528,12 @@ var Budget;
     })();
     Budget.MessageViewModel = MessageViewModel;
     var NewsFeedCtrl = (function () {
-        function NewsFeedCtrl($state, $timeout, $log, $ionicSideMenuDelegate, dataService, firebaseService, authenticationService) {
+        function NewsFeedCtrl($state, $timeout, $log, $ionicSideMenuDelegate, dataService, firebaseService, userData) {
             var _this = this;
             this.dataService = dataService;
             this.firebaseService = firebaseService;
             this.messages = [];
             $log.debug("Initializing news feed control");
-            var userData = authenticationService.userData;
             if (userData) {
                 var subscription = firebaseService.users
                     .user(userData.uid).projects()
@@ -546,9 +541,9 @@ var Budget;
                     return firebaseService.projects
                         .project(project.projectId)
                         .transactions.byTimestamp()
-                        .map(function (x) { return ({
+                        .map(function (transaction) { return ({
                         projectId: project.projectId,
-                        transaction: x
+                        transaction: transaction
                     }); });
                 })
                     .subscribe(function (x) {
@@ -582,6 +577,7 @@ var Budget;
             this.messages.splice(index, 0, messageViewModel);
         };
         NewsFeedCtrl.IID = "newsFeedCtrl";
+        NewsFeedCtrl.controllerAs = NewsFeedCtrl.IID + " as vm";
         NewsFeedCtrl.$inject = [
             "$state",
             "$timeout",
@@ -589,7 +585,7 @@ var Budget;
             "$ionicSideMenuDelegate",
             Budget.DataService.IID,
             Budget.Data.FirebaseService.IID,
-            Budget.AuthenticationService.IID
+            "userData"
         ];
         return NewsFeedCtrl;
     })();
@@ -886,7 +882,6 @@ var Budget;
     'use strict';
     var MainCtrl = (function () {
         function MainCtrl($scope, $state, $log, $ionicSideMenuDelegate, dataService, authenticationService, commandService, userData) {
-            var _this = this;
             this.$scope = $scope;
             this.$state = $state;
             this.$log = $log;
@@ -896,7 +891,7 @@ var Budget;
             this.commandService = commandService;
             this.userData = userData;
             console.log("Initializing main controller");
-            $scope.$watch(function (_) { return _this.authenticationService.userData; }, function (_) {
+            authenticationService.authentication.subscribe(function (userData) {
                 $state.reload();
             });
             this.contextCommands = commandService.contextCommands;
@@ -912,11 +907,9 @@ var Budget;
         };
         MainCtrl.authenticate = function ($q, $log, authenticationService) {
             var deferred = $q.defer();
-            // TODO: sign up for de-authentication
-            authenticationService.initialized
-                .then(function (x) {
-                var userData = authenticationService.userData;
-                $log.debug("User data", userData);
+            authenticationService.authentication.first()
+                .subscribe(function (userData) {
+                $log.debug("User datain MainCtrl.resolve", userData);
                 if (userData) {
                     deferred.resolve(userData);
                 }
@@ -1271,13 +1264,15 @@ var Budget;
     })();
     Budget.ProjectCtrl = ProjectCtrl;
 })(Budget || (Budget = {}));
+/// <reference path="../../typings/rx/rx.d.ts" />
 /// <reference path="../services/authentication-service.ts" />
 var Budget;
 (function (Budget) {
     var LoginCtrl = (function () {
-        function LoginCtrl($stateParams, $state, $scope, $log, authenticationService) {
+        function LoginCtrl($stateParams, $state, $log, authenticationService) {
             this.$stateParams = $stateParams;
             this.$state = $state;
+            this.$log = $log;
             this.authenticationService = authenticationService;
             this.once = false;
             $log.debug("Initializing login controller", $stateParams.toState, $stateParams.toParams);
@@ -1286,10 +1281,14 @@ var Budget;
             var _this = this;
             if (!this.once) {
                 this.once = true;
-                this.authenticationService.facebookLogin()
-                    .then(function (authData) {
-                    _this.$state.go(_this.$stateParams.toState, angular.fromJson(_this.$stateParams.toParams));
+                this.authenticationService.authentication.first(function (userData) { return !!userData; })
+                    .subscribe(function (userData) {
+                    _this.$log.debug("onNext in loginCtrl", userData);
+                    if (userData) {
+                        _this.$state.go(_this.$stateParams.toState, angular.fromJson(_this.$stateParams.toParams));
+                    }
                 });
+                this.authenticationService.facebookLogin();
             }
         };
         LoginCtrl.IID = "loginCtrl";
@@ -1297,9 +1296,8 @@ var Budget;
         LoginCtrl.$inject = [
             "$stateParams",
             "$state",
-            "$scope",
             "$log",
-            Budget.AuthenticationService.IID,
+            Budget.AuthenticationService.IID
         ];
         return LoginCtrl;
     })();
@@ -1308,22 +1306,21 @@ var Budget;
 var Budget;
 (function (Budget) {
     var ProjectsCtrl = (function () {
-        function ProjectsCtrl($log, dataService, authenticationService) {
+        function ProjectsCtrl($log, dataService, userData) {
             var _this = this;
             this.$log = $log;
             this.dataService = dataService;
-            this.authenticationService = authenticationService;
+            this.userData = userData;
             this.projects = [];
             this.newProjectTitle = "";
             $log.debug("Initializing projects controller.");
-            authenticationService.initialized
-                .then(function (_) { return dataService.getProjectsForUser(authenticationService.userData.uid); })
+            dataService.getProjectsForUser(userData.uid)
                 .then(function (projects) { return _this.projects = projects; });
         }
         ProjectsCtrl.prototype.onAddNew = function () {
             var _this = this;
             console.assert(this.newProjectTitle.length > 0);
-            this.dataService.addNewProject(this.authenticationService.userData.uid, this.newProjectTitle)
+            this.dataService.addNewProject(this.userData.uid, this.newProjectTitle)
                 .then(function (x) { return _this.projects.unshift(x); });
             this.newProjectTitle = "";
         };
@@ -1332,7 +1329,7 @@ var Budget;
         ProjectsCtrl.$inject = [
             "$log",
             Budget.DataService.IID,
-            Budget.AuthenticationService.IID
+            "userData"
         ];
         return ProjectsCtrl;
     })();
@@ -1419,6 +1416,10 @@ var Budget;
                 "left-side-content@logged-in": {
                     templateUrl: "templates/project-left-side.html",
                     controller: Budget.ProjectCtrl.controllerAs
+                },
+                "right-side-content@logged-in": {
+                    templateUrl: "templates/news-feed.html",
+                    controller: Budget.NewsFeedCtrl.controllerAs
                 }
             }
         });

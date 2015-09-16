@@ -16,17 +16,16 @@ module Budget {
         private static authenticate($q: ng.IQService, $log: ng.ILogService, authenticationService: IAuthenticationService): ng.IPromise<UserData> {
             var deferred = $q.defer<UserData>();
 
-            // TODO: sign up for de-authentication
-            authenticationService.initialized
-                .then(x => {
-                    let userData = authenticationService.userData;
-                    $log.debug("User data", userData);
-                    if (userData) {
-                        deferred.resolve(userData);
-                    } else {
-                        deferred.reject({ reason: "authentication" });
-                    }
-                });
+            authenticationService.authentication.first()
+                .subscribe(userData => {
+
+                $log.debug("User datain MainCtrl.resolve", userData);
+                if (userData) {
+                    deferred.resolve(userData);
+                } else {
+                    deferred.reject({ reason: "authentication" });
+                }
+            });
 
             return deferred.promise;
         }
@@ -57,7 +56,7 @@ module Budget {
 
             console.log("Initializing main controller");
 
-            $scope.$watch(_ => this.authenticationService.userData, _ => {
+            authenticationService.authentication.subscribe(userData => {
                 $state.reload();
             });
 

@@ -9,21 +9,20 @@
         public static $inject = [
             "$log",
             DataService.IID,
-            AuthenticationService.IID
+            "userData"
         ];
 
-        constructor(private $log: ng.ILogService, private dataService: IDataService, private authenticationService: IAuthenticationService) {
+        constructor(private $log: ng.ILogService, private dataService: IDataService, private userData: UserData) {
             $log.debug("Initializing projects controller.");
 
-            authenticationService.initialized
-                .then(_ => dataService.getProjectsForUser(authenticationService.userData.uid))
+            dataService.getProjectsForUser(userData.uid)
                 .then(projects => this.projects = projects);
         }
 
         public onAddNew() {
             console.assert(this.newProjectTitle.length > 0);
 
-            this.dataService.addNewProject(this.authenticationService.userData.uid, this.newProjectTitle)
+            this.dataService.addNewProject(this.userData.uid, this.newProjectTitle)
                 .then(x => this.projects.unshift(x));
 
             this.newProjectTitle = "";

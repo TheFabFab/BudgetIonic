@@ -89,6 +89,10 @@ module Budget {
                     "left-side-content@logged-in": {
                         templateUrl: "templates/project-left-side.html",
                         controller: ProjectCtrl.controllerAs
+                    },
+                    "right-side-content@logged-in": {
+                        templateUrl: "templates/news-feed.html",
+                        controller: NewsFeedCtrl.controllerAs
                     }
                 }
             });

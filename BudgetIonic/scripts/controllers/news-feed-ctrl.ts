@@ -13,6 +13,7 @@ module Budget {
 
     export class NewsFeedCtrl {
         public static IID = "newsFeedCtrl";
+        public static controllerAs = NewsFeedCtrl.IID + " as vm";
 
         public messages: MessageViewModel[] = [];
 
@@ -23,12 +24,11 @@ module Budget {
             "$ionicSideMenuDelegate",
             DataService.IID,
             Data.FirebaseService.IID,
-            AuthenticationService.IID
+            "userData"
         ];
 
-        constructor($state: ng.ui.IStateService, $timeout: ng.ITimeoutService, $log: ng.ILogService, $ionicSideMenuDelegate, private dataService: IDataService, private firebaseService: Data.FirebaseService, authenticationService: IAuthenticationService) {
+        constructor($state: ng.ui.IStateService, $timeout: ng.ITimeoutService, $log: ng.ILogService, $ionicSideMenuDelegate, private dataService: IDataService, private firebaseService: Data.FirebaseService, userData: UserData) {
             $log.debug("Initializing news feed control");
-            var userData = authenticationService.userData;
 
             if (userData) {
 

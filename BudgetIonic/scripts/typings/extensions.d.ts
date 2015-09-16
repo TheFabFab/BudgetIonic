@@ -1,4 +1,5 @@
-﻿declare module angular {
+﻿/// <reference path="../../typings/rx/rx.d.ts" />
+declare module angular {
     interface IQService {
         /**
          * Combines multiple promises into a single promise that is resolved when all of the input promises are resolved.
@@ -13,4 +14,11 @@
 
 interface AngularFireArrayService {
     (firebaseQuery: FirebaseQuery): AngularFireArray;
+}
+
+declare module Rx {
+    interface Observable<T> {
+        first(): Observable<T>;
+        first(predicate: (item: T) => boolean): Observable<T>;
+    }
 }
