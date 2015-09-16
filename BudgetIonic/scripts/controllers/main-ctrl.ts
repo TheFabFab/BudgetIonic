@@ -70,7 +70,7 @@ module Budget {
 
         public logOut(): void {
             this.authenticationService.logOut();
-            this.$state.go("logged-in.home", {}, { reload: true });
+            this.$state.go("app.logged-in.home", {}, { reload: true });
         }
 
         public toggleLeft(): void {

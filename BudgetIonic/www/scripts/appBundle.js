@@ -551,7 +551,7 @@ var Budget;
                     var action = function () {
                         $ionicSideMenuDelegate.toggleRight(false);
                         $timeout(function () {
-                            $state.go("logged-in.project.account", { projectId: x.projectId, accountId: x.transaction.credit });
+                            $state.go("app.logged-in.project.account", { projectId: x.projectId, accountId: x.transaction.credit });
                         }, 150);
                     };
                     var messageVm = new MessageViewModel(userData.uid, messageText, x.transaction.timestamp, action);
@@ -647,7 +647,7 @@ var Budget;
         };
         NewAccountCtrl.prototype.close = function () {
             this.$log.debug("Closing");
-            this.$state.go("logged-in.project.account", { projectId: this.projectData.key, accountId: this.parentId });
+            this.$state.go("app.logged-in.project.account", { projectId: this.projectData.key, accountId: this.parentId });
         };
         NewAccountCtrl.IID = "newAccountCtrl";
         NewAccountCtrl.controllerAs = NewAccountCtrl.IID + " as vm";
@@ -756,10 +756,10 @@ var Budget;
                 .on(Budget.FirebaseEvents.value, function (accountSnapshot) {
                 _this.accountData = Budget.AccountData.fromSnapshot(accountSnapshot);
             });
-            this.addSubaccountCommand = new Budget.Command("Add subaccount", "/#/budget/project/" + this.projectData.key + "/new/" + this.accountSnapshot.key());
-            this.deleteCommand = new Budget.Command("Delete account", "/#/budget/project/" + this.projectData.key + "/delete/" + this.accountSnapshot.key(), false);
-            this.allocateBudgetCommand = new Budget.Command("Allocate budget", "/#/budget/project/" + this.projectData.key + "/allocate/" + this.accountSnapshot.key());
-            this.addExpenseCommand = new Budget.Command("Register expense", "/#/budget/project/" + this.projectData.key + "/expense/" + this.accountSnapshot.key());
+            this.addSubaccountCommand = new Budget.Command("Add subaccount", "/#/app/budget/project/" + this.projectData.key + "/new/" + this.accountSnapshot.key());
+            this.deleteCommand = new Budget.Command("Delete account", "/#/app/budget/project/" + this.projectData.key + "/delete/" + this.accountSnapshot.key(), false);
+            this.allocateBudgetCommand = new Budget.Command("Allocate budget", "/#/app/budget/project/" + this.projectData.key + "/allocate/" + this.accountSnapshot.key());
+            this.addExpenseCommand = new Budget.Command("Register expense", "/#/app/budget/project/" + this.projectData.key + "/expense/" + this.accountSnapshot.key());
             var projects = dataService.getProjectsReference();
             var childrenQuery = projects
                 .child(projectData.key)
@@ -815,7 +815,7 @@ var Budget;
                         var deferred = $q.defer();
                         deferred.reject({
                             reason: "redirect",
-                            state: "logged-in.project.account",
+                            state: "app.logged-in.project.account",
                             params: { projectId: projectData.key, accountId: rootAccountId }
                         });
                         return deferred.promise;
@@ -921,7 +921,7 @@ var Budget;
         };
         MainCtrl.prototype.logOut = function () {
             this.authenticationService.logOut();
-            this.$state.go("logged-in.home", {}, { reload: true });
+            this.$state.go("app.logged-in.home", {}, { reload: true });
         };
         MainCtrl.prototype.toggleLeft = function () {
             this.$ionicSideMenuDelegate.toggleLeft();
@@ -965,10 +965,10 @@ var Budget;
         DeleteAccountCtrl.prototype.ok = function () {
             var _this = this;
             this.dataService.deleteAccount(this.projectData.key, this.accountId)
-                .then(function (x) { return _this.$state.go("logged-in.project.account", { accountId: _this.account.parent }); });
+                .then(function (x) { return _this.$state.go("app.logged-in.project.account", { accountId: _this.account.parent }); });
         };
         DeleteAccountCtrl.prototype.cancel = function () {
-            this.$state.go("logged-in.project.account", { accountId: this.accountId });
+            this.$state.go("app.logged-in.project.account", { accountId: this.accountId });
         };
         DeleteAccountCtrl.IID = "deleteAccountCtrl";
         DeleteAccountCtrl.controllerAs = DeleteAccountCtrl.IID + " as vm";
@@ -1083,7 +1083,7 @@ var Budget;
             this.close();
         };
         AllocateBudgetCtrl.prototype.close = function () {
-            this.$state.go("logged-in.project.account", { accountId: this.creditAccountId });
+            this.$state.go("app.logged-in.project.account", { accountId: this.creditAccountId });
         };
         AllocateBudgetCtrl.prototype.validate = function () {
             var _this = this;
@@ -1197,7 +1197,7 @@ var Budget;
             this.close();
         };
         AddExpenseCtrl.prototype.close = function () {
-            this.$state.go("logged-in.project.account", { accountId: this.debitAccount.key });
+            this.$state.go("app.logged-in.project.account", { accountId: this.debitAccount.key });
         };
         AddExpenseCtrl.prototype.validate = function () {
             var result = false;
@@ -1388,9 +1388,9 @@ var Budget;
                 }
             }
         });
-        $stateProvider.state("logged-in", {
+        $stateProvider.state("app", {
             abstract: true,
-            url: "/budget",
+            url: "/app",
             views: {
                 "main-frame": {
                     controller: Budget.MainCtrl.controllerAs,
@@ -1399,82 +1399,88 @@ var Budget;
             },
             resolve: Budget.MainCtrl.resolve()
         });
-        $stateProvider.state("logged-in.projects", {
-            url: "/projects",
-            views: {
-                "main-content": {
-                    templateUrl: "templates/projects.html",
-                    controller: Budget.ProjectsCtrl.controllerAs
-                }
-            }
-        });
-        $stateProvider.state("logged-in.project", {
+        $stateProvider.state("app.logged-in", {
             abstract: true,
-            url: "/project/:projectId",
-            resolve: Budget.ProjectCtrl.resolve(),
+            url: "/budget",
             views: {
-                "left-side-content@logged-in": {
-                    templateUrl: "templates/project-left-side.html",
-                    controller: Budget.ProjectCtrl.controllerAs
-                },
-                "right-side-content@logged-in": {
+                "right-side-content@app": {
                     templateUrl: "templates/news-feed.html",
                     controller: Budget.NewsFeedCtrl.controllerAs
                 }
             }
         });
-        $stateProvider.state("logged-in.project.home", {
+        $stateProvider.state("app.logged-in.projects", {
+            url: "/projects",
+            views: {
+                "main-content@app": {
+                    templateUrl: "templates/projects.html",
+                    controller: Budget.ProjectsCtrl.controllerAs
+                }
+            }
+        });
+        $stateProvider.state("app.logged-in.project", {
+            abstract: true,
+            url: "/project/:projectId",
+            resolve: Budget.ProjectCtrl.resolve(),
+            views: {
+                "left-side-content@app": {
+                    templateUrl: "templates/project-left-side.html",
+                    controller: Budget.ProjectCtrl.controllerAs
+                }
+            }
+        });
+        $stateProvider.state("app.logged-in.project.home", {
             url: "/home",
             resolve: Budget.AccountCtrl.resolveHome()
         });
-        $stateProvider.state("logged-in.project.account", {
+        $stateProvider.state("app.logged-in.project.account", {
             url: "/account/:accountId",
             views: {
-                "main-content@logged-in": {
+                "main-content@app": {
                     templateUrl: "templates/account.html",
                     resolve: Budget.AccountCtrl.resolve(),
                     controller: Budget.AccountCtrl.controllerAs
                 }
             }
         });
-        $stateProvider.state("logged-in.project.new-account", {
+        $stateProvider.state("app.logged-in.project.new-account", {
             url: "/new/:parentId",
             views: {
-                "main-content@logged-in": {
+                "main-content@app": {
                     templateUrl: "templates/new-account.html",
                     controller: Budget.NewAccountCtrl.controllerAs
                 }
             }
         });
-        $stateProvider.state("logged-in.project.delete-account", {
+        $stateProvider.state("app.logged-in.project.delete-account", {
             url: "/delete/:accountId",
             views: {
-                "main-content@logged-in": {
+                "main-content@app": {
                     templateUrl: "templates/delete-account.html",
                     controller: Budget.DeleteAccountCtrl.controllerAs
                 }
             }
         });
-        $stateProvider.state("logged-in.project.allocate", {
+        $stateProvider.state("app.logged-in.project.allocate", {
             url: "/allocate/:accountId",
             views: {
-                "main-content@logged-in": {
+                "main-content@app": {
                     templateUrl: "templates/allocate.html",
                     controller: Budget.AllocateBudgetCtrl.controllerAs
                 }
             }
         });
-        $stateProvider.state("logged-in.project.expense", {
+        $stateProvider.state("app.logged-in.project.expense", {
             url: "/expense/:accountId",
             views: {
-                "main-content@logged-in": {
+                "main-content@app": {
                     templateUrl: "templates/expense.html",
                     controller: Budget.AddExpenseCtrl.controllerAs
                 }
             }
         });
         // if none of the above states are matched, use this as the fallback
-        $urlRouterProvider.otherwise("/budget/projects");
+        $urlRouterProvider.otherwise("/app/budget/projects");
         // configure html5 to get links working on jsfiddle
         $locationProvider.html5Mode(false);
     });

@@ -140,7 +140,7 @@
 
         private close(): void {
             this.$state.go(
-                "logged-in.project.account",
+                "app.logged-in.project.account",
                 <IAccountStateParams>{ accountId: this.creditAccountId });
         }
 

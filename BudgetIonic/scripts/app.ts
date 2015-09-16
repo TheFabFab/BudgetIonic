@@ -59,9 +59,9 @@ module Budget {
                     }
                 });
 
-            $stateProvider.state("logged-in", {
+            $stateProvider.state("app", {
                     abstract: true,
-                    url: "/budget",
+                    url: "/app",
                     views: {
                         "main-frame": {
                             controller: MainCtrl.controllerAs,
@@ -69,43 +69,50 @@ module Budget {
                         }
                     },
                     resolve: MainCtrl.resolve()
-                });
+            });
 
-            $stateProvider.state("logged-in.projects", {
+            $stateProvider.state("app.logged-in", {
+                abstract: true,
+                url: "/budget",
+                views: {
+                    "right-side-content@app": {
+                        templateUrl: "templates/news-feed.html",
+                        controller: NewsFeedCtrl.controllerAs
+                    }                    
+                }
+            });
+
+            $stateProvider.state("app.logged-in.projects", {
                     url: "/projects",
                     views: {
-                        "main-content": {
+                        "main-content@app": {
                             templateUrl: "templates/projects.html",
                             controller: ProjectsCtrl.controllerAs
                         }
                     }
                 });
 
-            $stateProvider.state("logged-in.project", {
+            $stateProvider.state("app.logged-in.project", {
                 abstract: true,
                 url: "/project/:projectId",
                 resolve: ProjectCtrl.resolve(),
                 views: {
-                    "left-side-content@logged-in": {
+                    "left-side-content@app": {
                         templateUrl: "templates/project-left-side.html",
                         controller: ProjectCtrl.controllerAs
-                    },
-                    "right-side-content@logged-in": {
-                        templateUrl: "templates/news-feed.html",
-                        controller: NewsFeedCtrl.controllerAs
                     }
                 }
             });
 
-            $stateProvider.state("logged-in.project.home", {
+            $stateProvider.state("app.logged-in.project.home", {
                 url: "/home",
                 resolve: AccountCtrl.resolveHome()
             });
 
-            $stateProvider.state("logged-in.project.account", {
+            $stateProvider.state("app.logged-in.project.account", {
                 url: "/account/:accountId",
                 views: {
-                    "main-content@logged-in": {
+                    "main-content@app": {
                         templateUrl: "templates/account.html",
                         resolve: AccountCtrl.resolve(),
                         controller: AccountCtrl.controllerAs
@@ -113,40 +120,40 @@ module Budget {
                 }
             });
 
-            $stateProvider.state("logged-in.project.new-account", {
+            $stateProvider.state("app.logged-in.project.new-account", {
                 url: "/new/:parentId",
                 views: {
-                    "main-content@logged-in": {
+                    "main-content@app": {
                         templateUrl: "templates/new-account.html",
                         controller: NewAccountCtrl.controllerAs
                     }
                 }
             });
 
-            $stateProvider.state("logged-in.project.delete-account", {
+            $stateProvider.state("app.logged-in.project.delete-account", {
                 url: "/delete/:accountId",
                 views: {
-                    "main-content@logged-in": {
+                    "main-content@app": {
                         templateUrl: "templates/delete-account.html",
                         controller: DeleteAccountCtrl.controllerAs
                     }
                 }
             });
 
-            $stateProvider.state("logged-in.project.allocate", {
+            $stateProvider.state("app.logged-in.project.allocate", {
                 url: "/allocate/:accountId",
                 views: {
-                    "main-content@logged-in": {
+                    "main-content@app": {
                         templateUrl: "templates/allocate.html",
                         controller: AllocateBudgetCtrl.controllerAs
                     }
                 }
             });
 
-            $stateProvider.state("logged-in.project.expense", {
+            $stateProvider.state("app.logged-in.project.expense", {
                 url: "/expense/:accountId",
                 views: {
-                    "main-content@logged-in": {
+                    "main-content@app": {
                         templateUrl: "templates/expense.html",
                         controller: AddExpenseCtrl.controllerAs
                     }
@@ -154,7 +161,7 @@ module Budget {
             });
 
             // if none of the above states are matched, use this as the fallback
-            $urlRouterProvider.otherwise("/budget/projects");
+            $urlRouterProvider.otherwise("/app/budget/projects");
 
             // configure html5 to get links working on jsfiddle
             $locationProvider.html5Mode(false);

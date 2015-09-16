@@ -31,7 +31,7 @@ module Budget {
                     var deferred = $q.defer();
                     deferred.reject({
                         reason: "redirect",
-                        state: "logged-in.project.account",
+                        state: "app.logged-in.project.account",
                         params: { projectId: projectData.key, accountId: rootAccountId }
                     });
                     return deferred.promise;
@@ -88,10 +88,10 @@ module Budget {
                     this.accountData = AccountData.fromSnapshot(accountSnapshot);
                 });
 
-            this.addSubaccountCommand = new Command("Add subaccount", `/#/budget/project/${this.projectData.key}/new/${this.accountSnapshot.key()}`);
-            this.deleteCommand = new Command("Delete account", `/#/budget/project/${this.projectData.key}/delete/${this.accountSnapshot.key()}`, false);
-            this.allocateBudgetCommand = new Command("Allocate budget", `/#/budget/project/${this.projectData.key}/allocate/${this.accountSnapshot.key()}`);
-            this.addExpenseCommand = new Command("Register expense", `/#/budget/project/${this.projectData.key}/expense/${this.accountSnapshot.key()}`);
+            this.addSubaccountCommand = new Command("Add subaccount", `/#/app/budget/project/${this.projectData.key}/new/${this.accountSnapshot.key()}`);
+            this.deleteCommand = new Command("Delete account", `/#/app/budget/project/${this.projectData.key}/delete/${this.accountSnapshot.key()}`, false);
+            this.allocateBudgetCommand = new Command("Allocate budget", `/#/app/budget/project/${this.projectData.key}/allocate/${this.accountSnapshot.key()}`);
+            this.addExpenseCommand = new Command("Register expense", `/#/app/budget/project/${this.projectData.key}/expense/${this.accountSnapshot.key()}`);
             const projects = dataService.getProjectsReference();
             const childrenQuery = projects
                 .child(projectData.key)
