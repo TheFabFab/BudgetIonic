@@ -20,10 +20,10 @@
     "underscore-observable-arrays": {
       "js": "underscore-observe.js"
     },
-    "angular": {},
-    "angular-animate": {},
-    "angular-sanitize": {},
-    "angular-ui-router": {}
+    "angular": { },
+    "angular-animate": { },
+    "angular-sanitize": { },
+    "angular-ui-router": { }
   },
   "devDependencies": {
     "ionic": "driftyco/ionic-bower#1.1.0",

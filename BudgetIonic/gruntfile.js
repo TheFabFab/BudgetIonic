@@ -1,4 +1,3 @@
-/// <binding BeforeBuild='commands:tsc-tests, commands:tsc-scripts' />
 /*
 This file in the main entry point for defining grunt tasks and using grunt plugins.
 Click here to learn more. http://go.microsoft.com/fwlink/?LinkID=513275&clcid=0x409
@@ -19,15 +18,15 @@ module.exports = function (grunt) {
                 files: ["test/**/*.ts", "test/tsconfig.json"],
                 tasks: ["commands:tsc-tests"],
                 options: {
-                    spawn: false,
-                },
+                    spawn: false
+                }
             },
             scripts: {
                 files: ["scripts/**/*.ts", "scripts/tsconfig.json"],
                 tasks: ["commands:tsc-scripts"],
                 options: {
-                    spawn: false,
-                },
+                    spawn: false
+                }
             },
             ionic: {
                 files: ["../../ionic/dist/js/ionic.bundle.js"],
@@ -36,12 +35,16 @@ module.exports = function (grunt) {
                     spawn: false
                 }
             },
+            sass: {
+                files: ["www/lib/ionic/scss/*.scss"],
+                tasks: ["sass:ionic"]
+            },
             www: {
                 options: {
-                    livereload: 35729,
+                    livereload: 35729
                 },
-                files: ["www/**/*.*"],
-            },
+                files: ["www/**/*.*"]
+            }
         },
         commands: {
             "tsc-tests": {
@@ -59,7 +62,7 @@ module.exports = function (grunt) {
                     port: 8181,
                     hostname: "0.0.0.0",
                     base: ["www", "./"],
-                    livereload: true,
+                    livereload: true
                 }
             }
         },
@@ -68,12 +71,27 @@ module.exports = function (grunt) {
                 src: "../../ionic/dist/js/ionic.bundle.js",
                 dest: "www/lib/ionic/js/ionic.bundle.js"
             }
+        },
+        sass: {
+            ionic: {
+                files: {
+                    "www/lib/ionic/css/ionic.css": "www/lib/ionic/scss/ionic.scss"
+                }
+            }
+        },
+        concurrent: {
+            watch: {
+                tasks: ["watch:sass", "watch:scripts", "watch:tests", "watch:ionic"],
+                options: {
+                    logConcurrentOutput: true
+                }
+            }
         }
     });
 
     grunt.registerTask("default", ["bower:install"]);
     grunt.registerTask("serve", ["connect:server", "watch:www"]);
-    grunt.registerTask("compile", ["watch:scripts", "watch:tests", "watch:ionic"]);
+    grunt.registerTask("compile", ["concurrent:watch"]);
 
     grunt.loadNpmTasks("grunt-bower-task");
     grunt.loadNpmTasks("grunt-commands");
@@ -81,4 +99,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks("grunt-http-server");
     grunt.loadNpmTasks("grunt-contrib-connect");
     grunt.loadNpmTasks("grunt-contrib-copy");
+    grunt.loadNpmTasks("grunt-contrib-sass");
+    grunt.loadNpmTasks('grunt-concurrent');
 };
