@@ -27,7 +27,7 @@
                     <div class="row row-fill">
                         <!-- Put further content here -->
                         <ul class="list col">
-                            <li class="item row">
+                            <li class="item item-stable row">
                                 <div class="col clip-circle" ng-style="vm.imageStyle"></div>
                                 <div class="col col-fill">
                                     <div class="row">{{vm.userData.displayName}}</div>
@@ -36,17 +36,17 @@
                                     </a>
                                 </div>
                             </li>
-                            <li class="item">
-                                <a class="row" ui-sref="app.logged-in.projects">
+                            <li class="item item-stable" ui-sref="app.logged-in.projects">
+                                <a class="row">
                                     <div>Home</div>
                                 </a>
                             </li>
-                            <li class="item">
-                                <a class="row" ui-sref="app.logged-in.project.home">
+                            <li class="item item-stable" ui-sref="app.logged-in.project.home">
+                                <a class="row">
                                     <div>Project home</div>
                                 </a>
                             </li>
-                            <li class="item" ng-repeat="command in vm.contextCommands" ng-if="command.isEnabled">
+                            <li class="item item-stable" ng-repeat="command in vm.contextCommands" ng-if="command.isEnabled">
                                 <a class="row" ng-href="{{command.link}}">
                                     <div>{{command.label}}</div>
                                 </a>

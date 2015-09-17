@@ -1,365 +1,311 @@
 /* Empty. Add your own CSS if you like */
 .row-fill {
-    flex-grow: 1;
-}
+  flex-grow: 1; }
 
 .plan-list {
   border-top: none;
-  background-image: none !important;
-}
+  background-image: none !important; }
 
 .plan {
   /*line-height: 1;*/
-  padding: 0;
-}
+  padding: 0; }
 
 .plan-left {
   text-align: center;
-  padding: 10px;
-}
+  padding: 10px; }
 
 .plan-center {
   background-color: #3399ff;
-  opacity: 0.5;
-}
+  opacity: 0.5; }
 
 .plan-right {
-  padding: 10px 40px 10px 10px;
-}
+  padding: 10px 40px 10px 10px; }
 
 .plan-date {
   font-size: 14px;
   opacity: 0.8;
   margin-bottom: 4px;
-  font-weight: 500;
-}
+  font-weight: 500; }
 
 .plan-duration {
   font-size: 11px;
-  opacity: 0.4;
-}
+  opacity: 0.4; }
 
 .dialog-title {
-    font-size: x-large;
-    margin: 20px;
-    text-align: center;
-}
+  font-size: x-large;
+  margin: 20px;
+  text-align: center; }
 
 .dialog-sub-title {
-    font-size: medium;
-    margin-left: 20px;
-    text-align: center;    
-}
+  font-size: medium;
+  margin-left: 20px;
+  text-align: center; }
 
 .budget-name {
   font-size: 32px;
   margin-bottom: 8px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  font-weight: lighter;
-}
+  font-weight: lighter; }
 
 .plan-info {
   opacity: 0.4;
   font-size: 12px;
-  /*line-height: 1.4;*/
-}
+  /*line-height: 1.4;*/ }
 
 .list-item-note {
-    position: absolute;
-    right: 36px;
-    top: 0;
-    bottom: 0;
-    font-size: 14px;
-    display: flex;
-    -ms-flex-direction: column;
-    -webkit-flex-direction: column;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.list-item-note > .notification {
-}
+  position: absolute;
+  right: 36px;
+  top: 0;
+  bottom: 0;
+  font-size: 14px;
+  display: flex;
+  -ms-flex-direction: column;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  justify-content: center; }
 
 .overlay-parent {
-    position: relative;
-    padding: 10px;
-}
+  position: relative;
+  padding: 10px; }
 
 .overlay {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-}
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0; }
 
 .center-child {
-    display: flex;
-    -ms-flex-direction: column;
-    -webkit-flex-direction: column;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.budget-list-item {
-}
+  display: flex;
+  -ms-flex-direction: column;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  justify-content: center; }
 
 .budget-list-item > .item-content {
-    padding: 0!important;
-}
+  padding: 0 !important; }
 
 .budget-item-main {
-    padding: 10px 0 0 10px;
-}
+  padding: 10px 0 0 10px; }
 
 .budget-item-separator {
-    flex-basis: 2px!important;
-    flex-grow: 0!important;
-    flex-shrink: 0!important;
-    margin: 0 10px 0 10px!important;
-    padding: 0!important;
-}
+  flex-basis: 2px !important;
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  margin: 0 10px 0 10px !important;
+  padding: 0 !important; }
 
 .budget-item-navigation {
-    flex-basis: 40px;
-    display: flex;
-    -ms-flex-direction: column;
-    -webkit-flex-direction: column;
-    flex-direction: column;
-    justify-content: center;
-    flex-grow: 0;
-    flex-shrink: 0;
-    margin: 0 10px 0 10px;
-    font-size: 22px;
-    text-align: right;
-}
+  flex-basis: 40px;
+  display: flex;
+  -ms-flex-direction: column;
+  -webkit-flex-direction: column;
+  flex-direction: column;
+  justify-content: center;
+  flex-grow: 0;
+  flex-shrink: 0;
+  margin: 0 10px 0 10px;
+  font-size: 22px;
+  text-align: right; }
 
 .account-overview-balance {
-    font-size: 16px;
-    font-weight: 200;
-    position: absolute;
-    left: 0;
-    top: 0;
-}
+  font-size: 16px;
+  font-weight: 200;
+  position: absolute;
+  left: 0;
+  top: 0; }
 
 .account-overview-credit {
-    font-size: 16px;
-    font-weight: 200;
-    position: absolute;
-    text-align: right;
-    right: 0;
-    top: 0;
-}
+  font-size: 16px;
+  font-weight: 200;
+  position: absolute;
+  text-align: right;
+  right: 0;
+  top: 0; }
 
 .account-overview-spent div {
-    font-size: 18px;
-    font-weight: 100;
-    font-stretch: condensed;
-    text-align: center;
-}
+  font-size: 18px;
+  font-weight: 100;
+  font-stretch: condensed;
+  text-align: center; }
 
 .account-overview-debit {
-    position: absolute;
-    left: 0;
-    bottom: 0;
-}
+  position: absolute;
+  left: 0;
+  bottom: 0; }
 
 .account-overview-debit div {
-    font-size: 16px;
-    font-weight: 100;
-}
+  font-size: 16px;
+  font-weight: 100; }
 
 .account-overview-gfx {
-    margin: 10px;
-}
+  margin: 10px; }
 
 .budget-prediction-col {
-    flex-grow: 0;
-    flex-shrink: 0;
-    flex-basis: 110px;
-}
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: 110px; }
 
 .budget-left-menu {
-    height: 100%;
-    display: flex;
-    -ms-flex-direction: column;
-    -webkit-flex-direction: column;
-    flex-direction: column;
-}
+  height: 100%;
+  display: flex;
+  -ms-flex-direction: column;
+  -webkit-flex-direction: column;
+  flex-direction: column; }
+
+.budget-left-menu > .row {
+  padding: 0; }
+
+.budget-left-menu .list {
+  padding: 0; }
 
 .budget-overview {
-    padding: 20px;
-    /*position: absolute;*/
-    border-top: 1px solid #ddd;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-}
+  /*position: absolute;*/
+  border-top: 1px solid #ddd;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%; }
 
 .budget-overview-row {
-    flex-grow: 0;
-    flex-shrink: 0;
-}
+  flex-grow: 0;
+  flex-shrink: 0; }
+
+.budget-overview-row ui-view {
+  margin: 15px; }
 
 .account-header {
-    margin: 20px;
-}
+  margin: 20px; }
 
 .account-header .budget-prediction-col {
-    flex-basis: 180px;
-}
+  flex-basis: 180px; }
 
 .account-title {
-    margin-left: 20px;
-    margin-top: 6px;
-}
+  margin-left: 20px;
+  margin-top: 6px; }
 
 .account-subject {
-    font-size: 36px;
-}
+  font-size: 36px; }
 
 .account-description {
-    font-size: 14px;
-}
+  font-size: 14px; }
 
-    .budget-overview .account-overview-balance {
-        font-size: 18px;
-    }
+.budget-overview .account-overview-balance {
+  font-size: 18px; }
 
-    .budget-overview .account-overview-credit {
-        font-size: 18px;
-    }
+.budget-overview .account-overview-credit {
+  font-size: 18px; }
 
-    .budget-overview .account-overview-spent div {
-        font-size: 20px;
-    }
+.budget-overview .account-overview-spent div {
+  font-size: 20px; }
 
-    .budget-overview .account-overview-debit div {
-        font-size: 18px;
-    }
+.budget-overview .account-overview-debit div {
+  font-size: 18px; }
 
-    .budget-overview .account-overview-gfx {
-        margin: 30px;
-    }
+.budget-overview .account-overview-gfx {
+  margin: 30px; }
 
-    .account-overview-gfx circle {
-        fill: #297f59;
-    }
+.account-overview-gfx circle {
+  fill: #297f59; }
 
-    .account-overview-gfx path {
-        stroke-width: 10;
-        fill: none;
-        stroke: #297f59;
-    }
+.account-overview-gfx path {
+  stroke-width: 10;
+  fill: none;
+  stroke: #297f59; }
 
-    .account-overview-gfx .warning circle {
-        fill: yellow;
-    }
+.account-overview-gfx .warning circle {
+  fill: yellow; }
 
-    .account-overview-gfx .warning path {
-        stroke: yellow;
-    }
+.account-overview-gfx .warning path {
+  stroke: yellow; }
 
-    .account-overview-gfx .error circle {
-        fill: red;
-    }
+.account-overview-gfx .error circle {
+  fill: red; }
 
-    .account-overview-gfx .error path {
-        stroke: red;
-    }
+.account-overview-gfx .error path {
+  stroke: red; }
 
 .dialog-button-container {
-    padding: 20px;
-    display: flex;
-    -ms-flex-direction: row;
-    -webkit-flex-direction: row; 
-    flex-direction: row;
-    justify-content: flex-end;
-}
+  padding: 20px;
+  display: flex;
+  -ms-flex-direction: row;
+  -webkit-flex-direction: row;
+  flex-direction: row;
+  justify-content: flex-end; }
 
-    .dialog-button-container button {
-        margin: 10px;
-        width: auto;
-        flex-grow: 0;
-    }
+.dialog-button-container button {
+  margin: 10px;
+  width: auto;
+  flex-grow: 0; }
 
 .account-view .time-ago {
-    text-align: right;
-    color: lightgray;
-}
+  text-align: right;
+  color: lightgray; }
 
 .project .time-ago {
-    text-align: right;
-    color: lightgray;
-}
+  text-align: right;
+  color: lightgray; }
 
 .clip-circle {
-  background-size:100px 133px;
-  background-position:0px -10px;
-  height:100px;
-  width:100px;
+  background-size: 100px 133px;
+  background-position: 0px -10px;
+  height: 100px;
+  width: 100px;
   flex-basis: 100px;
   background-repeat: no-repeat;
   flex-grow: 0;
-  border-radius:50%;
-  overflow:hidden;
-  margin:auto;
-}
+  border-radius: 50%;
+  overflow: hidden;
+  margin: auto; }
 
 .user-picture-small {
-    flex-basis: 80px;
-    flex-grow: 0;
-    flex-shrink: 0;
-}
+  flex-basis: 80px;
+  flex-grow: 0;
+  flex-shrink: 0; }
 
 .user-picture-small .clip-circle {
-    -ms-background-size:60px 80px;
-    background-size:60px 80px;
-  background-position:0px -7px;
-  height:60px;
-  width:60px;
-  flex-basis: 60px;
-}
+  -ms-background-size: 60px 80px;
+  background-size: 60px 80px;
+  background-position: 0px -7px;
+  height: 60px;
+  width: 60px;
+  flex-basis: 60px; }
 
 .messages-view {
-    flex-basis: 320px;
-    flex-grow: 0;
-    flex-shrink: 0;
-}
+  flex-basis: 320px;
+  flex-grow: 0;
+  flex-shrink: 0; }
 
 .news-message p {
-    -ms-word-wrap: break-word;
-    word-wrap: break-word;
-    display: inline-block;
-    white-space: normal;
-}
+  -ms-word-wrap: break-word;
+  word-wrap: break-word;
+  display: inline-block;
+  white-space: normal; }
 
 .news-message .col {
-    flex-shrink: 1;
-}
+  flex-shrink: 1; }
 
 .news-message .row {
-    width: 100%;
-}
+  width: 100%; }
 
 .news-message .time-ago {
-    text-align: right;
-    color: lightgray;
-}
+  text-align: right;
+  color: lightgray; }
 
 ui-view {
-    width: 100%;
-}
+  width: 100%; }
 
 .aside-open-left .left-menu-button {
-    display: none;
-}
+  display: none; }
 
 .aside-open-right .right-menu-button {
-    display: none;
-}
+  display: none; }
 
 .menu .scroll-content.scroll-content-false {
-  z-index: 10!important; 
-}
+  z-index: 10 !important; }
+
+a:visited, a:link {
+  color: #444;
+  text-decoration: none; }
+
+/*# sourceMappingURL=style.css.map */

@@ -442,22 +442,16 @@ var Budget;
             }).flatMap(function (authData) { return Rx.Observable.fromPromise(_this.getUserData(authData)); });
         }
         AuthenticationService.prototype.facebookLogin = function () {
-            //this.database.authWithOAuthPopup("facebook", (error, authData) => {
-            //    if (error) {
-            //        console.log("Login Failed!", error);
-            //        deferred.reject(error);
-            //    } else {
-            //        this.getUserData(authData)
-            //            .then(userData => {
-            //                deferred.resolve(userData);
-            //                this.userData = userData;
-            //            });
-            //    }
-            //});
+            var _this = this;
             this.$log.debug("Logging in with Facebook...");
-            this.database.authWithOAuthRedirect("facebook", function (error) {
+            this.database.authWithOAuthPopup("facebook", function (error, authData) {
                 if (error) {
                     console.log("Login Failed!", error);
+                    _this.database.authWithOAuthRedirect("facebook", function (error) {
+                        if (error) {
+                            console.log("Login Failed!", error);
+                        }
+                    });
                 }
             });
         };
@@ -1359,7 +1353,7 @@ var Budget;
 var Budget;
 (function (Budget) {
     "use strict";
-    var budgetModule = angular.module("budget-app", ["ionic", "firebase", "angularMoment", "ionic-material"])
+    var budgetModule = angular.module("budget-app", ["ionic", "firebase", "angularMoment"])
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.AuthenticationService.IID, Budget.AuthenticationService)
         .service(Budget.CommandService.IID, Budget.CommandService)

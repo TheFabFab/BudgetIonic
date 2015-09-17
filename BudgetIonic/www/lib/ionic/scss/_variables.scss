@@ -1,16 +1,23 @@
-
 // Colors
 // -------------------------------
+$darkPrimaryColor:   #00796B;
+$primaryColor:       #009688;
+$lightPrimaryColor:  #B2DFDB;
+$textPrimaryColor:   #FFFFFF;
+$accentColor:        #FF4081;
+$primaryTextColor:   #212121;
+$secondaryTextColor: #727272;
+$dividerColor:       #B6B6B6;
 
-$light:                           #fff !default;
-$stable:                          #f8f8f8 !default;
-$positive:                        #387ef5 !default;
-$calm:                            #11c1f3 !default;
-$balanced:                        #33cd5f !default;
+$light:                           $lightPrimaryColor !default;
+$stable:                          $primaryColor !default;
+$positive:                        $primaryColor !default;
+$calm:                            $lightPrimaryColor !default;
+$balanced:                        $lightPrimaryColor !default;
 $energized:                       #ffc900 !default;
-$assertive:                       #ef473a !default;
+$assertive:                       $accentColor !default;
 $royal:                           #886aea !default;
-$dark:                            #444 !default;
+$dark:                            $darkPrimaryColor !default;
 
 
 // Base
@@ -35,7 +42,7 @@ $headings-font-family:            $font-family-base !default;
 $headings-font-weight:            500 !default;
 $headings-line-height:            1.2 !default;
 
-$base-background-color:           #fff !default;
+$base-background-color:           $lightPrimaryColor !default;
 $base-color:                      #000 !default;
 
 $link-color:                      $positive !default;

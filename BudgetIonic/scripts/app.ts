@@ -24,7 +24,7 @@ module Budget {
     "use strict";
 
     var budgetModule =
-        angular.module("budget-app", ["ionic", "firebase", "angularMoment", "ionic-material"])
+        angular.module("budget-app", ["ionic", "firebase", "angularMoment"])
 
             .service(DataService.IID, DataService)
             .service(AuthenticationService.IID, AuthenticationService)

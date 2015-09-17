@@ -36,14 +36,14 @@ module.exports = function (grunt) {
                 }
             },
             sass: {
-                files: ["www/lib/ionic/scss/*.scss"],
+                files: ["www/lib/ionic/scss/*.scss", "www/css/*.scss"],
                 tasks: ["sass:ionic"]
             },
             www: {
                 options: {
                     livereload: 35729
                 },
-                files: ["www/**/*.*"]
+                files: ["www/**/*.js", "www/**/*.html", "www/**/*.css"]
             }
         },
         commands: {
@@ -75,7 +75,8 @@ module.exports = function (grunt) {
         sass: {
             ionic: {
                 files: {
-                    "www/lib/ionic/css/ionic.css": "www/lib/ionic/scss/ionic.scss"
+                    "www/lib/ionic/css/ionic.css": "www/lib/ionic/scss/ionic.scss",
+                    "www/css/style.css": "www/css/style.scss"
                 }
             }
         },

@@ -36,22 +36,16 @@ module Budget {
         }
 
         public facebookLogin(): void {
-            //this.database.authWithOAuthPopup("facebook", (error, authData) => {
-            //    if (error) {
-            //        console.log("Login Failed!", error);
-            //        deferred.reject(error);
-            //    } else {
-            //        this.getUserData(authData)
-            //            .then(userData => {
-            //                deferred.resolve(userData);
-            //                this.userData = userData;
-            //            });
-            //    }
-            //});
             this.$log.debug("Logging in with Facebook...");
-            this.database.authWithOAuthRedirect("facebook", error => {
+
+            this.database.authWithOAuthPopup("facebook", (error, authData) => {
                 if (error) {
                     console.log("Login Failed!", error);
+                    this.database.authWithOAuthRedirect("facebook", error => {
+                        if (error) {
+                            console.log("Login Failed!", error);
+                        }
+                    });
                 }
             });
         }
