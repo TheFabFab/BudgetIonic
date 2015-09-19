@@ -1,15 +1,13 @@
-﻿<ion-view>
-    <ion-content class="has-header" padding="false">
-        <form>
-            <div class="row">
-                <p class="dialog-title">Are you sure you want to delete the account '{{vm.account.subject}}'?</p>
+﻿<ion-view class="dialog-view delete-view" view-title="Deleting '{{vm.account.subject}}'">
+    <ion-content class="has-header" padding="true">
+        <div class="row item item-positive">
+            <h2>Are you sure you want to delete the account '{{vm.account.subject}}'?</h2>
+        </div>
+        <div class="row item item-positive">
+            <div class="row dialog-button-container">
+                <button class="button button-positive" ng-click="vm.ok()">Delete</button>
+                <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
             </div>
-            <div class="row">
-                <div class="row dialog-button-container">
-                    <button class="button button-positive" ng-click="vm.ok()">Delete</button>
-                    <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
-                </div>
-            </div>
-        </form>
+        </div>
     </ion-content>
 </ion-view>
