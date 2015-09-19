@@ -1,26 +1,17 @@
-﻿<ion-view>
-    <ion-content class="has-header" padding="false">
-        <form>
-            <div class="row">
-                <div class="col">
-                    <p class="row dialog-title">Register an expense to '{{vm.debitAccount.subject}}'</p>
-                    <p class="row dialog-sub-title">Availble amount: {{vm.debitAccount.credited - vm.debitAccount.debited}}</p>
-                </div>
+﻿<ion-view class="expense-view dialog-view" view-title="Register an expense to '{{vm.debitAccount.subject}}'">
+    <ion-content class="has-header" padding="true">
+        <div class="row item item-positive">
+            <h2 class="row dialog-sub-title">Available amount: {{vm.debitAccount.credited - vm.debitAccount.debited}}</h2>
+        </div>
+        <div class="row item item-positive item-input">
+            <div class="col input-label">Amount</div>
+            <input class="col" type="number" autofocus placeholder="Amount" ng-model="vm.amount">
+        </div>
+        <div class="row item item-positive">
+            <div class="row dialog-button-container">
+                <button class="button button-positive" ng-disabled="!vm.isEnabled" ng-click="vm.ok()">Register</button>
+                <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
             </div>
-            <div class="list list-inset">
-                <div class="item item-input">
-                    <label class="item-stacked-label col col-fill">
-                        <span class="input-label">Amount</span>
-                        <input type="number" autofocus placeholder="Amount" ng-model="vm.amount">
-                    </label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="row dialog-button-container">
-                    <button class="button button-positive" ng-disabled="!vm.isEnabled" ng-click="vm.ok()">Register</button>
-                    <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
-                </div>
-            </div>
-        </form>
+        </div>
     </ion-content>
 </ion-view>

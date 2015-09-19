@@ -1,32 +1,29 @@
-﻿<ion-view>
-    <ion-content class="has-header" padding="false">
-        <form>
-            <div class="row">
-                <p class="dialog-title">Allocate budget to '{{vm.creditAccount.subject}}'</p>
+﻿<ion-view class="allocate-view dialog-view" view-title="Allocate budget to '{{vm.creditAccount.subject}}'">
+    <ion-content class="has-header" padding="true">
+        <div class="row item item-positive item-input">
+            <div class="col input-label">Amount</div>
+            <input class="col" type="number" autofocus placeholder="Amount" ng-model="vm.amount">
+        </div>
+        <label ng-repeat="ancestor in vm.ancestors" class="row item item-positive item-radio">
+            <input type="radio" name="group" ng-value="ancestor" ng-model="vm.debitAccount">
+            <div class="item-content">{{ancestor.subject}}</div>
+            <i class="radio-icon ion-checkmark"></i>
+        </label>
+        <div class="row item item-positive helper-action" ng-repeat="cmd in vm.helperCommands">
+            <a href="" ng-if="cmd.action" ng-click="cmd.action()">
+                <i class="icon ion-help"></i>
+                {{cmd.label}}
+            </a>
+            <div ng-if="!cmd.action">
+                <i class="icon ion-alert-circled"></i>
+                {{cmd.label}}
             </div>
-            <div class="list list-inset">
-                <div class="item item-input">
-                    <label class="item-stacked-label col col-fill">
-                        <span class="input-label">Amount</span>
-                        <input type="number" autofocus placeholder="Amount" ng-model="vm.amount">
-                    </label>
-                </div>
-                <label ng-repeat="ancestor in vm.ancestors" class="item item-radio">
-                    <input type="radio" name="group" ng-value="ancestor" ng-model="vm.debitAccount">
-                    <div class="item-content">{{ancestor.subject}}</div>
-                    <i class="radio-icon ion-checkmark"></i>
-                </label>
-                <div class="item" ng-repeat="cmd in vm.helperCommands">
-                    <a href="" ng-if="cmd.action" ng-click="cmd.action()">{{cmd.label}}</a>
-                    <p ng-if="!cmd.action">{{cmd.label}}</p>
-                </div>
+        </div>
+        <div class="row item item-positive">
+            <div class="row dialog-button-container">
+                <button class="button button-positive" ng-disabled="!vm.isEnabled" ng-click="vm.ok()">Allocate</button>
+                <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
             </div>
-            <div class="row">
-                <div class="row dialog-button-container">
-                    <button class="button button-positive" ng-disabled="!vm.isEnabled" ng-click="vm.ok()">Allocate</button>
-                    <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
-                </div>
-            </div>
-        </form>
+        </div>
     </ion-content>
 </ion-view>

@@ -1,4 +1,4 @@
-﻿<div>
+﻿<div class="account-overview">
     <div class="overlay-parent" ng-if="account">
         <div class="account-overview-gfx-container">
             <div class="account-overview-gfx">
@@ -7,11 +7,11 @@
                      viewBox="0 0 80 80"
                      preserveAspectRatio="xMidYMid meet"
                      ng-class="accountEx.error ? 'error' : accountEx.warning ? 'warning' : ''">
-                    <circle cx="40" cy="40" r="39" style="fill: none; stroke: lightgray; stroke-width: 1px" />
-                    <circle cx="40" cy="40" r="31" style="fill: none; stroke: lightgray; stroke-width: 1px" />
-                    <circle ng-if="showFullCircle" cx="40" cy="40" r="35" style="stroke: yellow; stroke-width: 10px; fill: none" />
-                    <circle ng-if="showArc" cx="40" cy="5" r="5" />
-                    <circle ng-if="showArc" ng-attr-cx="{{accountEx.xArcEnd}}" ng-attr-cy="{{accountEx.yArcEnd}}" r="5"/>
+                    <circle cx="40" cy="40" r="39" class="outline-circle" />
+                    <circle cx="40" cy="40" r="31" class="outline-circle" />
+                    <circle ng-if="showFullCircle" cx="40" cy="40" r="35" class="full-circle" />
+                    <circle ng-if="showArc" class="end-point" cx="40" cy="5" r="5" />
+                    <circle ng-if="showArc" class="end-point" ng-attr-cx="{{accountEx.xArcEnd}}" ng-attr-cy="{{accountEx.yArcEnd}}" r="5"/>
                     <path ng-if="showArc" d="M0,0" ng-attr-d="{{accountEx.progressPath}}" />
                 </svg>
             </div>

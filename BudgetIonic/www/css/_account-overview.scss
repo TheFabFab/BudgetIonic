@@ -1,0 +1,117 @@
+﻿
+.account-overview-balance {
+    font-size: 16px;
+    font-weight: 200;
+    position: absolute;
+    left: 0;
+    top: 0;
+}
+
+.account-overview-credit {
+    font-size: 16px;
+    font-weight: 200;
+    position: absolute;
+    text-align: right;
+    right: 0;
+    top: 0;
+}
+
+.account-overview-spent div {
+    font-size: 18px;
+    font-weight: 100;
+    font-stretch: condensed;
+    text-align: center;
+}
+
+.account-overview-debit {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+.account-overview-debit div {
+    font-size: 16px;
+    font-weight: 100;
+}
+
+.account-overview-gfx {
+    margin: 10px;
+}
+
+.budget-overview .account-overview {
+    color: $textPrimaryColor;
+}
+
+.budget-overview .account-overview-balance {
+    font-size: 18px;
+}
+
+.budget-overview .account-overview-credit {
+    font-size: 18px;
+}
+
+.budget-overview .account-overview-spent div {
+    font-size: 20px;
+}
+
+.budget-overview .account-overview-debit div {
+    font-size: 18px;
+}
+
+.budget-overview .account-overview-gfx {
+    margin: 30px;
+}
+
+.account-overview-gfx .end-point {
+    fill: #297f59;
+}
+
+.account-overview-gfx path {
+    stroke-width: 10;
+    fill: none;
+    stroke: #297f59;
+}
+
+.account-overview-gfx .warning .end-point {
+    fill: yellow;
+}
+
+.account-overview-gfx .warning path {
+    stroke: yellow;
+}
+
+.account-overview-gfx .error .end-point {
+    fill: red;
+}
+
+.account-overview-gfx .error path {
+    stroke: red;
+}
+
+.account-overview {
+    color: $primaryTextColor;
+}
+
+.account-overview-gfx .outline-circle {
+    stroke: darken($textPrimaryColor, 20%);
+    fill: none;
+    stroke-width: 1px;
+}
+
+.account-overview-gfx .full-circle {
+    stroke: green;
+    stroke-width: 10px;
+    fill: none;
+}
+
+.account-overview-gfx .warning .full-circle {
+    stroke: yellow;
+}
+
+.account-overview-gfx .error .full-circle {
+    stroke: red;
+}
+
+.item-positive .account-overview {
+    color: darken($button-positive-text, 10%);
+}

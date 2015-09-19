@@ -1,0 +1,15 @@
+﻿
+.news-message .label {
+    -ms-word-wrap: break-word;
+    word-wrap: break-word;
+    display: inline-block;
+    white-space: normal;
+}
+
+.news-message .col {
+    flex-shrink: 1;
+}
+
+.news-message .row {
+    width: 100%;
+}

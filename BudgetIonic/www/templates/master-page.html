@@ -22,12 +22,12 @@
         <!-- Left menu -->
         <ion-side-menu side="left" width="320" expose-aside-when="(min-width:768px)">
             <ion-header-bar class="bar-dark"></ion-header-bar>
-            <ion-content scroll="false" class="has-header stable-bg" padding="false">
+            <ion-content scroll="false" class="has-header dark-bg" padding="false">
                 <div class="budget-left-menu">
                     <div class="row row-fill">
                         <!-- Put further content here -->
                         <ul class="list col">
-                            <li class="item item-stable row">
+                            <li class="item item-stable row user-box">
                                 <div class="col clip-circle" ng-style="vm.imageStyle"></div>
                                 <div class="col col-fill">
                                     <div class="row">{{vm.userData.displayName}}</div>
@@ -62,7 +62,7 @@
 
         <!-- Right menu -->
         
-        <ion-side-menu side="right" width="420" expose-aside-when="(min-width:1088px)">
+        <ion-side-menu side="right" width="420" expose-aside-when="(min-width:1400px)">
             <ion-header-bar class="bar-dark"></ion-header-bar>
             <ion-content scroll="true" class="has-header stable-bg" padding="false">
                 <ui-view name="right-side-content"></ui-view>

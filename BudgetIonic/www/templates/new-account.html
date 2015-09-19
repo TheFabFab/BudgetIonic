@@ -1,26 +1,16 @@
-﻿<ion-view>
-    <ion-content class="has-header" padding="false">
-        <form>
-            <div class="list list-inset">
-                <div class="item item-input">
-                    <label class="item-stacked-label col col-fill">
-                        <span class="input-label">Subject</span>
-                        <input type="text" autofocus placeholder="Subject" ng-model="vm.subject">
-                    </label>
-                </div>
-                <div class="item item-input">
-                    <label class="item-stacked-label col col-fill">
-                        <span class="input-label">Description</span>
-                        <input type="text" placeholder="Description" ng-model="vm.description">
-                    </label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="row dialog-button-container">
-                    <button class="button button-positive" ng-click="vm.ok()">Add</button>
-                    <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
-                </div>
-            </div>
-        </form>
+﻿<ion-view class="new-account-view dialog-view" view-title="Create new account">
+    <ion-content class="has-header" padding="true">
+        <div class="item item-input item-positive">
+            <div class="col input-label">Subject</div>
+            <input class="col" type="text" autofocus placeholder="Subject" ng-model="vm.subject">
+        </div>
+        <div class="item item-input item-positive">
+            <div class="col input-label">Description</div>
+            <input class="col" type="text" placeholder="Description" ng-model="vm.description">
+        </div>
+        <div class="item item-positive dialog-button-container">
+            <button class="button button-positive" ng-click="vm.ok()">Add</button>
+            <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
+        </div>
     </ion-content>
 </ion-view>

@@ -1,0 +1,53 @@
+﻿.budget-item-main {
+    padding: 10px 0 0 10px;
+}
+
+.budget-name {
+  font-size: 32px;
+  margin-bottom: 8px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: lighter;
+}
+
+.budget-item-separator {
+    flex-basis: 2px!important;
+    flex-grow: 0!important;
+    flex-shrink: 0!important;
+    margin: 0 10px 0 10px!important;
+    padding: 0!important;
+}
+
+.budget-item-navigation {
+    flex-basis: 40px;
+    display: flex;
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    justify-content: center;
+    flex-grow: 0;
+    flex-shrink: 0;
+    margin: 0 10px 0 10px;
+    font-size: 22px;
+    text-align: right;
+}
+
+.budget-prediction-col {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 110px;
+}
+
+.account-header {
+    margin: 20px;
+}
+
+.account-header .budget-prediction-col {
+    flex-basis: 180px;
+}
+
+.budget-list-item {
+}
+
+.budget-list-item > .item-content {
+    padding: 0!important;
+}
