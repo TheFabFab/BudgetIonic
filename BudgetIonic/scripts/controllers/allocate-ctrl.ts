@@ -13,9 +13,7 @@
         public static IID: string = "allocateBudgetCtrl";
         public static controllerAs = AllocateBudgetCtrl.IID + " as vm";
 
-        private creditAccountId: string;
-
-        public creditAccount: IAccountData;
+        public creditAccount: AccountData;
         public debitAccount: AccountData;
         public amount: number = 0;
         public ancestors: AccountData[];
@@ -23,7 +21,6 @@
         public helperCommands: HelperCommand[] = [];
 
         public static $inject = [
-            "$stateParams",
             "$scope",
             "$state",
             "$firebaseObject",
@@ -33,11 +30,11 @@
             "$q",
             DataService.IID,
             "projectData",
-            "userData"
+            "userData",
+            "accountSnapshot"
         ];
 
         constructor(
-            $stateParams,
             private $scope: ng.IScope,
             private $state: ng.ui.IStateService,
             private $firebaseObject: AngularFireObjectService,
@@ -47,27 +44,21 @@
             private $q: ng.IQService,
             private dataService: IDataService,
             private projectData: DataWithKey<ProjectHeader>,
-            private userData: UserData) {
+            private userData: UserData,
+            private accountSnapshot: FirebaseDataSnapshot) {
 
-            $log.debug("Initializing allocate controller", arguments);
+            $log.debug("Initializing allocate controller");
 
-            this.creditAccountId = $stateParams.accountId || "root";
+            this.creditAccount = AccountData.fromSnapshot(accountSnapshot);
 
-            this.dataService.getAccountSnapshot(this.projectData.key, this.creditAccountId)
-                .then(snapshot => {
-                    this.creditAccount = snapshot.exportVal<IAccountData>();
-                })
-                .then(x => {
-                    if (this.creditAccount.parent !== "") {
-                        this.getAncestors()
-                            .then(ancestors => {
-                                console.assert(ancestors.length > 0);
-                                this.ancestors = ancestors;
-                                this.debitAccount = ancestors[0];
-                            });
-                    }
-                })
-                .then(_ => this.validate());
+            if (this.creditAccount.parent !== "") {
+                this.getAncestors()
+                    .then(ancestors => {
+                        console.assert(ancestors.length > 0);
+                        this.ancestors = ancestors;
+                        this.debitAccount = ancestors[0];
+                    });
+            }
 
             var us1 = this.$scope.$watch(() => this.amount, _ => this.validate());
             var us2 = this.$scope.$watch(() => this.debitAccount, _ => this.validate());
@@ -81,7 +72,7 @@
                         amount: this.amount,
                         debit: "",
                         debitAccountName: "",
-                        credit: this.creditAccountId,
+                        credit: this.creditAccount.key,
                         creditAccountName: this.creditAccount.subject,
                         timestamp: Firebase.ServerValue.TIMESTAMP,
                         userId: this.userData.uid
@@ -98,7 +89,7 @@
                 var accounts = this.ancestors.slice(0);
 
                 // add the credit account itself
-                accounts.push(AccountData.fromIAccountData(this.creditAccount, this.creditAccountId));
+                accounts.push(AccountData.fromIAccountData(this.creditAccount, this.creditAccount.key));
 
                 // remove up to (including) the debit account
                 while (previousAccount == null || previousAccount.key != this.debitAccount.key) {
@@ -141,7 +132,7 @@
         private close(): void {
             this.$state.go(
                 "app.logged-in.project.account",
-                <IAccountStateParams>{ accountId: this.creditAccountId });
+                <IAccountStateParams>{ accountId: this.creditAccount.key });
         }
 
         private validate(): void {

@@ -6,32 +6,27 @@
         public static controllerAs = DeleteAccountCtrl.IID + " as vm";
 
         public static $inject = [
-            "$stateParams",
             "$state",
             "$ionicHistory",
             "$log",
             DataService.IID,
-            "projectData"
+            "projectData",
+            "accountSnapshot"
         ];
 
         private accountId: string;
-        public account: IAccountData;
+        public account: AccountData;
 
         constructor(
-            $stateParams,
             private $state: ng.ui.IStateService,
             private $ionicHistory,
             $log: ng.ILogService,
             private dataService: IDataService,
-            private projectData: DataWithKey<ProjectHeader>) {
+            private projectData: DataWithKey<ProjectHeader>,
+            private accountSnapshot: FirebaseDataSnapshot) {
 
-            $log.debug("Initializing delete account controller", $stateParams);
-            this.accountId = $stateParams.accountId || "root";
-
-            this.dataService.getAccountSnapshot(this.projectData.key, this.accountId)
-                .then(snapshot => {
-                    this.account = <IAccountData>snapshot.exportVal();
-                });
+            $log.debug("Initializing delete account controller");
+            this.account = AccountData.fromSnapshot(accountSnapshot);
         }
 
         public ok(): void {

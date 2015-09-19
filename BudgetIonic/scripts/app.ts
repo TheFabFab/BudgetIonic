@@ -114,17 +114,18 @@ module Budget {
                 views: {
                     "main-content@app": {
                         templateUrl: "templates/account.html",
-                        resolve: AccountCtrl.resolve(),
+                        resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: AccountCtrl.controllerAs
                     }
                 }
             });
 
-            $stateProvider.state("app.logged-in.project.new-account", {
-                url: "/new/:parentId",
+            $stateProvider.state("app.logged-in.project.new", {
+                url: "/new/:accountId",
                 views: {
                     "main-content@app": {
                         templateUrl: "templates/new-account.html",
+                        resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: NewAccountCtrl.controllerAs
                     }
                 }
@@ -135,6 +136,7 @@ module Budget {
                 views: {
                     "main-content@app": {
                         templateUrl: "templates/delete-account.html",
+                        resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: DeleteAccountCtrl.controllerAs
                     }
                 }
@@ -145,6 +147,7 @@ module Budget {
                 views: {
                     "main-content@app": {
                         templateUrl: "templates/allocate.html",
+                        resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: AllocateBudgetCtrl.controllerAs
                     }
                 }
@@ -155,6 +158,7 @@ module Budget {
                 views: {
                     "main-content@app": {
                         templateUrl: "templates/expense.html",
+                        resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: AddExpenseCtrl.controllerAs
                     }
                 }

@@ -1,16 +1,19 @@
-﻿<ion-view class="new-account-view dialog-view" view-title="Create new account">
+﻿<ion-view class="new-account-view dialog-view" view-title="Create new subaccount">
     <ion-content class="has-header" padding="true">
         <div class="item item-input item-positive">
-            <div class="col input-label">Subject</div>
-            <input class="col" type="text" autofocus placeholder="Subject" ng-model="vm.subject">
+            <div class="input-label">Parent account: {{vm.accountData.subject}}</div>
         </div>
         <div class="item item-input item-positive">
-            <div class="col input-label">Description</div>
-            <input class="col" type="text" placeholder="Description" ng-model="vm.description">
-        </div>
-        <div class="item item-positive dialog-button-container">
-            <button class="button button-positive" ng-click="vm.ok()">Add</button>
-            <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
-        </div>
-    </ion-content>
+                <div class="col input-label">Subject</div>
+                <input class="col" type="text" autofocus placeholder="Subject" ng-model="vm.subject">
+            </div>
+            <div class="item item-input item-positive">
+                <div class="col input-label">Description</div>
+                <input class="col" type="text" placeholder="Description" ng-model="vm.description">
+            </div>
+            <div class="item item-positive dialog-button-container">
+                <button class="button button-positive" ng-click="vm.ok()">Add</button>
+                <button class="button button-stable" ng-click="vm.cancel()">Cancel</button>
+            </div>
+</ion-content>
 </ion-view>

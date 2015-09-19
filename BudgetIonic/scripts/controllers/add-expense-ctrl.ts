@@ -11,7 +11,6 @@
         public isEnabled = false;
 
         public static $inject = [
-            "$stateParams",
             "$scope",
             "$state",
             "$firebaseObject",
@@ -21,11 +20,11 @@
             "$q",
             DataService.IID,
             "projectData",
-            "userData"
+            "userData",
+            "accountSnapshot"
         ];
 
         constructor(
-            $stateParams,
             private $scope: ng.IScope,
             private $state: angular.ui.IStateService,
             private $firebaseObject: AngularFireObjectService,
@@ -35,16 +34,12 @@
             private $q: ng.IQService,
             private dataService: IDataService,
             private projectData: DataWithKey<ProjectHeader>,
-            private userData: UserData) {
+            private userData: UserData,
+            private accountSnapshot: FirebaseDataSnapshot) {
 
-            $log.debug("Initializing add expense controller", arguments);
+            $log.debug("Initializing add expense controller");
 
-            const debitAccountId = $stateParams.accountId || "root";
-            this.dataService.getAccountSnapshot(projectData.key, debitAccountId)
-                .then(snapshot => {
-                    this.debitAccount = AccountData.fromSnapshot(snapshot);
-                    this.validate();
-                });
+            this.debitAccount = AccountData.fromSnapshot(accountSnapshot);
             const us1 = this.$scope.$watch(() => this.amount, _ => this.validate());
         }
 

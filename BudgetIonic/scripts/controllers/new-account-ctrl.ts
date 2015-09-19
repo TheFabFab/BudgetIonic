@@ -6,32 +6,31 @@
         public static controllerAs = NewAccountCtrl.IID + " as vm";
 
         public static $inject = [
-            "$stateParams",
             "$state",
-            "$scope",
             "$log",
             DataService.IID,
-            "projectData"
+            "projectData",
+            "accountSnapshot"
         ];
 
         public subject = "";
         public description = "";
-        public parentId: string;
+
+        public accountData: AccountData;
 
         constructor(
-            $stateParams,
             private $state: ng.ui.IStateService,
-            $scope: ng.IScope,
             private $log: ng.ILogService,
             private dataService: IDataService,
-            private projectData: DataWithKey<ProjectHeader>) {
+            private projectData: DataWithKey<ProjectHeader>,
+            private accountSnapshot: FirebaseDataSnapshot) {
 
-            $log.debug("Initializing new account controller", $stateParams);
-            this.parentId = $stateParams.parentId || "root";
+            $log.debug("Initializing new account controller");
+            this.accountData = AccountData.fromSnapshot(accountSnapshot);
         }
 
         public ok(): void {
-            this.dataService.addChildAccount(this.projectData.key, this.parentId, this.subject, this.description)
+            this.dataService.addChildAccount(this.projectData.key, this.accountSnapshot.key(), this.subject, this.description)
                 .then(x => this.close());
         }
 
@@ -43,7 +42,7 @@
             this.$log.debug("Closing");
             this.$state.go(
                 "app.logged-in.project.account",
-                <IAccountStateParams>{ projectId: this.projectData.key, accountId: this.parentId });
+                <IAccountStateParams>{ projectId: this.projectData.key, accountId: this.accountSnapshot.key() });
         }
     }
 }

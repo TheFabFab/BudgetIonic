@@ -18,7 +18,7 @@ module Budget {
         public static IID = "accountCtrl";
         public static controllerAs = AccountCtrl.IID + " as vm";
 
-        public static resolve() {
+        public static resolveAccountSnapshot() {
             return {
                 accountSnapshot: ["$stateParams", "projectData", DataService.IID, AccountCtrl.getAccount]
             };
@@ -60,6 +60,7 @@ module Budget {
         public transactions: TransactionViewModel[] = [];
 
         public static $inject = [
+            "$timeout",
             "$scope",
             "$firebaseObject",
             "$firebaseArray",
@@ -71,6 +72,7 @@ module Budget {
         ];
 
         constructor(
+            private $timeout: ng.ITimeoutService,
             private $scope: ng.IScope,
             private $firebaseObject: AngularFireObjectService,
             private $firebaseArray: AngularFireArrayService,
@@ -80,67 +82,70 @@ module Budget {
             private projectData: DataWithKey<ProjectHeader>,
             private accountSnapshot: FirebaseDataSnapshot) {
 
-            $log.debug("Initializing account controller", arguments);
+            $log.debug("Initializing account controller");
 
             this.accountData = AccountData.fromSnapshot(accountSnapshot);
-            accountSnapshot.ref()
-                .on(FirebaseEvents.value, accountSnapshot => {
-                    this.accountData = AccountData.fromSnapshot(accountSnapshot);
+
+            $timeout(() => {
+                accountSnapshot.ref()
+                    .on(FirebaseEvents.value, accountSnapshot => {
+                        this.accountData = AccountData.fromSnapshot(accountSnapshot);
+                    });
+
+                this.addSubaccountCommand = new Command("Add subaccount", `/#/app/budget/project/${this.projectData.key}/new/${this.accountSnapshot.key() }`);
+                this.deleteCommand = new Command("Delete account", `/#/app/budget/project/${this.projectData.key}/delete/${this.accountSnapshot.key() }`, false);
+                this.allocateBudgetCommand = new Command("Allocate budget", `/#/app/budget/project/${this.projectData.key}/allocate/${this.accountSnapshot.key() }`);
+                this.addExpenseCommand = new Command("Register expense", `/#/app/budget/project/${this.projectData.key}/expense/${this.accountSnapshot.key() }`);
+                const projects = dataService.getProjectsReference();
+                const childrenQuery = projects
+                    .child(projectData.key)
+                    .child("accounts")
+                    .orderByChild("parent")
+                    .equalTo(accountSnapshot.key());
+                this.subAccounts = $firebaseArray(childrenQuery);
+
+                this.subAccounts.$watch(event => $log.debug("subAccounts.watch", event, this.subAccounts));
+                const transactions = projects
+                    .child(projectData.key)
+                    .child("transactions");
+
+                const creditTransactionQuery = transactions
+                    .orderByChild("credit")
+                    .equalTo(accountSnapshot.key())
+                    .limitToFirst(10);
+                const debitTransactionQuery = transactions
+                    .orderByChild("debit")
+                    .equalTo(accountSnapshot.key())
+                    .limitToFirst(10);
+
+                creditTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
+                    var transaction = snapShot.exportVal<ITransactionData>();
+                    var label = `Credited ${transaction.amount} from '${transaction.debitAccountName}'.`;
+                    var vm = new TransactionViewModel(transaction.userId, label, transaction.timestamp);
+                    this.insertTransaction(vm);
                 });
 
-            this.addSubaccountCommand = new Command("Add subaccount", `/#/app/budget/project/${this.projectData.key}/new/${this.accountSnapshot.key()}`);
-            this.deleteCommand = new Command("Delete account", `/#/app/budget/project/${this.projectData.key}/delete/${this.accountSnapshot.key()}`, false);
-            this.allocateBudgetCommand = new Command("Allocate budget", `/#/app/budget/project/${this.projectData.key}/allocate/${this.accountSnapshot.key()}`);
-            this.addExpenseCommand = new Command("Register expense", `/#/app/budget/project/${this.projectData.key}/expense/${this.accountSnapshot.key()}`);
-            const projects = dataService.getProjectsReference();
-            const childrenQuery = projects
-                .child(projectData.key)
-                .child("accounts")
-                .orderByChild("parent")
-                .equalTo(accountSnapshot.key());
-            this.subAccounts = $firebaseArray(childrenQuery);
+                debitTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
+                    var transaction = snapShot.exportVal<ITransactionData>();
+                    var label = `Debited ${transaction.amount} to '${transaction.creditAccountName}'.`;
+                    var vm = new TransactionViewModel(transaction.userId, label, transaction.timestamp);
+                    this.insertTransaction(vm);
+                });
 
-            this.subAccounts.$watch(event => $log.debug("subAccounts.watch", event, this.subAccounts));
-            const transactions = projects
-                .child(projectData.key)
-                .child("transactions");
+                $scope.$on("$ionicView.beforeLeave", () => {
+                    $log.debug("Leaving account controller", this.$scope);
+                    this.commandService.registerContextCommands([]);
+                });
 
-            const creditTransactionQuery = transactions
-                .orderByChild("credit")
-                .equalTo(accountSnapshot.key())
-                .limitToFirst(10);
-            const debitTransactionQuery = transactions
-                .orderByChild("debit")
-                .equalTo(accountSnapshot.key())
-                .limitToFirst(10);
+                $scope.$on("$ionicView.afterEnter", () => {
+                    $log.debug("Entering account controller", this.$scope);
+                    this.updateContextCommands();
+                    this.setContextCommands();
+                });
 
-            creditTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
-                var transaction = snapShot.exportVal<ITransactionData>();
-                var label = `Credited ${transaction.amount} from '${transaction.debitAccountName}'.`;
-                var vm = new TransactionViewModel(transaction.userId, label, transaction.timestamp);
-                this.insertTransaction(vm);
-            });
-
-            debitTransactionQuery.on(FirebaseEvents.child_added, snapShot => {
-                var transaction = snapShot.exportVal<ITransactionData>();
-                var label = `Debited ${transaction.amount} to '${transaction.creditAccountName}'.`;
-                var vm = new TransactionViewModel(transaction.userId, label, transaction.timestamp);
-                this.insertTransaction(vm);
-            });
-
-            $scope.$on("$ionicView.beforeLeave", () => {
-                $log.debug("Leaving account controller", this.$scope);
-                this.commandService.registerContextCommands([]);
-            });
-
-            $scope.$on("$ionicView.afterEnter", () => {
-                $log.debug("Entering account controller", this.$scope);
-                this.updateContextCommands();
-                this.setContextCommands();
-            });
-
-            this.subAccounts.$watch(() => this.updateContextCommands());
-            $scope.$watch(x => this.transactions, () => this.updateContextCommands());
+                this.subAccounts.$watch(() => this.updateContextCommands());
+                $scope.$watch(x => this.transactions, () => this.updateContextCommands());
+            }, 0);
         }
 
         private insertTransaction(transactionVm: TransactionViewModel): void {
