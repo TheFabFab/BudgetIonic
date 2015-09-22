@@ -144,7 +144,7 @@
 
 .clip-circle {
   background-size:100px 133px;
-  background-position:0px -10px;
+  background-position:0 -10px;
   height:100px;
   width:100px;
   flex-basis: 100px;
@@ -162,12 +162,11 @@
 }
 
 .user-picture-small .clip-circle {
-    -ms-background-size:60px 80px;
     background-size:60px 80px;
-  background-position:0px -7px;
-  height:60px;
-  width:60px;
-  flex-basis: 60px;
+    background-position:0 -7px;
+    height:60px;
+    width:60px;
+    flex-basis: 60px;
 }
 
 ui-view {
