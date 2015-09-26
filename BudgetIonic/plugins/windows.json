@@ -1,0 +1,24 @@
+{
+    "prepare_queue": {
+        "installed": [],
+        "uninstalled": []
+    },
+    "config_munge": {
+        "files": {}
+    },
+    "installed_plugins": {
+        "cordova-plugin-splashscreen": {
+            "PACKAGE_NAME": "BudgetIonic"
+        },
+        "cordova-plugin-whitelist": {
+            "PACKAGE_NAME": "BudgetIonic"
+        },
+        "cordova-plugin-inappbrowser": {
+            "PACKAGE_NAME": "BudgetIonic"
+        },
+        "cordova-plugin-crosswalk-webview": {
+            "PACKAGE_NAME": "BudgetIonic"
+        }
+    },
+    "dependent_plugins": {}
+}

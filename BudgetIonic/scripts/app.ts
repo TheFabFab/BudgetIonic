@@ -24,7 +24,7 @@ module Budget {
     "use strict";
 
     var budgetModule =
-        angular.module("budget-app", ["ionic", "firebase", "angularMoment"])
+        angular.module("budget-app", ["ionic", "firebase", "angularMoment", "ngCordovaOauth"])
 
             .service(DataService.IID, DataService)
             .service(AuthenticationService.IID, AuthenticationService)
@@ -54,7 +54,7 @@ module Budget {
                     views: {
                         "main-frame": {
                             controller: LoginCtrl.controllerAs,
-                            templateUrl: "templates/login.html"
+                            templateUrl: "./templates/login.html"
                         }
                     }
                 });
@@ -65,7 +65,7 @@ module Budget {
                     views: {
                         "main-frame": {
                             controller: MainCtrl.controllerAs,
-                            templateUrl: "templates/master-page.html"
+                            templateUrl: "./templates/master-page.html"
                         }
                     },
                     resolve: MainCtrl.resolve()
@@ -76,7 +76,7 @@ module Budget {
                 url: "/budget",
                 views: {
                     "right-side-content@app": {
-                        templateUrl: "templates/news-feed.html",
+                        templateUrl: "./templates/news-feed.html",
                         controller: NewsFeedCtrl.controllerAs
                     }                    
                 }
@@ -86,7 +86,7 @@ module Budget {
                     url: "/projects",
                     views: {
                         "main-content@app": {
-                            templateUrl: "templates/projects.html",
+                            templateUrl: "./templates/projects.html",
                             controller: ProjectsCtrl.controllerAs
                         }
                     }
@@ -98,7 +98,7 @@ module Budget {
                 resolve: ProjectCtrl.resolve(),
                 views: {
                     "left-side-content@app": {
-                        templateUrl: "templates/project-left-side.html",
+                        templateUrl: "./templates/project-left-side.html",
                         controller: ProjectCtrl.controllerAs
                     }
                 }
@@ -113,7 +113,7 @@ module Budget {
                 url: "/account/:accountId",
                 views: {
                     "main-content@app": {
-                        templateUrl: "templates/account.html",
+                        templateUrl: "./templates/account.html",
                         resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: AccountCtrl.controllerAs
                     }
@@ -124,7 +124,7 @@ module Budget {
                 url: "/new/:accountId",
                 views: {
                     "main-content@app": {
-                        templateUrl: "templates/new-account.html",
+                        templateUrl: "./templates/new-account.html",
                         resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: NewAccountCtrl.controllerAs
                     }
@@ -135,7 +135,7 @@ module Budget {
                 url: "/delete/:accountId",
                 views: {
                     "main-content@app": {
-                        templateUrl: "templates/delete-account.html",
+                        templateUrl: "./templates/delete-account.html",
                         resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: DeleteAccountCtrl.controllerAs
                     }
@@ -146,7 +146,7 @@ module Budget {
                 url: "/allocate/:accountId",
                 views: {
                     "main-content@app": {
-                        templateUrl: "templates/allocate.html",
+                        templateUrl: "./templates/allocate.html",
                         resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: AllocateBudgetCtrl.controllerAs
                     }
@@ -157,7 +157,7 @@ module Budget {
                 url: "/expense/:accountId",
                 views: {
                     "main-content@app": {
-                        templateUrl: "templates/expense.html",
+                        templateUrl: "./templates/expense.html",
                         resolve: AccountCtrl.resolveAccountSnapshot(),
                         controller: AddExpenseCtrl.controllerAs
                     }

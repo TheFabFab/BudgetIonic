@@ -9,7 +9,10 @@ module.exports = function (grunt) {
                 options: {
                     targetDir: "www/lib",
                     layout: "byComponent",
-                    cleanTargetDir: false
+                    cleanTargetDir: false,
+                    verbose: true,
+                    bowerOptions: {
+                    }
                 }
             }
         },

@@ -36,7 +36,7 @@ module Budget {
     export class AccountOverview implements ng.IDirective {
         restrict = "E";
         replace = false;
-        templateUrl = "/templates/account-overview.html";
+        templateUrl = "./templates/account-overview.html";
         scope = {
             account: "=",
             showLabels: "="

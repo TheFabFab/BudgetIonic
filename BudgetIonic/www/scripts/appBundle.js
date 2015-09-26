@@ -421,17 +421,19 @@ var Budget;
     })();
     Budget.DataService = DataService;
 })(Budget || (Budget = {}));
+/// <reference path="../../typings/rx/rx-lite.d.ts" />
 /// <reference path="../typings/extensions.d.ts" />
 /// <reference path="../../typings/rx/rx.d.ts" />
 /// <reference path="data-service.ts" />
 var Budget;
 (function (Budget) {
     var AuthenticationService = (function () {
-        function AuthenticationService($q, $log, $http, dataService) {
+        function AuthenticationService($q, $log, $http, $cordovaOauth, dataService) {
             var _this = this;
             this.$q = $q;
             this.$log = $log;
             this.$http = $http;
+            this.$cordovaOauth = $cordovaOauth;
             this.dataService = dataService;
             $log.debug("Creating authentication service");
             this.database = dataService.getDatabaseReference();
@@ -439,21 +441,48 @@ var Budget;
                 var onComplete = function (authData) { return observer.onNext(authData); };
                 _this.database.onAuth(onComplete);
                 return Rx.Disposable.create(function () { return _this.database.offAuth(onComplete); });
-            }).flatMap(function (authData) { return Rx.Observable.fromPromise(_this.getUserData(authData)); });
+            }).flatMap(function (authData) { return Rx.Observable.fromPromise(_this.getUserData(authData)); })
+                .publish()
+                .refCount();
         }
         AuthenticationService.prototype.facebookLogin = function () {
             var _this = this;
-            this.$log.debug("Logging in with Facebook...");
-            this.database.authWithOAuthPopup("facebook", function (error, authData) {
-                if (error) {
-                    console.log("Login Failed!", error);
-                    _this.database.authWithOAuthRedirect("facebook", function (error) {
+            if (window.cordova) {
+                this.$log.debug("Logging in with Facebook through OAuth popup...", this.$cordovaOauth);
+                this.$cordovaOauth.facebook("1632738816997626", ["email"], {
+                    redirect_uri: "https://auth.firebase.com/v2/budgetionic/auth/facebook/callback",
+                })
+                    .then(function (result) {
+                    _this.database.authWithOAuthToken("facebook", result.access_token, function (error) {
                         if (error) {
-                            console.log("Login Failed!", error);
+                            _this.$log.error("Login failed with OAuth token. Bailing.", error);
+                        }
+                        else {
+                            _this.$log.info("Authentication successful.");
                         }
                     });
-                }
-            });
+                }, function (error) {
+                    _this.$log.error("Login failed with OAuth token. Bailing.", error);
+                });
+            }
+            else {
+                this.database.authWithOAuthPopup("facebook", function (error, authData) {
+                    if (error) {
+                        _this.$log.warn("Login failed with OAuth popup. Retrying with OAuth redirect.", error);
+                        _this.database.authWithOAuthRedirect("facebook", function (error) {
+                            if (error) {
+                                _this.$log.error("Login failed with OAuth redirect. Bailing.", error);
+                            }
+                            else {
+                                _this.$log.info("Authentication with OAuth redirect succeeded.");
+                            }
+                        });
+                    }
+                    else {
+                        _this.$log.info("Authentication with OAuth popup succeeded.");
+                    }
+                });
+            }
         };
         AuthenticationService.prototype.logOut = function () {
             this.database.unauth();
@@ -498,6 +527,7 @@ var Budget;
             "$q",
             "$log",
             "$http",
+            "$cordovaOauth",
             Budget.DataService.IID
         ];
         return AuthenticationService;
@@ -684,7 +714,7 @@ var Budget;
             this.$log = $log;
             this.restrict = "E";
             this.replace = false;
-            this.templateUrl = "/templates/account-overview.html";
+            this.templateUrl = "./templates/account-overview.html";
             this.scope = {
                 account: "=",
                 showLabels: "="
@@ -919,7 +949,7 @@ var Budget;
         };
         MainCtrl.prototype.logOut = function () {
             this.authenticationService.logOut();
-            this.$state.go("app.logged-in.home", {}, { reload: true });
+            this.$state.go("app.logged-in.projects", {}, { reload: true });
         };
         MainCtrl.prototype.toggleLeft = function () {
             this.$ionicSideMenuDelegate.toggleLeft();
@@ -1343,7 +1373,7 @@ var Budget;
 var Budget;
 (function (Budget) {
     "use strict";
-    var budgetModule = angular.module("budget-app", ["ionic", "firebase", "angularMoment"])
+    var budgetModule = angular.module("budget-app", ["ionic", "firebase", "angularMoment", "ngCordovaOauth"])
         .service(Budget.DataService.IID, Budget.DataService)
         .service(Budget.AuthenticationService.IID, Budget.AuthenticationService)
         .service(Budget.CommandService.IID, Budget.CommandService)
@@ -1368,7 +1398,7 @@ var Budget;
             views: {
                 "main-frame": {
                     controller: Budget.LoginCtrl.controllerAs,
-                    templateUrl: "templates/login.html"
+                    templateUrl: "./templates/login.html"
                 }
             }
         });
@@ -1378,7 +1408,7 @@ var Budget;
             views: {
                 "main-frame": {
                     controller: Budget.MainCtrl.controllerAs,
-                    templateUrl: "templates/master-page.html"
+                    templateUrl: "./templates/master-page.html"
                 }
             },
             resolve: Budget.MainCtrl.resolve()
@@ -1388,7 +1418,7 @@ var Budget;
             url: "/budget",
             views: {
                 "right-side-content@app": {
-                    templateUrl: "templates/news-feed.html",
+                    templateUrl: "./templates/news-feed.html",
                     controller: Budget.NewsFeedCtrl.controllerAs
                 }
             }
@@ -1397,7 +1427,7 @@ var Budget;
             url: "/projects",
             views: {
                 "main-content@app": {
-                    templateUrl: "templates/projects.html",
+                    templateUrl: "./templates/projects.html",
                     controller: Budget.ProjectsCtrl.controllerAs
                 }
             }
@@ -1408,7 +1438,7 @@ var Budget;
             resolve: Budget.ProjectCtrl.resolve(),
             views: {
                 "left-side-content@app": {
-                    templateUrl: "templates/project-left-side.html",
+                    templateUrl: "./templates/project-left-side.html",
                     controller: Budget.ProjectCtrl.controllerAs
                 }
             }
@@ -1421,7 +1451,7 @@ var Budget;
             url: "/account/:accountId",
             views: {
                 "main-content@app": {
-                    templateUrl: "templates/account.html",
+                    templateUrl: "./templates/account.html",
                     resolve: Budget.AccountCtrl.resolveAccountSnapshot(),
                     controller: Budget.AccountCtrl.controllerAs
                 }
@@ -1431,7 +1461,7 @@ var Budget;
             url: "/new/:accountId",
             views: {
                 "main-content@app": {
-                    templateUrl: "templates/new-account.html",
+                    templateUrl: "./templates/new-account.html",
                     resolve: Budget.AccountCtrl.resolveAccountSnapshot(),
                     controller: Budget.NewAccountCtrl.controllerAs
                 }
@@ -1441,7 +1471,7 @@ var Budget;
             url: "/delete/:accountId",
             views: {
                 "main-content@app": {
-                    templateUrl: "templates/delete-account.html",
+                    templateUrl: "./templates/delete-account.html",
                     resolve: Budget.AccountCtrl.resolveAccountSnapshot(),
                     controller: Budget.DeleteAccountCtrl.controllerAs
                 }
@@ -1451,7 +1481,7 @@ var Budget;
             url: "/allocate/:accountId",
             views: {
                 "main-content@app": {
-                    templateUrl: "templates/allocate.html",
+                    templateUrl: "./templates/allocate.html",
                     resolve: Budget.AccountCtrl.resolveAccountSnapshot(),
                     controller: Budget.AllocateBudgetCtrl.controllerAs
                 }
@@ -1461,7 +1491,7 @@ var Budget;
             url: "/expense/:accountId",
             views: {
                 "main-content@app": {
-                    templateUrl: "templates/expense.html",
+                    templateUrl: "./templates/expense.html",
                     resolve: Budget.AccountCtrl.resolveAccountSnapshot(),
                     controller: Budget.AddExpenseCtrl.controllerAs
                 }

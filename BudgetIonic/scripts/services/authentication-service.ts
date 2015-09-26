@@ -1,4 +1,5 @@
-﻿/// <reference path="../typings/extensions.d.ts" />
+﻿/// <reference path="../../typings/rx/rx-lite.d.ts" />
+/// <reference path="../typings/extensions.d.ts" />
 /// <reference path="../../typings/rx/rx.d.ts" />
 /// <reference path="data-service.ts" />
 module Budget {
@@ -20,10 +21,11 @@ module Budget {
             "$q",
             "$log",
             "$http",
+            "$cordovaOauth",
             DataService.IID
         ];
 
-        constructor(private $q: ng.IQService, private $log: ng.ILogService, private $http: ng.IHttpService, private dataService: IDataService) {
+        constructor(private $q: ng.IQService, private $log: ng.ILogService, private $http: ng.IHttpService, private $cordovaOauth: any, private dataService: IDataService) {
             $log.debug("Creating authentication service");
 
             this.database = dataService.getDatabaseReference();
@@ -32,22 +34,45 @@ module Budget {
                 const onComplete = (authData: FirebaseAuthData) => observer.onNext(authData);
                 this.database.onAuth(onComplete);
                 return Rx.Disposable.create(() => this.database.offAuth(onComplete));
-            }).flatMap(authData => Rx.Observable.fromPromise<UserData>(this.getUserData(authData)));
+            }).flatMap(authData => Rx.Observable.fromPromise<UserData>(this.getUserData(authData)))
+            .publish()
+            .refCount();
         }
 
         public facebookLogin(): void {
-            this.$log.debug("Logging in with Facebook...");
+            if (window.cordova) {
+                this.$log.debug("Logging in with Facebook through OAuth popup...", this.$cordovaOauth);
 
-            this.database.authWithOAuthPopup("facebook", (error, authData) => {
-                if (error) {
-                    console.log("Login Failed!", error);
-                    this.database.authWithOAuthRedirect("facebook", error => {
-                        if (error) {
-                            console.log("Login Failed!", error);
-                        }
+                this.$cordovaOauth.facebook("1632738816997626", ["email"], {
+                    redirect_uri: "https://auth.firebase.com/v2/budgetionic/auth/facebook/callback",
+                })
+                    .then(result => {
+                        this.database.authWithOAuthToken("facebook", result.access_token, error => {
+                            if (error) {
+                                this.$log.error("Login failed with OAuth token. Bailing.", error);
+                            } else {
+                                this.$log.info("Authentication successful.");
+                            }
+                        });
+                    }, error => {
+                        this.$log.error("Login failed with OAuth token. Bailing.", error);
                     });
-                }
-            });
+            } else {
+                this.database.authWithOAuthPopup("facebook", (error, authData) => {
+                    if (error) {
+                        this.$log.warn("Login failed with OAuth popup. Retrying with OAuth redirect.", error);
+                        this.database.authWithOAuthRedirect("facebook", error => {
+                            if (error) {
+                                this.$log.error("Login failed with OAuth redirect. Bailing.", error);
+                            } else {
+                                this.$log.info("Authentication with OAuth redirect succeeded.");
+                            }
+                        });
+                    } else {
+                        this.$log.info("Authentication with OAuth popup succeeded.");
+                    }
+                });
+            }
         }
 
         public logOut(): void {

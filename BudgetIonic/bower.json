@@ -3,7 +3,15 @@
   "license": "Apache-2.0",
   "private": true,
   "dependencies": {
-    "angular-moment": "~0.10.2"
+    "ionic": "driftyco/ionic-bower#1.1.0",
+    "angular-moment": "~0.10.3",
+    "ng-cordova-oauth": "~0.1.4",
+    "rxjs": "~4.0.0",
+    "robotodraft": "~1.1.0",
+    "firebase": "~2.3.0",
+    "moment": "~2.10.6",
+    "css-social-buttons": "zocial#~1.1.1",
+    "angularfire": "~1.1.2"
   },
   "exportsOverride": {
     "bootstrap": {
@@ -20,13 +28,16 @@
     "underscore-observable-arrays": {
       "js": "underscore-observe.js"
     },
+    "ng-cordova-oauth": {
+      "js": [ "dist/ng-cordova-oauth.min.js", "dist/ng-cordova-oauth.js" ]
+    },
+    "ionic": { },
     "angular": { },
     "angular-animate": { },
     "angular-sanitize": { },
     "angular-ui-router": { }
   },
   "devDependencies": {
-    "ionic": "driftyco/ionic-bower#1.1.0",
     "angular-mocks": "angular/bower-angular-mocks#1.4.3"
   },
   "resolutions": {
