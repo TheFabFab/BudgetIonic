@@ -1,7 +1,6 @@
-﻿/// <reference path="../../typings/rx/rx-lite.d.ts" />
-/// <reference path="../typings/extensions.d.ts" />
-/// <reference path="../../typings/rx/rx.d.ts" />
+﻿/// <reference path="../typings/extensions.d.ts" />
 /// <reference path="data-service.ts" />
+/// <reference path="../../typings/rx/rx.all.d.ts" />
 module Budget {
     export interface IAuthenticationService {
         authentication: Rx.Observable<UserData>;

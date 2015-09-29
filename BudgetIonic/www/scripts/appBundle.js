@@ -421,10 +421,9 @@ var Budget;
     })();
     Budget.DataService = DataService;
 })(Budget || (Budget = {}));
-/// <reference path="../../typings/rx/rx-lite.d.ts" />
 /// <reference path="../typings/extensions.d.ts" />
-/// <reference path="../../typings/rx/rx.d.ts" />
 /// <reference path="data-service.ts" />
+/// <reference path="../../typings/rx/rx.all.d.ts" />
 var Budget;
 (function (Budget) {
     var AuthenticationService = (function () {
