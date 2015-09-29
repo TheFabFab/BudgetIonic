@@ -46,10 +46,8 @@
                                     <div>Project home</div>
                                 </a>
                             </li>
-                            <li class="item item-stable" ng-repeat="command in vm.contextCommands" ng-if="command.isEnabled">
-                                <a class="row" ng-href="{{command.link}}">
-                                    <div>{{command.label}}</div>
-                                </a>
+                            <li class="item item-stable" ng-repeat="command in vm.contextCommands" ng-if="command.isEnabled" ng-click="command.go()">
+                                <div>{{command.label}}</div>
                             </li>
                         </ul>
                     </div>

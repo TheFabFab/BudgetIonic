@@ -62,6 +62,7 @@ module Budget {
         public static $inject = [
             "$timeout",
             "$scope",
+            "$state",
             "$firebaseObject",
             "$firebaseArray",
             "$log",
@@ -74,6 +75,7 @@ module Budget {
         constructor(
             private $timeout: ng.ITimeoutService,
             private $scope: ng.IScope,
+            private $state: ng.ui.IStateService,
             private $firebaseObject: AngularFireObjectService,
             private $firebaseArray: AngularFireArrayService,
             private $log: ng.ILogService,
@@ -92,10 +94,11 @@ module Budget {
                         this.accountData = AccountData.fromSnapshot(accountSnapshot);
                     });
 
-                this.addSubaccountCommand = new Command("Add subaccount", `/#/app/budget/project/${this.projectData.key}/new/${this.accountSnapshot.key() }`);
-                this.deleteCommand = new Command("Delete account", `/#/app/budget/project/${this.projectData.key}/delete/${this.accountSnapshot.key() }`, false);
-                this.allocateBudgetCommand = new Command("Allocate budget", `/#/app/budget/project/${this.projectData.key}/allocate/${this.accountSnapshot.key() }`);
-                this.addExpenseCommand = new Command("Register expense", `/#/app/budget/project/${this.projectData.key}/expense/${this.accountSnapshot.key() }`);
+                this.allocateBudgetCommand = new Command($state, "Allocate budget", "app.logged-in.project.allocate", { projectId: this.projectData.key, accountId: this.accountSnapshot.key() });
+                this.addExpenseCommand = new Command($state, "Register expense", "app.logged-in.project.expense", { projectId: this.projectData.key, accountId: this.accountSnapshot.key() });
+                this.addSubaccountCommand = new Command($state, "Add subaccount", "app.logged-in.project.new", { projectId: this.projectData.key, accountId: this.accountSnapshot.key() });
+                this.deleteCommand = new Command($state, "Delete account", "app.logged-in.project.delete-account", { projectId: this.projectData.key, accountId: this.accountSnapshot.key() }, false);
+
                 const projects = dataService.getProjectsReference();
                 const childrenQuery = projects
                     .child(projectData.key)

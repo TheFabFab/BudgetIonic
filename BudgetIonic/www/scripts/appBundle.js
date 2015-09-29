@@ -618,12 +618,17 @@ var Budget;
 var Budget;
 (function (Budget) {
     var Command = (function () {
-        function Command(label, link, isEnabled) {
+        function Command($state, label, to, params, isEnabled) {
             if (isEnabled === void 0) { isEnabled = true; }
+            this.$state = $state;
             this.label = label;
-            this.link = link;
+            this.to = to;
+            this.params = params;
             this.isEnabled = isEnabled;
         }
+        Command.prototype.go = function () {
+            this.$state.go(this.to, this.params);
+        };
         return Command;
     })();
     Budget.Command = Command;
@@ -763,10 +768,11 @@ var Budget;
     })();
     Budget.TransactionViewModel = TransactionViewModel;
     var AccountCtrl = (function () {
-        function AccountCtrl($timeout, $scope, $firebaseObject, $firebaseArray, $log, dataService, commandService, projectData, accountSnapshot) {
+        function AccountCtrl($timeout, $scope, $state, $firebaseObject, $firebaseArray, $log, dataService, commandService, projectData, accountSnapshot) {
             var _this = this;
             this.$timeout = $timeout;
             this.$scope = $scope;
+            this.$state = $state;
             this.$firebaseObject = $firebaseObject;
             this.$firebaseArray = $firebaseArray;
             this.$log = $log;
@@ -782,10 +788,10 @@ var Budget;
                     .on(Budget.FirebaseEvents.value, function (accountSnapshot) {
                     _this.accountData = Budget.AccountData.fromSnapshot(accountSnapshot);
                 });
-                _this.addSubaccountCommand = new Budget.Command("Add subaccount", "/#/app/budget/project/" + _this.projectData.key + "/new/" + _this.accountSnapshot.key());
-                _this.deleteCommand = new Budget.Command("Delete account", "/#/app/budget/project/" + _this.projectData.key + "/delete/" + _this.accountSnapshot.key(), false);
-                _this.allocateBudgetCommand = new Budget.Command("Allocate budget", "/#/app/budget/project/" + _this.projectData.key + "/allocate/" + _this.accountSnapshot.key());
-                _this.addExpenseCommand = new Budget.Command("Register expense", "/#/app/budget/project/" + _this.projectData.key + "/expense/" + _this.accountSnapshot.key());
+                _this.allocateBudgetCommand = new Budget.Command($state, "Allocate budget", "app.logged-in.project.allocate", { projectId: _this.projectData.key, accountId: _this.accountSnapshot.key() });
+                _this.addExpenseCommand = new Budget.Command($state, "Register expense", "app.logged-in.project.expense", { projectId: _this.projectData.key, accountId: _this.accountSnapshot.key() });
+                _this.addSubaccountCommand = new Budget.Command($state, "Add subaccount", "app.logged-in.project.new", { projectId: _this.projectData.key, accountId: _this.accountSnapshot.key() });
+                _this.deleteCommand = new Budget.Command($state, "Delete account", "app.logged-in.project.delete-account", { projectId: _this.projectData.key, accountId: _this.accountSnapshot.key() }, false);
                 var projects = dataService.getProjectsReference();
                 var childrenQuery = projects
                     .child(projectData.key)
@@ -891,6 +897,7 @@ var Budget;
         AccountCtrl.$inject = [
             "$timeout",
             "$scope",
+            "$state",
             "$firebaseObject",
             "$firebaseArray",
             "$log",
