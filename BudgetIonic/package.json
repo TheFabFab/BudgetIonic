@@ -25,9 +25,6 @@
   },
   "cordovaPlugins": [],
   "cordovaPlatforms": [
-    {
-      "platform": "android",
-      "locator": "windows"
-    }
+    "android"
   ]
 }

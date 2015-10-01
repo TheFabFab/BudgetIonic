@@ -1326,8 +1326,9 @@ var Budget;
 var Budget;
 (function (Budget) {
     var ProjectsCtrl = (function () {
-        function ProjectsCtrl($log, dataService, userData) {
+        function ProjectsCtrl($scope, $log, dataService, userData) {
             var _this = this;
+            this.$scope = $scope;
             this.$log = $log;
             this.dataService = dataService;
             this.userData = userData;
@@ -1335,7 +1336,10 @@ var Budget;
             this.newProjectTitle = "";
             $log.debug("Initializing projects controller.");
             dataService.getProjectsForUser(userData.uid)
-                .then(function (projects) { return _this.projects = projects; });
+                .then(function (projects) {
+                _this.projects = projects;
+                $scope.$apply();
+            });
         }
         ProjectsCtrl.prototype.onAddNew = function () {
             var _this = this;
@@ -1347,6 +1351,7 @@ var Budget;
         ProjectsCtrl.IID = "projectsCtrl";
         ProjectsCtrl.controllerAs = ProjectsCtrl.IID + " as vm";
         ProjectsCtrl.$inject = [
+            "$scope",
             "$log",
             Budget.DataService.IID,
             "userData"

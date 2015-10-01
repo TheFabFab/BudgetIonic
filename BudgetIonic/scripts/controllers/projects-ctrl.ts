@@ -7,16 +7,20 @@
         public newProjectTitle = "";
 
         public static $inject = [
+            "$scope",
             "$log",
             DataService.IID,
             "userData"
         ];
 
-        constructor(private $log: ng.ILogService, private dataService: IDataService, private userData: UserData) {
+        constructor(private $scope: ng.IScope, private $log: ng.ILogService, private dataService: IDataService, private userData: UserData) {
             $log.debug("Initializing projects controller.");
 
             dataService.getProjectsForUser(userData.uid)
-                .then(projects => this.projects = projects);
+                .then(projects => {
+                    this.projects = projects;
+                    $scope.$apply();
+                });
         }
 
         public onAddNew() {
